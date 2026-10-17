@@ -1,0 +1,10 @@
+{
+  "context": "technical",
+  "editingPasses": 1,
+  "detector": "executed",
+  "issues": [],
+  "marksNormalizer": "executed on changed prose only",
+  "preservationValidator": "passed",
+  "residuals": "None found in editable README prose. Model outputs are attributed records and were not rewritten.",
+  "stopReason": "No further justified in-scope edit found."
+}
