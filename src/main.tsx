@@ -588,7 +588,7 @@ function App() {
                           <strong
                             role="cell"
                             className={
-                              last?.result.returnPct < 0 ? "negative" : ""
+                              last?.result.equity < 10000 ? "negative" : ""
                             }
                           >
                             {last
