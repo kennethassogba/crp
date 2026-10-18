@@ -113,7 +113,7 @@ export async function settle(env, market) {
 export async function tick(env) {
   const previous = await stateValue(env, "market");
   const market =
-    previous && previous.source === "Kraken Futures public REST" && previous.to >= Math.floor(Date.now() / HOUR) * HOUR
+    previous && previous.source === "Kraken Futures public REST" && previous.assets.BTC.funding[0]?.accrualHours === 1 && previous.to >= Math.floor(Date.now() / HOUR) * HOUR
       ? previous
       : await collectKraken(10);
   if (market !== previous) await setState(env, "market", market);

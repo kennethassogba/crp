@@ -103,6 +103,7 @@ function App() {
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true),
     [selected, setSelected] = useState("sol"),
+    [historySource, setHistorySource] = useState("momentum"),
     [cohort, setCohort] = useState("live"),
     [page, setPage] = useState(0),
     [copied, setCopied] = useState(false),
@@ -142,7 +143,7 @@ function App() {
   useEffect(() => {
     document.title = `CRP · ${NAV.find((n) => n.id === view)?.label}`;
     setPage(0);
-  }, [view, cohort]);
+  }, [view, cohort, historySource]);
   const rows = state?.decisions.filter((r) => r.cohort === cohort) ?? [];
   const latest = state?.decisions.find(
     (r) => r.cohort === "live" && r.model === selected,
@@ -173,10 +174,10 @@ function App() {
     .map((b) => ({ t: b.t, equity: b.c }));
   const selectedStats = report?.results.find((r) => r.name === "Momentum");
   const modelRuns = rows
-    .filter((r) => r.model === selected && r.result)
+    .filter((r) => r.model === historySource && r.result)
     .sort((a, b) => a.snapshot_at - b.snapshot_at);
   const curve =
-    selected === "momentum"
+    historySource === "momentum"
       ? (selectedStats?.curve ?? [])
       : modelRuns.map((r) => ({ t: r.result.exitAt, equity: r.result.equity }));
   const curveReturn = curve.length
@@ -303,7 +304,7 @@ function App() {
                       : view === "models"
                         ? "Model comparison"
                         : view === "history"
-                          ? "Historical test"
+                          ? historySource === "momentum" ? "Binance backtest" : "Performance"
                           : "Strategy & data"}
                   </h2>
                   <p>
@@ -312,7 +313,7 @@ function App() {
                       : view === "models"
                         ? "Decisions from the same market snapshot."
                         : view === "history"
-                          ? `${date(report.from)} to ${date(report.to)} · ${report.days} sessions`
+                          ? historySource === "momentum" ? `${date(report.from)} to ${date(report.to)} · ${report.days} sessions` : `${cohort === "live" ? "Forward observations" : "Binance replay"} · ${modelRuns.length} settled`
                           : "Inputs, sizing and execution assumptions."}
                   </p>
                 </div>
@@ -668,8 +669,8 @@ function App() {
                       </label>
                       <select
                         id="history-source"
-                        value={selected}
-                        onChange={(e) => setSelected(e.target.value)}
+                        value={historySource}
+                        onChange={(e) => setHistorySource(e.target.value)}
                       >
                         <option value="momentum">Momentum benchmark</option>
                         {state.models.map((m) => (
@@ -680,7 +681,7 @@ function App() {
                       </select>
                       <ChevronDown size={14} />
                     </div>
-                    {selected !== "momentum" && (
+                    {historySource !== "momentum" && (
                       <div className="segmented">
                         {["live", "replay"].map((c) => (
                           <button
@@ -712,7 +713,7 @@ function App() {
                     <span>Starting equity $10,000</span>
                   </div>
                   <Chart data={curve} label="Recorded paper equity" />
-                  {selected === "momentum" ? (
+                  {historySource === "momentum" ? (
                     <>
                       <div className="history-metrics">
                         <Fact
@@ -937,7 +938,7 @@ function App() {
                         </div>
                       </dl>
                       <div className="method-links">
-                        <a href="/docs/data-access.json" target="_blank">
+                        <a href="/api/source-health" target="_blank">
                           Data checks <ExternalLink size={13} />
                         </a>
                         <a href="/openapi.json" target="_blank">

@@ -136,6 +136,20 @@ test("a position cannot settle against another venue", () => {
   const m = { ...fixture(), source: "Kraken Futures public REST" };
   assert.equal(simulate({ action: "BTC_1X" }, { ...snapshot, source: "Binance USD-M public REST" }, m), null);
 });
+test("Kraken accrual charges 24 hours, excludes the exit period and bounds stop credits", () => {
+  const m = fixture();
+  const entryAt = at + HOUR;
+  m.assets.BTC.funding = Array.from({ length: 25 }, (_, i) => ({ t: entryAt + i * HOUR, rate: 0.001, absolutePerUnit: 0.5, accrualHours: 1 }));
+  const full = simulate({ action: "BTC_1X" }, snapshot, m);
+  assert.equal(full.fundingPayments, 24);
+  assert.ok(Math.abs(full.funding - full.quantity * 0.5 * 24) < 1e-8);
+  m.assets.BTC.bars[2].l = 90;
+  const stopped = simulate({ action: "BTC_1X" }, snapshot, m);
+  assert.equal(stopped.fundingPayments, 3);
+  for (const f of m.assets.BTC.funding) f.absolutePerUnit = -0.5;
+  const credit = simulate({ action: "BTC_1X" }, snapshot, m);
+  assert.equal(credit.fundingPayments, 2);
+});
 test("funding filters compare equivalent eight-hour periods", () => {
   const s = structuredClone(snapshot);
   s.assets.BTC = { ...s.assets.BTC, trend: 0.01, ret24h: 0.02, lastFunding: 0.0001, fundingPeriodHours: 1 };
