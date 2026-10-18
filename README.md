@@ -14,23 +14,25 @@ The site displays the recorded decision, reference levels, historical evaluation
 
 ## Data and evaluation
 
-- Market data: public Binance spot, USD-M perpetual, mark price and funding APIs, tested without authentication. The initial dataset contains 2,400 hourly candles per asset in each price series and 303 funding records per asset. [Access evidence](docs/data-access.json).
+- Historical data: public Binance spot, USD-M perpetual, mark price and funding APIs, tested without authentication. The initial dataset contains 2,400 hourly candles per asset in each price series and 303 funding records per asset. [Access evidence](docs/data-access.json).
 - Rule benchmark: 89 completed daily sessions, using fixed parameters and past-only features. Momentum is compared with daily BTC/ETH positions and passive spot holding. A second run doubles fees and slippage.
 - Model replay: 14 shared historical snapshots for all five configurations. These retrospective results are exploratory and are never merged into prospective performance.
 - Forward journal: decisions are stored before entry and settled against subsequent prices. Late, missing and failed responses do not become positions. No rule substitutes for a model response.
+
+Daily collection uses public Kraken Futures trade, mark and index candles and hourly funding. Binance rejected requests from the deployed Cloudflare runtime with HTTP 403; Kraken was selected for prospective observations. The archive remains on its original venue, and non-cash positions cannot settle against prices from another venue. The five initial prospective Binance decisions were all cash.
 
 The initial 75 successful provider requests cost $0.242856, based on returned token usage and the documented standard rates. This includes five prospective decisions and 70 historical replay decisions. The current run and cost records are in [models.json](public/data/models.json).
 
 There is no fitted model, parameter search or claimed predictive advantage. Fourteen replay days are insufficient to establish profitability. Historical model replay can also be contaminated by information in model training; prospective observations are needed to assess performance. News and analyst consensus are outside this version.
 
-Archived inputs keep their original version. Snapshot version 1.0.1 corrects the seven-day feature to span 168 hourly intervals; version 1.0.0 used 167. The trend benchmark does not use that feature. Recorded model decisions are not regenerated.
+Archived inputs keep their original version. Snapshot version 1.0.1 corrects the seven-day feature to span 168 hourly intervals; version 1.0.0 used 167. The trend benchmark does not use that feature. Recorded model decisions are not regenerated. Version 1.1.0 adds venue and funding-period handling for daily Kraken observations.
 
 ## Position rules
 
 | Parameter | Value |
 | --- | --- |
-| Starting paper equity | 10,000 USDT per strategy and cohort |
-| Instruments | BTCUSDT and ETHUSDT USD-M perpetuals; cash |
+| Starting paper equity | 10,000 account units per strategy and cohort |
+| Instruments | Live: Kraken PF_XBTUSD / PF_ETHUSD; archive: Binance BTCUSDT / ETHUSDT; cash |
 | Direction | Long only |
 | Isolated margin leverage | 1× or 2× |
 | Stop distance | Greater of 1% and twice hourly ATR14 / entry price |
@@ -38,10 +40,10 @@ Archived inputs keep their original version. Snapshot version 1.0.1 corrects the
 | Maximum notional | 2× account equity; collateral never exceeds equity |
 | Taker fee assumption | 0.05% each side |
 | Slippage assumption | 0.02% adverse each side |
-| Funding | Subsequent observed payments, including negative-rate credits |
+| Funding | Kraken published USD funding per base unit; archived Binance mark × rate; negative-rate credits included |
 | Time exit | 24 hours after entry |
 
-Risk sizing usually makes account exposure lower than the selected margin leverage. Stops can gap and funding can increase losses beyond the 2% sizing budget. Liquidation is approximated using mark-price candles and a fixed 0.5% maintenance margin. If a stop and liquidation occur within the same hourly candle, the engine takes the worse outcome. Real exchange margin tiers, liquidation fees, intrahour order sequence and fills are not reproduced. USDT is treated as the account unit without modelling a depeg.
+Risk sizing usually makes account exposure lower than the selected margin leverage. Stops can gap and funding can increase losses beyond the 2% sizing budget. Liquidation is approximated using mark-price candles and a fixed 0.5% maintenance margin. If a stop and liquidation occur within the same hourly candle, the engine takes the worse outcome. Real exchange margin tiers, liquidation fees, intrahour order sequence and fills are not reproduced. Live accounts use USD; the Binance archive uses USDT without modelling a depeg. Funding periods are explicit: Kraken hourly, Binance eight-hour. The trend filter normalizes its funding threshold to eight hours.
 
 Entries use the next hourly open after the snapshot and include adverse slippage. Stop gaps use the worse of the stop and candle open. Drawdown is measured on settled equity, not continuous intraday account value. Model API costs are reported separately from trading P&L.
 
@@ -98,7 +100,7 @@ Install CRP from the browser’s app installation menu. On iOS, use Share → Ad
 
 The PWA uses a single viewport at normal desktop and phone sizes, native selects and dialogs, safe-area insets, reduced-motion support and a mobile bottom navigation. Short screens and zoom may scroll so that controls remain reachable. The service worker caches the shell and static assets, while API responses remain network-only to avoid presenting offline decisions as current.
 
-- JSON: `/api/state`, `/api/backtest`, `/api/decisions`
+- JSON: `/api/state`, `/api/backtest`, `/api/decisions`, `/api/source-health`
 - OpenAPI: `/openapi.json`
 - Markdown negotiation: request `/` with `Accept: text/markdown`
 - Discovery: `/.well-known/api-catalog`, `/.well-known/mcp/server-card.json`, `/.well-known/agent-skills/index.json`
@@ -109,6 +111,6 @@ All agent tools are read-only and share the same recorded data as the interface.
 
 ## Sources
 
-[Binance public archives](https://github.com/binance/binance-public-data) · [USD-M market API](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Kline-Candlestick-Data) · [Funding history](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Get-Funding-Rate-History) · [Cloudflare Workers](https://developers.cloudflare.com/workers/) · [Cloudflare CLI](https://developers.cloudflare.com/cf/)
+[Kraken public candles](https://docs.kraken.com/api/docs/futures-api/charts/candles) · [Kraken funding history](https://docs.kraken.com/api/docs/futures-api/trading/historical-funding-rates/) · [Binance public archives](https://github.com/binance/binance-public-data) · [USD-M market API](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Kline-Candlestick-Data) · [Funding history](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Get-Funding-Rate-History) · [Cloudflare Workers](https://developers.cloudflare.com/workers/) · [Cloudflare CLI](https://developers.cloudflare.com/cf/)
 
 Code: [MIT](LICENSE). Third-party data and dependencies retain their own terms.

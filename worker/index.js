@@ -3,6 +3,7 @@ import { MODELS } from "../lib/models.mjs";
 import { stateValue, setState, tick } from "./jobs.js";
 import { discovery, GUIDE, LINKS, TOOLS } from "./discovery.js";
 import { fetchJSON } from "../lib/market.mjs";
+import { collectKraken } from "../lib/kraken.mjs";
 
 const headers = {
   "X-Content-Type-Options": "nosniff",
@@ -163,6 +164,8 @@ export default {
         });
       if (path === "/api/state") return json(await current(env, request));
       if (path === "/api/source-health") {
+        const cached = await caches.default.match(request);
+        if (cached) return cached;
         const checks = await Promise.all([
           ["Binance", "https://fapi.binance.com/fapi/v1/time"],
           ["OKX", "https://www.okx.com/api/v5/public/time"],
@@ -175,7 +178,15 @@ export default {
             return { source, ok: false, error: error.message, at: Date.now() };
           }
         }));
-        return json({ checks });
+        let live;
+        try {
+          const market = await collectKraken(10);
+          live = { ok: true, source: market.source, to: market.to, assets: Object.fromEntries(Object.entries(market.assets).map(([asset, s]) => [asset, { bars: s.bars.length, marks: s.marks.length, funding: s.funding.length }])) };
+        } catch (error) { live = { ok: false, error: error.message }; }
+        const response = json({ checks, live });
+        response.headers.set("Cache-Control", "public, max-age=600");
+        await caches.default.put(request, response.clone());
+        return response;
       }
       if (path === "/api/decisions")
         return json({ decisions: await decisions(env) });

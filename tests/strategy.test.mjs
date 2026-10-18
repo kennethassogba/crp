@@ -9,6 +9,7 @@ import {
   snapshotAt,
   simulate,
   position,
+  momentum,
   replay,
   validateBars,
 } from "../lib/strategy.mjs";
@@ -125,6 +126,24 @@ test("cash holds equity unchanged", () =>
     simulate({ action: "CASH" }, snapshot, {}).equity,
     RULES.capital,
   ));
+test("absolute linear-contract funding is charged in account currency", () => {
+  const m = fixture();
+  m.assets.BTC.funding[0] = { t: at + 2 * HOUR, rate: 0.9, mark: 999999, absolutePerUnit: 0.5 };
+  const trade = simulate({ action: "BTC_1X" }, snapshot, m);
+  assert.equal(trade.funding, trade.quantity * 0.5);
+});
+test("a position cannot settle against another venue", () => {
+  const m = { ...fixture(), source: "Kraken Futures public REST" };
+  assert.equal(simulate({ action: "BTC_1X" }, { ...snapshot, source: "Binance USD-M public REST" }, m), null);
+});
+test("funding filters compare equivalent eight-hour periods", () => {
+  const s = structuredClone(snapshot);
+  s.assets.BTC = { ...s.assets.BTC, trend: 0.01, ret24h: 0.02, lastFunding: 0.0001, fundingPeriodHours: 1 };
+  s.assets.ETH.lastFunding = null;
+  assert.equal(momentum(s).action, "CASH");
+  s.assets.BTC.fundingPeriodHours = 8;
+  assert.equal(momentum(s).action, "BTC_1X");
+});
 test("all models have a finite reservation exceeding estimated bounded usage", () => {
   const s = snapshotAt(market, at);
   for (const m of MODELS) {

@@ -384,7 +384,7 @@ function App() {
                         value={`${fmt(current.volumeRatio)}×`}
                       />
                       <Fact
-                        label="Last funding"
+                        label={`Last funding (${current?.fundingPeriodHours ?? 8}h)`}
                         value={
                           current.lastFunding === null
                             ? "Unavailable"
@@ -909,10 +909,10 @@ function App() {
                       </div>
                       <h3>Sources and evaluation</h3>
                       <p>
-                        Public Binance spot, perpetual, mark price and funding
-                        endpoints were accessed without authentication. Source
-                        timestamps, model outputs and provider usage are
-                        retained.
+                        Daily data uses public Kraken Futures prices, marks and
+                        hourly funding. Archived backtests use Binance. Both
+                        sources require no account. Timestamps, model outputs
+                        and provider usage are retained.
                       </p>
                       <dl className="method-values">
                         <div>

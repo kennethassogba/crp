@@ -1,4 +1,4 @@
-import { collect } from "../lib/market.mjs";
+import { collectKraken } from "../lib/kraken.mjs";
 import { snapshotAt, simulate, HOUR, DAY, RULES } from "../lib/strategy.mjs";
 import { MODELS, callModel, reservation } from "../lib/models.mjs";
 
@@ -113,9 +113,9 @@ export async function settle(env, market) {
 export async function tick(env) {
   const previous = await stateValue(env, "market");
   const market =
-    previous && previous.to >= Math.floor(Date.now() / HOUR) * HOUR
+    previous && previous.source === "Kraken Futures public REST" && previous.to >= Math.floor(Date.now() / HOUR) * HOUR
       ? previous
-      : await collect(10);
+      : await collectKraken(10);
   if (market !== previous) await setState(env, "market", market);
   await settle(env, market);
   if (!env.OPENAI_API_KEY) {
