@@ -18,6 +18,7 @@ async function open({
   width = 390,
   storageState,
   clockTime,
+  freezeClock = false,
 } = {}) {
   const context = await browser.newContext({
     viewport: { width, height: 844 },
@@ -44,7 +45,10 @@ async function open({
     { key, preference, standalone, blockedStorage },
   );
   const page = await context.newPage();
-  await page.clock.install(clockTime ? { time: new Date(clockTime) } : {});
+  const initialTime = clockTime ?? Date.now();
+  await page.clock.install({ time: new Date(initialTime) });
+  // Freeze before navigation so network latency cannot count as test engagement.
+  if (freezeClock) await page.clock.pauseAt(new Date(initialTime + 1000));
   await page.goto(base);
   await page
     .getByRole("heading", { name: "Today’s decisions", exact: true })
@@ -152,7 +156,7 @@ checks.push(
 );
 // Foreground time only; a background tab does not trigger promotion.
 {
-  const { page, context } = await open({ ios: true });
+  const { page, context } = await open({ ios: true, freezeClock: true });
   await page.evaluate(() => {
     window.testVisibility = "visible";
     Object.defineProperty(document, "visibilityState", {
@@ -210,7 +214,7 @@ for (const width of [320, 375, 390, 768, 1440]) {
     await page.screenshot({ path: "output/playwright/install-ios-guide.png" });
   await page.keyboard.press("Escape");
   await dialog.waitFor({ state: "hidden" });
-  assert.equal(await button(page).count(), 0);
+  await button(page).waitFor({ state: "hidden" });
   assert.equal(
     await page
       .getByRole("button", { name: "Download evidence", exact: true })
