@@ -139,7 +139,7 @@ test("a position cannot settle against another venue", () => {
 test("funding filters compare equivalent eight-hour periods", () => {
   const s = structuredClone(snapshot);
   s.assets.BTC = { ...s.assets.BTC, trend: 0.01, ret24h: 0.02, lastFunding: 0.0001, fundingPeriodHours: 1 };
-  s.assets.ETH.lastFunding = null;
+  s.assets.ETH = { ...s.assets.BTC, lastFunding: null };
   assert.equal(momentum(s).action, "CASH");
   s.assets.BTC.fundingPeriodHours = 8;
   assert.equal(momentum(s).action, "BTC_1X");
