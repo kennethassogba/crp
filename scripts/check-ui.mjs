@@ -34,8 +34,9 @@ for (const [engine, type] of [
       width <= 820
         ? page.getByRole("navigation", { name: "Mobile workspace" })
         : page.getByRole("navigation", { name: "Workspace", exact: true });
-    for (const label of ["Today", "Models", "Backtest", "Method"]) {
-      await nav.getByRole("button", { name: label, exact: true }).click();
+    for (const label of ["Today", "Models", "Backtest", "Method", "Execution", "Evidence"]) {
+      await (label === "Execution" || label === "Evidence" ? page : nav)
+        .getByRole("button", { name: label, exact: true }).click();
       await page.waitForTimeout(80);
       const box = await page.evaluate(() => ({
         width: document.documentElement.clientWidth,
@@ -54,7 +55,7 @@ for (const [engine, type] of [
           box.bodyHeight <= height + 1,
           `${engine} ${width} ${label}: body scroll`,
         );
-      if (width === 390)
+      if (width >= 375 && height >= 667)
         check(
           box.mainScroll <= box.mainHeight + 1,
           `${engine} ${width} ${label}: hidden main scroll ${JSON.stringify(box)}`,

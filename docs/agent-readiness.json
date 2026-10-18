@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-10-18T00:05:39.377Z",
+  "scanner": "https://isitagentready.com/mcp",
+  "url": "https://crp.keff.uk",
+  "enabledChecks": [
+    "robotsTxt",
+    "sitemap",
+    "linkHeaders",
+    "markdownNegotiation",
+    "contentSignals",
+    "apiCatalog",
+    "mcpServerCard",
+    "agentSkills",
+    "webMcp"
+  ],
+  "scope": "Nine applicable read-only discovery checks. This is not the full 23-check profile.",
+  "response": {
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "# Agent Readiness: https://crp.keff.uk\n\n**Level 5/5 -- Agent-Native**\n\n## Discoverability (3/3 passing)\n- PASS robotsTxt: robots.txt exists with valid format\n- PASS sitemap: sitemap.xml exists with valid structure (url: https://crp.keff.uk/sitemap.xml, from robots txt, format: xml)\n- PASS linkHeaders: Found agent-useful Link relations: alternate, service-desc, api-catalog (relationsFound: {\"rel\":\"alternate\",\"href\":\"https://crp.keff.uk/index.md\",\"type\":\"text/markdown\"}, {\"rel\":\"service-desc\",\"href\":\"https://crp.keff.uk/openapi.json\"}, {\"rel\":\"api-catalog\",\"href\":\"https://crp.keff.uk/.well-known/api-catalog\"}, totalLinks: 5)\n- OK dnsAid: Excluded by scan configuration\n\n## Content Accessibility (1/1 passing)\n- PASS markdownNegotiation: Site supports Markdown for Agents (contentType: text/markdown)\n\n## Bot Access Control (1/1 passing)\n- OK robotsTxtAiRules: Excluded by scan configuration\n- PASS contentSignals: Content Signals found in robots.txt (signals: {\"userAgent\":\"*\",\"path\":null,\"aiTrain\":\"no\",\"search\":\"yes\",\"aiInput\":\"yes\"}, signalCount: 1)\n- OK webBotAuth: Web Bot Auth directory not found (informational only) (excluded by scan configuration)\n\n## API, Auth, MCP & A2A Discovery (4/4 passing)\n- PASS apiCatalog: API Catalog found with 1 API listed (apiCount: 1, linksetEntries: 1, correct content type)\n- OK oauthDiscovery: No OAuth/OIDC discovery metadata found (excluded by scan configuration)\n- OK oauthProtectedResource: No OAuth Protected Resource Metadata found (excluded by scan configuration)\n- OK authMd: auth.md not found (excluded by scan configuration)\n- PASS mcpServerCard: MCP Server Card found at /.well-known/mcp/server-card.json (path: /.well-known/mcp/server-card.json, format: sep, name: crp, has version, has transport, has tools, has description)\n- OK a2aAgentCard: A2A Agent Card not found (excluded by scan configuration)\n- PASS agentSkills: Agent Skills index exists with valid JSON (skillCount: 1, specVersion: 0.2.0, path: /.well-known/agent-skills/index.json, v2 valid entries)\n- PASS webMcp: Found 1 WebMCP tool via document.modelContext: read_crp_positions (toolCount: 1, tools: read_crp_positions, detectionMethod: imperative_api)\n- OK ard: Excluded by scan configuration\n- OK personalAgentProtocol: Excluded by scan configuration\n\n## Commerce (0/0 passing)\n- OK x402: x402 payment protocol not detected (not a commerce site) (excluded by scan configuration)\n- OK mpp: MPP payment discovery not detected (not a commerce site) (excluded by scan configuration)\n- OK ucp: UCP profile not found (not a commerce site) (excluded by scan configuration)\n- OK acp: ACP discovery document not found (not a commerce site) (excluded by scan configuration)\n- OK ap2: AP2 not detected (no A2A Agent Card) (not a commerce site) (excluded by scan configuration)\n"
+        }
+      ]
+    },
+    "jsonrpc": "2.0",
+    "id": 2
+  }
+}

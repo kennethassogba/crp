@@ -1756,10 +1756,18 @@ dialog a {
     min-height: 32px;
   }
   .model-row {
-    min-height: 65px;
+    min-height: 52px;
+  }
+  .table-pane .section-toolbar {
+    margin-block-end: 8px;
   }
   .budget-strip {
-    margin-block-start: 10px;
+    margin-block-start: 6px;
+    padding-block: 6px;
+    gap: 4px 10px;
+  }
+  .table-foot {
+    padding-block: 6px;
   }
   .history-pane .chart {
     max-height: 125px;
@@ -1771,8 +1779,8 @@ dialog a {
     padding-block: 7px;
   }
   .method-values {
-    gap: 10px;
-    margin-block: 16px;
+    gap: 9px;
+    margin-block: 9px;
   }
   .method-icon {
     margin-block: 5px 10px;

@@ -94,6 +94,8 @@ For another account, replace the account, database and domain in `cloudflare.con
 
 ## Interface and agent access
 
+Install CRP from the browser’s app installation menu. On iOS, use Share → Add to Home Screen.
+
 The PWA uses a single viewport at normal desktop and phone sizes, native selects and dialogs, safe-area insets, reduced-motion support and a mobile bottom navigation. Short screens and zoom may scroll so that controls remain reachable. The service worker caches the shell and static assets, while API responses remain network-only to avoid presenting offline decisions as current.
 
 - JSON: `/api/state`, `/api/backtest`, `/api/decisions`
@@ -103,7 +105,7 @@ The PWA uses a single viewport at normal desktop and phone sizes, native selects
 - Read-only MCP: `/mcp`, tools `get_daily_decisions` and `get_backtest`
 - WebMCP: `read_crp_positions` when supported by the browser
 
-All agent tools are read-only and share the same recorded data as the interface. They cannot place orders, spend provider credit or mutate records.
+All agent tools are read-only and share the same recorded data as the interface. They cannot place orders, spend provider credit or mutate records. Nine applicable discovery checks passed the Cloudflare Agent Readiness Scanner; the selected checks and full response are saved in [agent-readiness.json](docs/agent-readiness.json). This scoped scan excludes authentication and commerce features that the app does not offer.
 
 ## Sources
 

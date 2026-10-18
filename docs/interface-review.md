@@ -10,8 +10,8 @@ All six owning better-interface skills were loaded and used during implementatio
 
 | Domain | Evidence inspected | Result |
 | --- | --- | --- |
-| Accessibility | `src/main.tsx`, native selects/dialog, named navigation, `src/style.css` focus rules; axe scans across 16 view/viewport combinations and three transient states; dialog Escape | Clear within inspected scope |
-| Layout | Four views at four sizes, overflow measurements in `scripts/check-ui.mjs`, mobile and desktop screenshots; loading/error/empty screenshots | Clear |
+| Accessibility | `src/main.tsx`, native selects/dialog, named navigation, `src/style.css` focus rules; axe scans across 24 view/viewport combinations and three transient states; dialog Escape | Clear within inspected scope |
+| Layout | Four views and three method sections at four sizes, overflow measurements in `scripts/check-ui.mjs`, mobile and desktop screenshots; loading/error/empty screenshots | Clear |
 | Writing | Interface labels, recovery instructions, simulation and cost labels; README audit in `docs/copy-review.json` | Clear |
 | Typography | Geist rendering, numeric columns, wrapping of model reasons, full decision access through dialog; mobile screenshots | Clear |
 | Colors | White surfaces, violet selection and positive values, red losses, explicit signed numbers and text labels; axe contrast checks | Clear within automated and visual checks |
@@ -25,7 +25,7 @@ No actionable interface findings remain in the inspected scope. During implement
 
 Passed:
 
-- `CRP_URL=https://crp.keff.uk npm run test:ui`: 16 view/viewport combinations; no serious or critical axe findings, no horizontal overflow, no normal-size body overflow. Tested asset selection, model selection, replay selection and decision dialog dismissal. Evidence: `output/playwright/verification.json` and screenshots generated locally.
+- `CRP_URL=https://crp.keff.uk npm run test:ui`: 24 view/viewport combinations; no serious or critical axe findings, no horizontal overflow, no normal-size body overflow. Tested asset selection, model selection, replay selection and decision dialog dismissal. Evidence: `output/playwright/verification.json` and screenshots generated locally.
 - `CRP_URL=https://crp.keff.uk node scripts/check-pwa.mjs`: Chromium reported no installability errors. Manifest uses standalone display and includes 192/512 icons. Offline reload displayed a recoverable error; Retry restored the current data after reconnection. Loading, error and empty states had no serious or critical axe findings. Evidence: `output/playwright/pwa.json` and screenshots.
 - Root font resize to 200% at 640×600: no horizontal document overflow. This is a text/reflow check, not a claim of native browser zoom certification.
 - `npm run check`, financial-engine tests and production build passed. GitHub Actions and Cloudflare Workers Builds also completed successfully during publication.

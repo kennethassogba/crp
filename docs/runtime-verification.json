@@ -1,0 +1,267 @@
+{
+  "checkedAt": "2026-10-18T00:07:19.882Z",
+  "target": "https://crp.keff.uk",
+  "ui": [
+    {
+      "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "view": "Today",
+      "box": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyHeight": 900,
+        "height": 900,
+        "mainHeight": 808,
+        "mainScroll": 808
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "view": "Models",
+      "box": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyHeight": 900,
+        "height": 900,
+        "mainHeight": 808,
+        "mainScroll": 808
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "view": "Backtest",
+      "box": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyHeight": 900,
+        "height": 900,
+        "mainHeight": 808,
+        "mainScroll": 808
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "view": "Method",
+      "box": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyHeight": 900,
+        "height": 900,
+        "mainHeight": 808,
+        "mainScroll": 808
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "view": "Today",
+      "box": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyHeight": 844,
+        "height": 844,
+        "mainHeight": 698,
+        "mainScroll": 698
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "view": "Models",
+      "box": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyHeight": 844,
+        "height": 844,
+        "mainHeight": 698,
+        "mainScroll": 698
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "view": "Backtest",
+      "box": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyHeight": 844,
+        "height": 844,
+        "mainHeight": 698,
+        "mainScroll": 698
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "view": "Method",
+      "box": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyHeight": 844,
+        "height": 844,
+        "mainHeight": 698,
+        "mainScroll": 698
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 375,
+      "height": 667,
+      "view": "Today",
+      "box": {
+        "width": 375,
+        "scrollWidth": 375,
+        "bodyHeight": 667,
+        "height": 667,
+        "mainHeight": 521,
+        "mainScroll": 521
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 375,
+      "height": 667,
+      "view": "Models",
+      "box": {
+        "width": 375,
+        "scrollWidth": 375,
+        "bodyHeight": 667,
+        "height": 667,
+        "mainHeight": 521,
+        "mainScroll": 631
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 375,
+      "height": 667,
+      "view": "Backtest",
+      "box": {
+        "width": 375,
+        "scrollWidth": 375,
+        "bodyHeight": 667,
+        "height": 667,
+        "mainHeight": 521,
+        "mainScroll": 521
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 375,
+      "height": 667,
+      "view": "Method",
+      "box": {
+        "width": 375,
+        "scrollWidth": 375,
+        "bodyHeight": 667,
+        "height": 667,
+        "mainHeight": 521,
+        "mainScroll": 523
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "view": "Today",
+      "box": {
+        "width": 320,
+        "scrollWidth": 320,
+        "bodyHeight": 753,
+        "height": 568,
+        "mainHeight": 607,
+        "mainScroll": 607
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "view": "Models",
+      "box": {
+        "width": 320,
+        "scrollWidth": 320,
+        "bodyHeight": 800,
+        "height": 568,
+        "mainHeight": 654,
+        "mainScroll": 654
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "view": "Backtest",
+      "box": {
+        "width": 320,
+        "scrollWidth": 320,
+        "bodyHeight": 744,
+        "height": 568,
+        "mainHeight": 598,
+        "mainScroll": 598
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "view": "Method",
+      "box": {
+        "width": 320,
+        "scrollWidth": 320,
+        "bodyHeight": 736,
+        "height": 568,
+        "mainHeight": 590,
+        "mainScroll": 590
+      },
+      "violations": []
+    }
+  ],
+  "pwa": {
+    "base": "https://crp.keff.uk",
+    "install": {
+      "installabilityErrors": []
+    },
+    "states": [
+      {
+        "state": "loading",
+        "seriousViolations": 0
+      },
+      {
+        "state": "error",
+        "seriousViolations": 0
+      },
+      {
+        "state": "empty",
+        "seriousViolations": 0
+      }
+    ],
+    "offlineRetry": "passed"
+  }
+}
