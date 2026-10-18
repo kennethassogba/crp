@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import "@fontsource-variable/geist";
 import "./style.css";
+import { InstallPrompt } from "./InstallPrompt";
 
 type Candle = {
   t: number;
@@ -273,7 +274,7 @@ function App() {
             <h1>{NAV.find((n) => n.id === view)?.label}</h1>
           </div>
           <div className="top-actions">
-            <span className="paper-tag">Paper trading</span>
+            <InstallPrompt />
             <button
               className="icon-button"
               onClick={download}

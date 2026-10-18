@@ -113,7 +113,12 @@ for (const [engine, type] of [["chromium", chromium]]) {
       `${engine} ${width} dialog: ${JSON.stringify(dialogIssues.map((v) => v.id))}`,
     );
     await page.keyboard.press("Escape");
-    assert.equal(await page.locator("dialog").isVisible(), false);
+    assert.equal(
+      await page
+        .getByRole("dialog", { name: "Recorded decision", exact: true })
+        .isVisible(),
+      false,
+    );
     await nav.getByRole("button", { name: "Today", exact: true }).click();
     await page
       .locator(".asset-switch")

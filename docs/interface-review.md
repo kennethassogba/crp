@@ -36,3 +36,9 @@ All six owning better-interface skills were loaded. The earlier review missed th
 ## Verdict
 
 Approve within the inspected Chromium/browser boundary. Device installation and assistive-technology checks listed above remain unverified. This review concerns presentation and access to recorded data, not strategy profitability.
+
+## Installation invitation
+
+The header offers installation after the third distinct visit or three foreground minutes. It reuses the paper-trading header slot, so it does not move or cover decisions. Native installation requires an explicit click; iOS uses a native dialog with Home Screen instructions. Dismissal snoozes the suggestion for 14 days. Standalone mode, a recorded installation and unsupported browsers suppress it.
+
+`npm run test:install` checks separate visits, quick-reload deduplication, foreground time, background exclusion, snooze persistence, accepted/dismissed/expired native prompts, blocked storage, five header sizes, iOS instructions, Escape, restored focus and serious/critical axe findings. Browser fixtures emulate iOS detection and the native event. They do not certify an actual iPhone or Android installation. The check runs in GitHub Actions alongside the existing 30 view/viewport checks.

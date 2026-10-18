@@ -34,4 +34,5 @@ jobs:
           curl --silent http://127.0.0.1:5185/api/state > /dev/null
           node scripts/seed-local.mjs
           npm run test:ui
+          npm run test:install
           CRP_URL=http://127.0.0.1:5185 npm run smoke

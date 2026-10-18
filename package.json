@@ -12,7 +12,8 @@
     "data": "node scripts/collect.mjs",
     "backtest": "node scripts/backtest.mjs",
     "deploy": "cf deploy",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "test:install": "node scripts/check-install.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",

@@ -12,6 +12,14 @@ At 08:00 UTC, each configuration receives the same market snapshot and chooses c
 
 Today shows all five model decisions together. Tap a model to read its reasoning and position levels; Models compares measured returns, and Backtest contains the historical evaluations. Provider usage remains available in the public journal and API. It connects to no exchange account and places no orders. Reference levels are not executable quotes. Derivatives availability depends on your location and exchange.
 
+## Installing the app
+
+An optional **Install app** action appears in the header on the third visit, or after three minutes with the page visible. Visits must be separated by at least 30 minutes; quick reloads do not count. Dismissing the invitation hides it for 14 days. Counts and preferences stay in the browser’s local storage, with no analytics request or user account.
+
+Supporting browsers open their installation prompt only after a click. On iPhone and iPad, the action opens instructions for adding CRP to the Home Screen. The invitation is hidden in standalone mode and after a recorded installation. If storage is blocked, the time-based invitation still works, but the dismissal cannot persist across visits.
+
+Implementation references: [browser install prompt](https://web.dev/articles/customize-install) and [Apple Home Screen instructions](https://support.apple.com/en-euro/guide/iphone/iphea86e5236/ios). Browser policy tests simulate the installation event; physical device installation remains unverified.
+
 ## Data and evaluation
 
 - Historical data: public Binance spot, USD-M perpetual, mark price and funding APIs, tested without authentication. The initial dataset contains 2,400 hourly candles per asset in each price series and 303 funding records per asset. [Access evidence](docs/data-access.json).
