@@ -86,7 +86,7 @@ Do not run the evaluator against an already funded production journal without re
 
 The frontend is React, TypeScript and CSS. A Cloudflare Worker serves the app and read-only APIs; D1 stores decisions, settlement results and the spending ledger. A scheduled handler checks every 15 minutes, refreshes market history at most hourly and records the daily decisions once. Public visitors cannot trigger a model run. Missing credentials or unavailable market data leave the prior records intact.
 
-GitHub Actions checks types, financial tests, the production build and browser behavior in Chromium and WebKit. Cloudflare Workers Builds runs the checked build and deploys pushes to `main` using the existing account integration. The deployed Worker secret is configured separately and is preserved across source deployments.
+GitHub Actions checks types, financial tests, the production build and browser behavior in Chromium. Cloudflare Workers Builds runs the checked build and deploys pushes to `main` using the existing account integration. The deployed Worker secret is configured separately and is preserved across source deployments.
 
 For another account, replace the account, database and domain in `cloudflare.config.ts`; initialize D1; configure `OPENAI_API_KEY` as a Worker secret; then run `npm run deploy`. Use a Cloudflare deployment token supplied through your CI secret store, or connect the repository through Workers Builds. No OpenAI secret belongs in GitHub source or public assets.
 

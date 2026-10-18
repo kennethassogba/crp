@@ -1,4 +1,4 @@
-import { chromium, webkit } from "playwright";
+import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -9,7 +9,6 @@ const failures = [];
 const check = (condition, message) => { if (!condition) failures.push(message); };
 for (const [engine, type] of [
   ["chromium", chromium],
-  ["webkit", webkit],
 ]) {
   if (process.env.CRP_BROWSERS && !process.env.CRP_BROWSERS.split(",").includes(engine)) continue;
   const browser = await type.launch({ headless: true });

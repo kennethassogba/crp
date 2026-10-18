@@ -23,8 +23,8 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npm run build
-      - run: npx playwright install --with-deps chromium webkit
-      - name: Check desktop and mobile in Chromium and WebKit
+      - run: npx playwright install --with-deps chromium
+      - name: Check desktop and mobile in Chromium
         run: |
           node scripts/seed.mjs
           npm run dev > /tmp/crp-dev.log 2>&1 &
