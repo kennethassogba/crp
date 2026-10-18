@@ -443,7 +443,7 @@ function App() {
                         {selected === "momentum"
                           ? "Rule reference"
                           : expired ? "Expired observation" : latest
-                            ? "Recorded model output"
+                            ? `Recorded ${time(latest.published_at)}`
                             : "No recorded output"}
                       </span>
                       <strong>{action}</strong>

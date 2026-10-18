@@ -19,7 +19,7 @@ All six owning better-interface skills were loaded and used during implementatio
 
 ## Findings
 
-No actionable interface findings remain in the inspected scope. During implementation, the mobile model-row height was reduced to avoid hidden overflow, model reasons gained an explicit full-text action, and the first-install cache was corrected to include the built JavaScript and CSS.
+No actionable interface findings remain in the inspected scope. During implementation, the mobile model-row height was reduced to avoid hidden overflow, model reasons gained an explicit full-text action, the decision timestamp and historical venue became explicit, and the first-install cache was corrected to include the built JavaScript and CSS.
 
 ## Verification
 
