@@ -1,7 +1,8 @@
 {
-  "checkedAt": "2026-10-18T00:13:34.985Z",
+  "checkedAt": "2026-10-18T00:27:41.518Z",
   "target": "https://crp.keff.uk",
-  "testedCommit": "afadfa728853011f572e6e03cb6a9117ef5e4abf",
+  "testedCommit": "4e73762",
+  "financialTests": 18,
   "ui": [
     {
       "engine": "chromium",
@@ -356,10 +357,10 @@
       "box": {
         "width": 320,
         "scrollWidth": 320,
-        "bodyHeight": 697,
+        "bodyHeight": 716,
         "height": 568,
-        "mainHeight": 551,
-        "mainScroll": 551
+        "mainHeight": 570,
+        "mainScroll": 570
       },
       "violations": []
     }
