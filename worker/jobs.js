@@ -125,6 +125,12 @@ export async function tick(env) {
   const now = Date.now(),
     day = Math.floor(now / DAY) * DAY,
     daily = day + 8 * HOUR;
+  await setState(env, "scheduler", {
+    at: now,
+    status: "waiting",
+    nextSnapshotAt: now < daily ? daily : daily + DAY,
+    marketAt: market.to,
+  });
   const count = await env.DB.prepare(
     "SELECT COUNT(*) AS n FROM runs WHERE cohort='live'",
   ).first();

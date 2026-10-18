@@ -1,6 +1,6 @@
 import { snapshotAt, momentum, position, HOUR } from "../lib/strategy.mjs";
 import { MODELS } from "../lib/models.mjs";
-import { stateValue, tick } from "./jobs.js";
+import { stateValue, setState, tick } from "./jobs.js";
 import { discovery, GUIDE, LINKS, TOOLS } from "./discovery.js";
 
 const headers = {
@@ -204,14 +204,16 @@ export default {
   },
   async scheduled(_controller, env, ctx) {
     ctx.waitUntil(
-      tick(env).catch((error) =>
+      tick(env).catch(async (error) => {
+        const message = error instanceof Error ? error.message : "Unknown error";
         console.error(
           JSON.stringify({
             event: "scheduled_failed",
-            error: error instanceof Error ? error.message : "Unknown error",
+            error: message,
           }),
-        ),
-      ),
+        );
+        await setState(env, "scheduler", { at: Date.now(), status: "failed", error: message });
+      }),
     );
   },
 };
