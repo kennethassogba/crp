@@ -38,6 +38,13 @@ test("gaps and duplicate hours fail closed", () => {
   assert.throws(() => validateBars(s.filter((_, i) => i !== 15)), /missing/);
   assert.throws(() => validateBars([...s, s.at(-1)]), /duplicate/);
 });
+test("seven-day return spans exactly 168 hourly intervals", () => {
+  const snap = snapshotAt(market, at);
+  const past = market.assets.BTC.bars.filter(b => b.t + HOUR <= at);
+  const expected = Number((past.at(-1).c / past.at(-169).c - 1).toFixed(6));
+  assert.equal(snap.assets.BTC.ret7d, expected);
+  assert.throws(() => snapshotAt(market, market.from + 168 * HOUR), /Incomplete/);
+});
 test("risk sizing limits account notional and stop risk", () => {
   const s = snapshotAt(market, at);
   for (const action of ["BTC_1X", "BTC_2X", "ETH_1X", "ETH_2X"]) {

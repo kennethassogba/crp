@@ -113,7 +113,7 @@ export async function settle(env, market) {
 export async function tick(env) {
   const previous = await stateValue(env, "market");
   const market =
-    previous && Date.now() - previous.collectedAt < 50 * 60_000
+    previous && previous.to >= Math.floor(Date.now() / HOUR) * HOUR
       ? previous
       : await collect(10);
   if (market !== previous) await setState(env, "market", market);

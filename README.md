@@ -21,7 +21,9 @@ The site displays the recorded decision, reference levels, historical evaluation
 
 The initial 75 successful provider requests cost $0.242856, based on returned token usage and the documented standard rates. This includes five prospective decisions and 70 historical replay decisions. The current run and cost records are in [models.json](public/data/models.json).
 
-There is no fitted model, parameter search or claimed predictive advantage. Fourteen replay days are insufficient to establish profitability. News and analyst consensus are outside this version.
+There is no fitted model, parameter search or claimed predictive advantage. Fourteen replay days are insufficient to establish profitability. Historical model replay can also be contaminated by information in model training; prospective observations are needed to assess performance. News and analyst consensus are outside this version.
+
+Archived inputs keep their original version. Snapshot version 1.0.1 corrects the seven-day feature to span 168 hourly intervals; version 1.0.0 used 167. The trend benchmark does not use that feature. Recorded model decisions are not regenerated.
 
 ## Position rules
 
