@@ -2,6 +2,7 @@ import { snapshotAt, momentum, position, HOUR } from "../lib/strategy.mjs";
 import { MODELS } from "../lib/models.mjs";
 import { stateValue, setState, tick } from "./jobs.js";
 import { discovery, GUIDE, LINKS, TOOLS } from "./discovery.js";
+import { fetchJSON } from "../lib/market.mjs";
 
 const headers = {
   "X-Content-Type-Options": "nosniff",
@@ -161,6 +162,21 @@ export default {
           },
         });
       if (path === "/api/state") return json(await current(env, request));
+      if (path === "/api/source-health") {
+        const checks = await Promise.all([
+          ["Binance", "https://fapi.binance.com/fapi/v1/time"],
+          ["OKX", "https://www.okx.com/api/v5/public/time"],
+          ["Kraken Futures", "https://futures.kraken.com/derivatives/api/v3/tickers"],
+        ].map(async ([source, url]) => {
+          try {
+            const result = await fetchJSON(url);
+            return { source, ok: true, keys: Object.keys(result), at: Date.now() };
+          } catch (error) {
+            return { source, ok: false, error: error.message, at: Date.now() };
+          }
+        }));
+        return json({ checks });
+      }
       if (path === "/api/decisions")
         return json({ decisions: await decisions(env) });
       if (path === "/api/backtest")
