@@ -339,7 +339,7 @@ function App() {
                               {a === "BTC" ? "₿" : "Ξ"}
                             </span>
                             {a}
-                            <small>/ USDT</small>
+                            <small>/ {state.snapshot.quote ?? "USDT"}</small>
                           </button>
                         ))}
                       </div>
