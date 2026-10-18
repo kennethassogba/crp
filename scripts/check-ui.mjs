@@ -19,6 +19,7 @@ for (const [engine, type] of [["chromium", chromium]]) {
   for (const [width, height] of [
     [1440, 900],
     [390, 844],
+    [768, 800],
     [375, 667],
     [320, 568],
   ]) {

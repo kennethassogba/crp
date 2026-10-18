@@ -9,10 +9,10 @@ All six owning better-interface skills were loaded. The earlier review missed th
 | Domain | Evidence | Result |
 | --- | --- | --- |
 | Accessibility | Named model buttons and navigation, native dialog/Escape, keyboard and touch chart inspection, axe scans in `scripts/check-ui.mjs` and `scripts/check-pwa.mjs` | Clear in the tested browser scope |
-| Layout | Today decisions precede market context; five rows remain visible together. Overflow checks at 1440×900, 390×844, 375×667 and 320×568; actual desktop/mobile screenshots | Clear; short screens can scroll |
+| Layout | Today decisions precede market context; five rows remain visible together. Overflow checks at 1440×900, 390×844, 375×667, 320×568 and 768×800; actual desktop/mobile screenshots | Clear; short screens can scroll |
 | Writing | Purpose statement, action labels, explicit simulated positions, recovery text; new copy passed the local Avoid AI Writing detector with no findings | Clear; recorded model reasoning preserved |
 | Typography | Geist, tabular numbers, full reasons in dialog, long position plan at 375px | Clear in inspected states |
-| Color | Explicit tooltip foreground/background; measured active contrast >=4.5:1 at all four sizes; failed decisions and delayed data have text labels | Clear within automated and visual checks |
+| Color | Explicit tooltip foreground/background; measured active contrast >=4.5:1 at all five sizes; failed decisions and delayed data have text labels | Clear within automated and visual checks |
 | UI polish | Flat model list, consistent separators, paired asset quotes, focus/hover states, reduced motion and refreshed social preview | Clear |
 
 ## Resolved findings
@@ -27,7 +27,7 @@ All six owning better-interface skills were loaded. The earlier review missed th
 ## Verification
 
 - TypeScript, 18 financial/data/budget tests and production build passed.
-- `npm run test:ui`: 24 view/viewport combinations, no serious or critical axe findings, no horizontal overflow, no body/main overflow at normal phone and desktop sizes.
+- `npm run test:ui`: 30 view/viewport combinations, no serious or critical axe findings, no horizontal overflow, no body/main overflow at normal phone and desktop sizes.
 - Tested all five daily rows, model detail dismissal, historical replay, direct Backtest reload, asset selection, keyboard chart navigation, active tooltip contrast and 200% root-font reflow.
 - Browser-only fixtures exercise cash, BTC 2×, ETH 1×, provider failure and excluded late response. Verified copied position levels, long-plan dialog contrast, touch selection and chart-period change. Fixtures never write records or invoke a provider.
 - `scripts/check-pwa.mjs` verifies standalone installability, offline Retry and loading/error/empty states against the published build. Native iPhone installation, VoiceOver, TalkBack and native browser zoom remain outside the verified scope.
