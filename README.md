@@ -98,6 +98,8 @@ For another account, replace the account, database and domain in `cloudflare.con
 
 Install CRP from the browser’s app installation menu. On iOS, use Share → Add to Home Screen.
 
+The interface opens in dark mode. [Backtest](https://crp.keff.uk/#backtest) links directly to the historical benchmark; model replays are under Models → Historical replay.
+
 The PWA uses a single viewport at normal desktop and phone sizes, native selects and dialogs, safe-area insets, reduced-motion support and a mobile bottom navigation. Short screens and zoom may scroll so that controls remain reachable. The service worker caches the shell and static assets, while API responses remain network-only to avoid presenting offline decisions as current.
 
 - JSON: `/api/state`, `/api/backtest`, `/api/decisions`, `/api/source-health`

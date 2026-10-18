@@ -107,6 +107,11 @@ for (const [engine, type] of [
   }
   // Text resize and reflow. Short viewports may scroll to preserve access.
   const page = await browser.newPage({ viewport: { width: 640, height: 600 } });
+  await page.goto(`${base}/#backtest`);
+  await page.getByRole("heading", { name: "Binance backtest", exact: true }).waitFor();
+  assert.equal(await page.getByLabel("Performance source").inputValue(), "momentum");
+  await page.reload();
+  await page.getByRole("heading", { name: "Binance backtest", exact: true }).waitFor();
   await page.goto(base);
   await page
     .getByRole("heading", { name: "Daily position", exact: true })

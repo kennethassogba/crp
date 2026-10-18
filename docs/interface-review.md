@@ -2,7 +2,7 @@
 
 ## Scope and coverage
 
-Reviewed the complete Today → Models → decision details → Backtest → Method flow, plus initial loading, unavailable data, an empty decision journal and offline recovery. React 19, TypeScript, CSS tokens, Geist Variable and Lucide icons. The project follows the supplied workspace AGENTS.md: white surfaces, sans-serif type, no green, concise factual copy. No separate project design-system or contribution document exists.
+Reviewed the complete Today → Models → decision details → Backtest → Method flow, plus initial loading, unavailable data, an empty decision journal and offline recovery. React 19, TypeScript, CSS tokens, Geist Variable and Lucide icons. The project follows the supplied workspace AGENTS.md: sans-serif type, no green and concise factual copy. The user subsequently requested dark mode by default; this explicit request overrides the initial white-surface preference. No separate project design-system or contribution document exists.
 
 Runtime evidence covers Chromium at 1440×900, 390×844, 375×667 and 320×568. At normal desktop and phone sizes the application fits one viewport. Short screens deliberately allow scrolling to keep controls accessible. Native iPhone installation and assistive-technology behavior are outside the verified boundary.
 
@@ -14,7 +14,7 @@ All six owning better-interface skills were loaded and used during implementatio
 | Layout | Four views and three method sections at four sizes, overflow measurements in `scripts/check-ui.mjs`, mobile and desktop screenshots; loading/error/empty screenshots | Clear |
 | Writing | Interface labels, recovery instructions, simulation and cost labels; README audit in `docs/copy-review.json` | Clear |
 | Typography | Geist rendering, numeric columns, wrapping of model reasons, full decision access through dialog; mobile screenshots | Clear |
-| Colors | White surfaces, violet selection and positive values, red losses, explicit signed numbers and text labels; axe contrast checks | Clear within automated and visual checks |
+| Colors | Dark surfaces, violet selection and positive values, red losses, explicit signed numbers and text labels; axe contrast checks | Clear within automated and visual checks |
 | UI polish | Shared spacing/borders, bottom navigation, control alignment, hover/focus states, reduced-motion CSS, loading and error states | Clear |
 
 ## Findings
@@ -38,3 +38,7 @@ Not verified:
 ## Verdict
 
 Approve for the inspected domains and runtime boundary. No unreviewed domain; the device and assistive-technology checks listed above remain unverified.
+
+## Dark default update
+
+The user requested dark mode by default. Theme tokens, native control appearance, chart outlines, navigation, dialogs, PWA launch colors and the shell cache were updated together. All 24 view/viewport combinations passed contrast and overflow checks in Chromium, including the open decision dialog. A system set to light still rendered the dark interface. The direct `/#backtest` route loaded the benchmark and survived reload. No financial rules or recorded results changed.

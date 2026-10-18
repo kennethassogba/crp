@@ -5,23 +5,26 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #26262d;
-  background: #fff;
+  color: var(--color-text);
+  background: var(--color-bg);
+  color-scheme: dark;
   font-synthesis: none;
   font-weight: 400;
   line-height: 1.5;
-  --color-bg: #fff;
-  --color-surface: #fafafc;
-  --color-hover: #f1f0f7;
-  --color-line: #e9e8ef;
-  --color-border: #a2a0ae;
-  --color-text: #26262d;
-  --color-muted: #696773;
-  --color-accent: #6253c3;
-  --color-accent-soft: #f0edfc;
-  --color-loss: #b73e51;
-  --color-focus: #6253c3;
-  --color-warning: #875610;
+  --color-bg: #101114;
+  --color-surface: #16171c;
+  --color-hover: #23232d;
+  --color-line: #2b2c35;
+  --color-border: #686775;
+  --color-text: #ececf0;
+  --color-muted: #a3a2ae;
+  --color-accent: #b2a2fa;
+  --color-accent-soft: #29243b;
+  --color-accent-hover: #c1b4ff;
+  --color-on-accent: #14111e;
+  --color-loss: #f1879a;
+  --color-focus: #b2a2fa;
+  --color-warning: #edba6e;
   font-size: 14px;
 }
 * {
@@ -178,14 +181,14 @@ strong {
   border-radius: 6px;
   text-align: start;
   font-size: 13px;
-  color: #5d5a68;
+  color: var(--color-muted);
 }
 .sidebar nav button small {
   margin-inline-start: auto;
   font-size: 11px;
 }
 .sidebar nav button[aria-current] {
-  background: #eeecf5;
+  background: var(--color-accent-soft);
   color: var(--color-text);
   font-weight: 550;
 }
@@ -239,7 +242,7 @@ strong {
   font-weight: 500;
 }
 .slash {
-  color: #aaa7b4;
+  color: var(--color-muted);
 }
 .top-actions {
   display: flex;
@@ -356,12 +359,12 @@ strong {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f8efe2;
-  color: #9d6312;
+  background: #352718;
+  color: #edba6e;
 }
 .coin.eth {
-  background: #eeedf7;
-  color: #675c9a;
+  background: var(--color-accent-soft);
+  color: #c9bbff;
 }
 .market-type {
   font-size: 11px;
@@ -472,13 +475,13 @@ strong {
   color: var(--color-muted);
 }
 .crosshair {
-  stroke: #9791ae;
+  stroke: var(--color-muted);
   stroke-width: 1;
   stroke-dasharray: 4 4;
 }
 .chart-dot {
   fill: var(--color-accent);
-  stroke: #fff;
+  stroke: var(--color-bg);
   stroke-width: 2;
 }
 .chart-tooltip {
@@ -629,7 +632,7 @@ dd {
 .primary {
   min-height: 38px;
   background: var(--color-accent);
-  color: white;
+  color: var(--color-on-accent);
   border-radius: 6px;
   display: flex;
   justify-content: center;
@@ -800,7 +803,7 @@ dd {
   background: #4b74b5;
 }
 .model-4 {
-  background: #36333f;
+  background: #b9b2cb;
 }
 .model-row > div:nth-child(2) {
   display: grid;
@@ -1044,10 +1047,10 @@ dialog {
   overflow: auto;
   overscroll-behavior: contain;
   color: var(--color-text);
-  box-shadow: 0 15px 80px #2520361c;
+  box-shadow: 0 15px 80px #00000080;
 }
 dialog::backdrop {
-  background: #24202f33;
+  background: #00000088;
 }
 .dialog-heading {
   display: flex;
@@ -1114,7 +1117,7 @@ dialog a {
     background: var(--color-hover);
   }
   .primary:not(:disabled):hover {
-    background: #5343b0;
+    background: var(--color-accent-hover);
   }
   .sidebar-bottom a:hover,
   .method-links a:hover {
@@ -1216,7 +1219,7 @@ dialog a {
     inset-inline: 0;
     inset-block-end: 0;
     z-index: 4;
-    background: #fffffff5;
+    background: var(--color-bg);
     backdrop-filter: blur(18px);
     border-block-start: 1px solid var(--color-line);
     padding: 6px 12px calc(7px + env(safe-area-inset-bottom));

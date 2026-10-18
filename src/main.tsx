@@ -93,9 +93,13 @@ const NAV = [
   { id: "history", label: "Backtest", icon: History },
   { id: "method", label: "Method", icon: FileText },
 ];
+function viewFromHash() {
+  const route = window.location.hash.slice(1);
+  return route === "backtest" ? "history" : NAV.find(n => n.id === route)?.id;
+}
 
 function App() {
-  const [view, setView] = useState("today"),
+  const [view, setView] = useState(() => viewFromHash() ?? "today"),
     [asset, setAsset] = useState("BTC"),
     [period, setPeriod] = useState(7),
     [state, setState] = useState<State | null>(null),
@@ -136,6 +140,14 @@ function App() {
     load();
     if ("serviceWorker" in navigator)
       navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
+  useEffect(() => {
+    const navigate = () => {
+      const next = viewFromHash();
+      if (next) setView(next);
+    };
+    window.addEventListener("hashchange", navigate);
+    return () => window.removeEventListener("hashchange", navigate);
   }, []);
   useEffect(() => {
     if (dialog) detail.current?.showModal();
@@ -185,6 +197,7 @@ function App() {
     : null;
   const changeView = (id: string) => {
     setView(id);
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${id === "history" ? "backtest" : id}`);
   };
   const download = () => {
     const blob = new Blob(
@@ -410,7 +423,7 @@ function App() {
                         <span className="mini-label">Settled drawdown</span>
                         <strong>{fmt(selectedStats.maxDrawdown)}%</strong>
                       </div>
-                      <button onClick={() => setView("history")}>
+                      <button onClick={() => changeView("history")}>
                         View test <ArrowRight size={15} />
                       </button>
                     </div>
@@ -500,7 +513,7 @@ function App() {
                         </p>
                         <button
                           className="secondary"
-                          onClick={() => setView("models")}
+                          onClick={() => changeView("models")}
                         >
                           View model status <ArrowRight size={14} />
                         </button>
@@ -965,7 +978,7 @@ function App() {
           <span>
             {state ? `Updated ${time(state.collectedAt)}` : "Connecting"}
           </span>
-          <button onClick={() => setView("method")}>
+          <button onClick={() => changeView("method")}>
             Method & limits <Info size={12} />
           </button>
         </footer>
