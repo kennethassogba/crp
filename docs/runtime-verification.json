@@ -1,6 +1,7 @@
 {
-  "checkedAt": "2026-10-18T00:07:19.882Z",
+  "checkedAt": "2026-10-18T00:13:34.985Z",
   "target": "https://crp.keff.uk",
+  "testedCommit": "afadfa728853011f572e6e03cb6a9117ef5e4abf",
   "ui": [
     {
       "engine": "chromium",
@@ -64,6 +65,36 @@
     },
     {
       "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "view": "Execution",
+      "box": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyHeight": 900,
+        "height": 900,
+        "mainHeight": 808,
+        "mainScroll": 808
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "view": "Evidence",
+      "box": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyHeight": 900,
+        "height": 900,
+        "mainHeight": 808,
+        "mainScroll": 808
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
       "width": 390,
       "height": 844,
       "view": "Today",
@@ -124,6 +155,36 @@
     },
     {
       "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "view": "Execution",
+      "box": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyHeight": 844,
+        "height": 844,
+        "mainHeight": 698,
+        "mainScroll": 698
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "view": "Evidence",
+      "box": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyHeight": 844,
+        "height": 844,
+        "mainHeight": 698,
+        "mainScroll": 698
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
       "width": 375,
       "height": 667,
       "view": "Today",
@@ -148,7 +209,7 @@
         "bodyHeight": 667,
         "height": 667,
         "mainHeight": 521,
-        "mainScroll": 631
+        "mainScroll": 521
       },
       "violations": []
     },
@@ -178,7 +239,37 @@
         "bodyHeight": 667,
         "height": 667,
         "mainHeight": 521,
-        "mainScroll": 523
+        "mainScroll": 521
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 375,
+      "height": 667,
+      "view": "Execution",
+      "box": {
+        "width": 375,
+        "scrollWidth": 375,
+        "bodyHeight": 667,
+        "height": 667,
+        "mainHeight": 521,
+        "mainScroll": 521
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 375,
+      "height": 667,
+      "view": "Evidence",
+      "box": {
+        "width": 375,
+        "scrollWidth": 375,
+        "bodyHeight": 667,
+        "height": 667,
+        "mainHeight": 521,
+        "mainScroll": 521
       },
       "violations": []
     },
@@ -205,10 +296,10 @@
       "box": {
         "width": 320,
         "scrollWidth": 320,
-        "bodyHeight": 800,
+        "bodyHeight": 714,
         "height": 568,
-        "mainHeight": 654,
-        "mainScroll": 654
+        "mainHeight": 568,
+        "mainScroll": 568
       },
       "violations": []
     },
@@ -235,10 +326,40 @@
       "box": {
         "width": 320,
         "scrollWidth": 320,
-        "bodyHeight": 736,
+        "bodyHeight": 718,
         "height": 568,
-        "mainHeight": 590,
-        "mainScroll": 590
+        "mainHeight": 572,
+        "mainScroll": 572
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "view": "Execution",
+      "box": {
+        "width": 320,
+        "scrollWidth": 320,
+        "bodyHeight": 733,
+        "height": 568,
+        "mainHeight": 587,
+        "mainScroll": 587
+      },
+      "violations": []
+    },
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "view": "Evidence",
+      "box": {
+        "width": 320,
+        "scrollWidth": 320,
+        "bodyHeight": 697,
+        "height": 568,
+        "mainHeight": 551,
+        "mainScroll": 551
       },
       "violations": []
     }
