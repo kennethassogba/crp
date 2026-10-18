@@ -87,6 +87,9 @@ for (const [engine, type] of [
       .getByRole("button", { name: "Read Luna decision", exact: true })
       .click();
     await page.getByRole("dialog").waitFor();
+    const dialogIssues = (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze())
+      .violations.filter(v => ["critical", "serious"].includes(v.impact));
+    check(dialogIssues.length === 0, `${engine} ${width} dialog: ${JSON.stringify(dialogIssues.map(v => v.id))}`);
     await page.keyboard.press("Escape");
     assert.equal(await page.locator("dialog").isVisible(), false);
     await nav.getByRole("button", { name: "Today", exact: true }).click();

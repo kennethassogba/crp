@@ -981,9 +981,9 @@ function App() {
           </button>
         ))}
       </nav>
-      <dialog ref={detail} onClose={() => setDialog(null)}>
+      <dialog ref={detail} aria-labelledby="decision-title" onClose={() => setDialog(null)}>
         <div className="dialog-heading">
-          <h2>Recorded decision</h2>
+          <h2 id="decision-title">Recorded decision</h2>
           <button
             className="icon-button"
             aria-label="Close decision"
