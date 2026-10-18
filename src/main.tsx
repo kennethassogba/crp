@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
-  ArrowDownLeft,
   ArrowUpRight,
   ArrowLeft,
   ArrowRight,
@@ -17,7 +16,6 @@ import {
   Layers,
   RefreshCw,
   Shield,
-  Wallet,
   X,
 } from "lucide-react";
 import "@fontsource-variable/geist";
@@ -95,7 +93,7 @@ const NAV = [
 ];
 function viewFromHash() {
   const route = window.location.hash.slice(1);
-  return route === "backtest" ? "history" : NAV.find(n => n.id === route)?.id;
+  return route === "backtest" ? "history" : NAV.find((n) => n.id === route)?.id;
 }
 
 function App() {
@@ -106,7 +104,6 @@ function App() {
     [report, setReport] = useState<Report | null>(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true),
-    [selected, setSelected] = useState("sol"),
     [historySource, setHistorySource] = useState("momentum"),
     [cohort, setCohort] = useState("live"),
     [page, setPage] = useState(0),
@@ -150,36 +147,33 @@ function App() {
     return () => window.removeEventListener("hashchange", navigate);
   }, []);
   useEffect(() => {
-    if (dialog) detail.current?.showModal();
+    if (dialog) {
+      setCopied(false);
+      detail.current?.showModal();
+    }
   }, [dialog]);
   useEffect(() => {
     document.title = `CRP · ${NAV.find((n) => n.id === view)?.label}`;
     setPage(0);
   }, [view, cohort, historySource]);
   const rows = state?.decisions.filter((r) => r.cohort === cohort) ?? [];
-  const latest = state?.decisions.find(
-    (r) => r.cohort === "live" && r.model === selected,
-  );
-  const expired = Boolean(latest && Date.now() >= latest.entry_after + 86_400_000);
-  const decision =
-    selected === "momentum"
-      ? state?.reference
-      : latest?.status === "completed" && !expired
-        ? latest.decision
-        : null;
-  const plan =
-    decision && decision.action !== "CASH"
-      ? makePlan(
-          decision,
-          selected === "momentum" ? state?.snapshot : latest?.snapshot,
-        )
+  const dailyRuns =
+    state?.models.map((model) => ({
+      ...model,
+      run: state.decisions.find(
+        (r) =>
+          r.cohort === "live" &&
+          r.model === model.id &&
+          new Date(r.snapshot_at).toISOString().slice(0, 10) ===
+            new Date(state.asOf).toISOString().slice(0, 10),
+      ),
+    })) ?? [];
+  const dialogPlan =
+    dialog?.status === "completed" &&
+    dialog.decision?.action !== "CASH" &&
+    dialog.decision
+      ? makePlan(dialog.decision, dialog.snapshot)
       : null;
-  const action =
-    decision?.action === "CASH"
-      ? "Stay in cash"
-      : decision
-        ? `Long ${decision.action.split("_")[0]}`
-        : "Awaiting a decision";
   const current = state?.snapshot.assets[asset];
   const chartData = (state?.prices[asset] ?? [])
     .slice(-24 * period)
@@ -197,7 +191,11 @@ function App() {
     : null;
   const changeView = (id: string) => {
     setView(id);
-    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${id === "history" ? "backtest" : id}`);
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${window.location.search}#${id === "history" ? "backtest" : id}`,
+    );
   };
   const download = () => {
     const blob = new Blob(
@@ -211,8 +209,9 @@ function App() {
     URL.revokeObjectURL(a.href);
   };
   async function copy() {
-    if (!plan || !state) return;
-    const text = `CRP paper plan\n${action}\nReference ${money(plan.entry)}\nStop ${money(plan.stop)}\nIsolated leverage ${plan.leverage}x\nNotional ${money(plan.notional)} per $10,000 equity\nExit 24h after entry\nSnapshot ${new Date((selected === "momentum" ? state.asOf : latest?.snapshot_at) ?? state.asOf).toISOString()}\nNo order has been placed.`;
+    if (!dialogPlan || !dialog) return;
+    const plan = dialogPlan;
+    const text = `CRP paper plan\n${actionLabel(dialog.decision?.action)}\nReference ${money(plan.entry)}\nStop ${money(plan.stop)}\nIsolated leverage ${plan.leverage}x\nNotional ${money(plan.notional)} per $10,000 equity\nPlanned entry ${new Date(dialog.entry_after).toISOString()}\nExit 24h after entry\nSnapshot ${new Date(dialog.snapshot_at).toISOString()}\nNo order has been placed.`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -309,24 +308,30 @@ function App() {
             </div>
           ) : (
             <>
-              <div className="page-heading">
+              <div
+                className={`page-heading ${view === "today" ? "today-heading" : ""}`}
+              >
                 <div>
                   <h2>
                     {view === "today"
-                      ? "Daily position"
+                      ? "Today’s decisions"
                       : view === "models"
                         ? "Model comparison"
                         : view === "history"
-                          ? historySource === "momentum" ? "Binance backtest" : "Performance"
+                          ? historySource === "momentum"
+                            ? "Binance backtest"
+                            : "Performance"
                           : "Strategy & data"}
                   </h2>
                   <p>
                     {view === "today"
-                      ? `${date(state.asOf)} · Market snapshot ${time(state.asOf)}`
+                      ? "Five AI models choose BTC, ETH or cash each day. Compare their simulated positions."
                       : view === "models"
                         ? "Decisions from the same market snapshot."
                         : view === "history"
-                          ? historySource === "momentum" ? `${date(report.from)} to ${date(report.to)} · ${report.days} sessions` : `${cohort === "live" ? "Forward observations" : "Binance replay"} · ${modelRuns.length} settled`
+                          ? historySource === "momentum"
+                            ? `${date(report.from)} to ${date(report.to)} · ${report.days} sessions`
+                            : `${cohort === "live" ? "Forward observations" : "Binance replay"} · ${modelRuns.length} settled`
                           : "Inputs, sizing and execution assumptions."}
                   </p>
                 </div>
@@ -339,49 +344,126 @@ function App() {
               </div>
               {view === "today" && (
                 <div className="today-grid">
-                  <section className="market-pane">
-                    <div className="market-toolbar">
-                      <div className="asset-switch" aria-label="Asset">
-                        {["BTC", "ETH"].map((a) => (
+                  <section
+                    className="decisions-pane"
+                    aria-labelledby="daily-models-title"
+                  >
+                    <div className="daily-heading">
+                      <h3 id="daily-models-title">
+                        {date(state.asOf)} <span>· Daily session</span>
+                      </h3>
+                      <button
+                        onClick={() => changeView("method")}
+                        className="text-link"
+                      >
+                        How it works <ArrowUpRight size={13} />
+                      </button>
+                    </div>
+                    <div className="daily-columns" aria-hidden="true">
+                      <span>Model</span>
+                      <span>Position</span>
+                    </div>
+                    <div className="daily-decisions">
+                      {dailyRuns.map((m, i) => {
+                        const r = m.run;
+                        const expired = Boolean(
+                          r && Date.now() >= r.entry_after + 86_400_000,
+                        );
+                        const usable = r?.status === "completed";
+                        const label = usable
+                          ? `${actionLabel(r.decision?.action)}${expired ? " · expired" : ""}`
+                          : r?.status === "failed"
+                            ? "Request failed"
+                            : r?.status === "late"
+                              ? "Late, excluded"
+                              : "Awaiting run";
+                        return (
+                          <button
+                            className={`daily-decision ${usable && r?.decision?.action !== "CASH" ? "has-position" : ""}`}
+                            key={m.id}
+                            disabled={!r}
+                            aria-label={`Read ${m.name} decision: ${label}`}
+                            onClick={() => {
+                              setCopied(false);
+                              setDialog(r!);
+                            }}
+                          >
+                            <span className="daily-model">
+                              <span className={`model-dot model-${i}`} />
+                              <strong>{m.name}</strong>
+                            </span>
+                            <span
+                              className={`daily-action ${r?.status === "failed" ? "negative" : ""}`}
+                            >
+                              {label}
+                            </span>
+                            <ArrowUpRight
+                              size={15}
+                              className="decision-arrow"
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="daily-foot">
+                      <span>Paper positions · 24h hold</span>
+                      <button
+                        className="text-link"
+                        onClick={() => changeView("models")}
+                      >
+                        Compare results <ArrowRight size={13} />
+                      </button>
+                    </div>
+                  </section>
+                  <section className="market-pane" aria-label="Market context">
+                    <div className="market-heading">
+                      <h3>Market</h3>
+                      <span>{time(state.asOf)} snapshot</span>
+                    </div>
+                    <div className="asset-switch" aria-label="Asset">
+                      {["BTC", "ETH"].map((a) => {
+                        const quote = state.snapshot.assets[a];
+                        return (
                           <button
                             key={a}
                             aria-pressed={asset === a}
                             onClick={() => setAsset(a)}
                           >
-                            <span className={"coin " + a.toLowerCase()}>
+                            <span className={`coin ${a.toLowerCase()}`}>
                               {a === "BTC" ? "₿" : "Ξ"}
                             </span>
-                            {a}
-                            <small>/ {state.snapshot.quote ?? "USDT"}</small>
+                            <span className="asset-quote">
+                              <span className="asset-symbol">
+                                {a}
+                                <small
+                                  className={
+                                    quote.ret24h < 0 ? "negative" : "positive"
+                                  }
+                                >
+                                  {pct(quote.ret24h * 100)}
+                                </small>
+                              </span>
+                              <strong>{money(quote.price)}</strong>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="market-chart-heading">
+                      <span>
+                        {asset} perpetual · {state.snapshot.quote ?? "USDT"}
+                      </span>
+                      <div className="period-switch" aria-label="Chart period">
+                        {[1, 7].map((p) => (
+                          <button
+                            key={p}
+                            aria-pressed={period === p}
+                            onClick={() => setPeriod(p)}
+                          >
+                            {p === 1 ? "24h" : "7d"}
                           </button>
                         ))}
                       </div>
-                      <span className="market-type">Perpetual</span>
-                    </div>
-                    <div className="quote">
-                      <strong>{money(current.price)}</strong>
-                      <span
-                        className={current.ret24h < 0 ? "negative" : "positive"}
-                      >
-                        {current.ret24h < 0 ? (
-                          <ArrowDownLeft size={15} />
-                        ) : (
-                          <ArrowUpRight size={15} />
-                        )}{" "}
-                        {pct(current.ret24h * 100)}
-                        <small>24h</small>
-                      </span>
-                    </div>
-                    <div className="period-switch" aria-label="Chart period">
-                      {[1, 7].map((p) => (
-                        <button
-                          key={p}
-                          aria-pressed={period === p}
-                          onClick={() => setPeriod(p)}
-                        >
-                          {p === 1 ? "24h" : `${p}d`}
-                        </button>
-                      ))}
                     </div>
                     <Chart
                       data={chartData}
@@ -398,140 +480,13 @@ function App() {
                         value={`${fmt(current.volumeRatio)}×`}
                       />
                       <Fact
-                        label={`Last funding (${current?.fundingPeriodHours ?? 8}h)`}
+                        label={`Funding (${current.fundingPeriodHours ?? 8}h)`}
                         value={
                           current.lastFunding === null
                             ? "Unavailable"
                             : `${fmt(current.lastFunding * 100, 4)}%`
                         }
                       />
-                    </div>
-                    <div className="comparison-strip">
-                      <div>
-                        <span className="mini-label">Momentum benchmark</span>
-                        <strong
-                          className={
-                            selectedStats.returnPct < 0
-                              ? "negative"
-                              : "positive"
-                          }
-                        >
-                          {pct(selectedStats.returnPct)}
-                        </strong>
-                      </div>
-                      <div>
-                        <span className="mini-label">Settled drawdown</span>
-                        <strong>{fmt(selectedStats.maxDrawdown)}%</strong>
-                      </div>
-                      <button onClick={() => changeView("history")}>
-                        View test <ArrowRight size={15} />
-                      </button>
-                    </div>
-                  </section>
-                  <section className="position-pane">
-                    <div className="panel-heading">
-                      <h3>Position plan</h3>
-                      <Shield size={16} />
-                    </div>
-                    <label className="select-label" htmlFor="model-select">
-                      Decision source
-                    </label>
-                    <div className="select-wrap">
-                      <select
-                        id="model-select"
-                        value={selected}
-                        onChange={(e) => setSelected(e.target.value)}
-                      >
-                        <option value="momentum">Momentum · rule</option>
-                        {state.models.map((m) => (
-                          <option value={m.id} key={m.id}>
-                            {m.name}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown size={14} />
-                    </div>
-                    <div className="decision-heading">
-                      <span className="mini-label">
-                        {selected === "momentum"
-                          ? "Rule reference"
-                          : expired ? "Expired observation" : latest
-                            ? `Recorded ${time(latest.published_at)}`
-                            : "No recorded output"}
-                      </span>
-                      <strong>{action}</strong>
-                      {decision && (
-                        <span className="position-badge">
-                          {decision.action === "CASH"
-                            ? "No exposure"
-                            : `${plan?.leverage}× isolated · Long`}
-                        </span>
-                      )}
-                    </div>
-                    {plan ? (
-                      <>
-                        <dl className="plan-values">
-                          <div>
-                            <dt>Reference price</dt>
-                            <dd>{money(plan.entry)}</dd>
-                          </div>
-                          <div>
-                            <dt>Stop level</dt>
-                            <dd>{money(plan.stop)}</dd>
-                          </div>
-                          <div>
-                            <dt>Notional / $10,000</dt>
-                            <dd>{money(plan.notional)}</dd>
-                          </div>
-                          <div>
-                            <dt>Collateral</dt>
-                            <dd>{money(plan.collateral)}</dd>
-                          </div>
-                          <div>
-                            <dt>Stop risk, before gaps</dt>
-                            <dd>2% of equity</dd>
-                          </div>
-                          <div>
-                            <dt>Holding period</dt>
-                            <dd>24 hours</dd>
-                          </div>
-                        </dl>
-                        <button className="primary" onClick={copy}>
-                          {copied ? <Check size={16} /> : <Copy size={16} />}{" "}
-                          {copied ? "Plan copied" : "Copy plan"}
-                        </button>
-                      </>
-                    ) : (
-                      <div className="position-empty">
-                        <Wallet size={27} />
-                        <p>
-                          {decision
-                            ? "The selected strategy keeps its balance in cash."
-                            : expired ? "This observation has expired. Check the model journal for the next run." : state.configured
-                              ? "The next daily model run will appear here."
-                              : "Model decisions are awaiting connection."}
-                        </p>
-                        <button
-                          className="secondary"
-                          onClick={() => changeView("models")}
-                        >
-                          View model status <ArrowRight size={14} />
-                        </button>
-                      </div>
-                    )}
-                    <p className="plan-note">
-                      {selected === "momentum"
-                        ? "Reference from a fixed rule. Model results are listed separately."
-                        : (latest?.decision?.reason.split(/(?<=\.)\s/)[0] ??
-                          "A missing response is never replaced with a rule.")}
-                      {selected !== "momentum" && latest && <button className="reason-detail" onClick={() => setDialog(latest)}>Read decision</button>}
-                    </p>
-                    <div className="execution-note">
-                      <Info size={14} />
-                      <span>
-                        Reference levels. No order placed. Funding and price
-                        gaps can increase losses.
-                      </span>
                     </div>
                   </section>
                 </div>
@@ -565,7 +520,6 @@ function App() {
                       <span role="columnheader">Model</span>
                       <span role="columnheader">Latest decision</span>
                       <span role="columnheader">Net return</span>
-                      <span role="columnheader">Cost</span>
                       <span role="columnheader">Details</span>
                     </div>
                     {state.models.map((m, i) => {
@@ -589,7 +543,7 @@ function App() {
                               className={`decision-pill ${r?.status === "failed" ? "failure" : ""}`}
                             >
                               {r?.status === "completed"
-                                ? r.decision?.action.replace("_", " · ")
+                                ? actionLabel(r.decision?.action)
                                 : r?.status === "failed"
                                   ? "Request failed"
                                   : r?.status === "late"
@@ -608,13 +562,6 @@ function App() {
                               ? pct((last.result.equity / 10000 - 1) * 100)
                               : "Not measured"}
                           </strong>
-                          <span role="cell" className="numeric">
-                            $
-                            {fmt(
-                              rr.reduce((s, x) => s + x.cost, 0),
-                              4,
-                            )}
-                          </span>
                           <span role="cell">
                             <button
                               className="icon-button"
@@ -628,40 +575,6 @@ function App() {
                         </div>
                       );
                     })}
-                  </div>
-                  <div className="budget-strip">
-                    <div>
-                      <span className="mini-label">Provider spending</span>
-                      <strong>
-                        ${fmt(state.budget.actual, 3)}{" "}
-                        <small>/ ${fmt(state.budget.cap, 0)} limit</small>
-                      </strong>
-                    </div>
-                    <div
-                      className="budget-track"
-                      role="meter"
-                      aria-label="Committed provider budget"
-                      aria-valuemin={0}
-                      aria-valuemax={state.budget.cap}
-                      aria-valuenow={state.budget.committed}
-                    >
-                      <span
-                        style={{
-                          width: `${Math.min(100, (state.budget.committed / state.budget.cap) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                    <p>
-                      $
-                      {fmt(
-                        Math.max(
-                          0,
-                          state.budget.committed - state.budget.actual,
-                        ),
-                        3,
-                      )}{" "}
-                      reserved or unresolved
-                    </p>
                   </div>
                   <div className="table-foot">
                     <Info size={15} />
@@ -942,10 +855,6 @@ function App() {
                           <dd>Recorded before entry, then settled</dd>
                         </div>
                         <div>
-                          <dt>Lifetime provider limit</dt>
-                          <dd>$15, reserved before requests</dd>
-                        </div>
-                        <div>
                           <dt>Missing or failed response</dt>
                           <dd>Excluded, never replaced</dd>
                         </div>
@@ -972,8 +881,9 @@ function App() {
           )}
         </main>
         <footer className="statusbar">
-          <span className="status-source">
-            <span /> Public market data
+          <span className={`status-source ${state?.stale ? "warning" : ""}`}>
+            <span />{" "}
+            {state?.stale ? "Delayed market data" : "Public market data"}
           </span>
           <span>
             {state ? `Updated ${time(state.collectedAt)}` : "Connecting"}
@@ -995,7 +905,11 @@ function App() {
           </button>
         ))}
       </nav>
-      <dialog ref={detail} aria-labelledby="decision-title" onClose={() => setDialog(null)}>
+      <dialog
+        ref={detail}
+        aria-labelledby="decision-title"
+        onClose={() => setDialog(null)}
+      >
         <div className="dialog-heading">
           <h2 id="decision-title">Recorded decision</h2>
           <button
@@ -1012,7 +926,67 @@ function App() {
               {state?.models.find((m) => m.id === dialog.model)?.name} ·{" "}
               {dialog.cohort}
             </span>
-            <h3>{dialog.decision?.action ?? dialog.status}</h3>
+            <h3>
+              {dialog.decision
+                ? actionLabel(dialog.decision.action)
+                : dialog.status === "failed"
+                  ? "Request failed"
+                  : "Awaiting completion"}
+            </h3>
+            {dialog.status === "late" && (
+              <p className="small-note">
+                Late response. Excluded from performance.
+              </p>
+            )}
+            {Date.now() >= dialog.entry_after + 86_400_000 && (
+              <p className="small-note">This observation has expired.</p>
+            )}
+            {dialogPlan && (
+              <>
+                <dl className="plan-values dialog-plan">
+                  <div>
+                    <dt>Reference price</dt>
+                    <dd>{money(dialogPlan.entry)}</dd>
+                  </div>
+                  <div>
+                    <dt>Stop level</dt>
+                    <dd>{money(dialogPlan.stop)}</dd>
+                  </div>
+                  <div>
+                    <dt>Notional / $10,000</dt>
+                    <dd>{money(dialogPlan.notional)}</dd>
+                  </div>
+                  <div>
+                    <dt>Collateral</dt>
+                    <dd>{money(dialogPlan.collateral)}</dd>
+                  </div>
+                  <div>
+                    <dt>Stop risk, before gaps</dt>
+                    <dd>2% of equity</dd>
+                  </div>
+                  <div>
+                    <dt>Planned entry</dt>
+                    <dd>
+                      {date(dialog.entry_after)} · {time(dialog.entry_after)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Time exit</dt>
+                    <dd>
+                      {date(dialog.entry_after + 86_400_000)} ·{" "}
+                      {time(dialog.entry_after + 86_400_000)}
+                    </dd>
+                  </div>
+                </dl>
+                <button className="secondary copy-plan" onClick={copy}>
+                  {copied ? <Check size={15} /> : <Copy size={15} />}
+                  {copied ? "Plan copied" : "Copy paper plan"}
+                </button>
+                <p className="small-note">
+                  Reference levels. Funding and price gaps can increase losses.
+                </p>
+              </>
+            )}
             <p>
               {dialog.decision?.reason ??
                 dialog.error ??
@@ -1030,20 +1004,19 @@ function App() {
                 <dd>{time(dialog.published_at)}</dd>
               </div>
               <div>
-                <dt>Latency</dt>
-                <dd>{fmt(dialog.latency_ms / 1000)} s</dd>
-              </div>
-              <div>
-                <dt>Recorded cost</dt>
-                <dd>${fmt(dialog.cost, 5)}</dd>
-              </div>
-              <div>
                 <dt>Settled P&amp;L</dt>
                 <dd>
                   {dialog.result ? money(dialog.result.pnl) : "Not settled"}
                 </dd>
               </div>
             </dl>
+            <details className="technical-details">
+              <summary>Request details</summary>
+              <p>
+                Latency {fmt(dialog.latency_ms / 1000)} s · Provider cost $
+                {fmt(dialog.cost, 5)}
+              </p>
+            </details>
             <a href="/api/decisions" target="_blank">
               Open complete journal <ExternalLink size={14} />
             </a>
@@ -1052,6 +1025,12 @@ function App() {
       </dialog>
     </div>
   );
+}
+function actionLabel(action?: string) {
+  if (!action) return "No position";
+  if (action === "CASH") return "Cash";
+  const [asset, leverage] = action.split("_");
+  return `Long ${asset} · ${leverage?.replace("X", "×")}`;
 }
 function makePlan(d: any, s: any) {
   if (!s) return null;
@@ -1086,6 +1065,7 @@ function Chart({
   price?: boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
+  useEffect(() => setHover(null), [data.length, label]);
   const width = 760,
     height = 240,
     pad = 12;
@@ -1101,6 +1081,7 @@ function Chart({
     span = max - min || 1;
   const x = (i: number) => pad + (i / (data.length - 1)) * (width - 2 * pad),
     y = (v: number) => height - 20 - ((v - min) / span) * (height - 45);
+  const active = hover !== null && hover < data.length ? hover : null;
   const points = data.map((d, i) => `${x(i)},${y(d.equity)}`).join(" ");
   const select = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -1126,8 +1107,29 @@ function Chart({
         preserveAspectRatio="none"
         role="img"
         aria-label={`${label}. From ${money(data[0].equity)} to ${money(data.at(-1)!.equity)}.`}
+        tabIndex={0}
+        onFocus={() => setHover(data.length - 1)}
+        onBlur={() => setHover(null)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+            e.preventDefault();
+            setHover((i) =>
+              Math.max(
+                0,
+                Math.min(
+                  data.length - 1,
+                  (i ?? data.length - 1) + (e.key === "ArrowLeft" ? -1 : 1),
+                ),
+              ),
+            );
+          }
+          if (e.key === "Escape") setHover(null);
+        }}
+        onPointerDown={select}
         onPointerMove={select}
-        onPointerLeave={() => setHover(null)}
+        onPointerLeave={(e) => {
+          if (e.pointerType !== "touch") setHover(null);
+        }}
       >
         {[25, 120, 220].map((v) => (
           <line
@@ -1148,27 +1150,28 @@ function Chart({
           points={points}
           vectorEffect="non-scaling-stroke"
         />
-        {hover !== null && (
+        {active !== null && (
           <>
             <line
               className="crosshair"
-              x1={x(hover)}
-              x2={x(hover)}
+              x1={x(active)}
+              x2={x(active)}
               y1="0"
               y2={height}
             />
             <circle
               className="chart-dot"
-              cx={x(hover)}
-              cy={y(data[hover].equity)}
+              cx={x(active)}
+              cy={y(data[active].equity)}
               r="4"
             />
           </>
         )}
       </svg>
-      {hover !== null && (
-        <span className="chart-tooltip">
-          {date(data[hover].t)} · {money(data[hover].equity)}
+      {active !== null && (
+        <span className="chart-tooltip" role="status">
+          {date(data[active].t)} · {time(data[active].t)} ·{" "}
+          {money(data[active].equity)}
         </span>
       )}
       <div className="chart-dates">

@@ -1,4 +1,4 @@
-const CACHE='crp-shell-v3';
+const CACHE='crp-shell-v4';
 self.addEventListener('install',event=>{
  event.waitUntil((async()=>{
   const cache=await caches.open(CACHE);

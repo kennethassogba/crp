@@ -10,7 +10,7 @@ Daily BTC and ETH paper positions, with five OpenAI configurations and a recorde
 
 At 08:00 UTC, each configuration receives the same market snapshot and chooses cash, BTC or ETH, with 1× or 2× isolated margin leverage. Entry is scheduled for 09:00 UTC, after the response is recorded. The position closes 24 hours later or at its stop. The first prospective observation can start at another full hour.
 
-The site displays the recorded decision, reference levels, historical evaluations, provider cost and settlement journal. It connects to no exchange account and places no orders. Reference levels are not executable quotes. Derivatives availability depends on your location and exchange.
+Today shows all five model decisions together. Tap a model to read its reasoning and position levels; Models compares measured returns, and Backtest contains the historical evaluations. Provider usage remains available in the public journal and API. It connects to no exchange account and places no orders. Reference levels are not executable quotes. Derivatives availability depends on your location and exchange.
 
 ## Data and evaluation
 

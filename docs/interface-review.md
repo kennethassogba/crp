@@ -2,43 +2,37 @@
 
 ## Scope and coverage
 
-Reviewed the complete Today → Models → decision details → Backtest → Method flow, plus initial loading, unavailable data, an empty decision journal and offline recovery. React 19, TypeScript, CSS tokens, Geist Variable and Lucide icons. The project follows the supplied workspace AGENTS.md: sans-serif type, no green and concise factual copy. The user subsequently requested dark mode by default; this explicit request overrides the initial white-surface preference. No separate project design-system or contribution document exists.
+Reviewed Today, Models, decision details, Backtest and all Method sections after the hierarchy revision requested on 18 October 2026. Includes loading, unavailable data, an empty journal, mixed decision statuses and offline recovery. React 19, TypeScript, CSS tokens, Geist Variable and Lucide icons. The workspace AGENTS.md and the explicit dark-mode brief govern the design. No separate project design-system document exists.
 
-Runtime evidence covers Chromium at 1440×900, 390×844, 375×667 and 320×568. At normal desktop and phone sizes the application fits one viewport. Short screens deliberately allow scrolling to keep controls accessible. Native iPhone installation and assistive-technology behavior are outside the verified boundary.
+All six owning better-interface skills were loaded. The earlier review missed the active chart tooltip; its blanket color verdict did not cover that state. The current checks explicitly open and measure the tooltip.
 
-All six owning better-interface skills were loaded and used during implementation.
-
-| Domain | Evidence inspected | Result |
+| Domain | Evidence | Result |
 | --- | --- | --- |
-| Accessibility | `src/main.tsx`, native selects/dialog, named navigation, `src/style.css` focus rules; axe scans across 24 view/viewport combinations and three transient states; dialog Escape | Clear within inspected scope |
-| Layout | Four views and three method sections at four sizes, overflow measurements in `scripts/check-ui.mjs`, mobile and desktop screenshots; loading/error/empty screenshots | Clear |
-| Writing | Interface labels, recovery instructions, simulation and cost labels; README audit in `docs/copy-review.json` | Clear |
-| Typography | Geist rendering, numeric columns, wrapping of model reasons, full decision access through dialog; mobile screenshots | Clear |
-| Colors | Dark surfaces, violet selection and positive values, red losses, explicit signed numbers and text labels; axe contrast checks | Clear within automated and visual checks |
-| UI polish | Shared spacing/borders, bottom navigation, control alignment, hover/focus states, reduced-motion CSS, loading and error states | Clear |
+| Accessibility | Named model buttons and navigation, native dialog/Escape, keyboard and touch chart inspection, axe scans in `scripts/check-ui.mjs` and `scripts/check-pwa.mjs` | Clear in the tested browser scope |
+| Layout | Today decisions precede market context; five rows remain visible together. Overflow checks at 1440×900, 390×844, 375×667 and 320×568; actual desktop/mobile screenshots | Clear; short screens can scroll |
+| Writing | Purpose statement, action labels, explicit simulated positions, recovery text; new copy passed the local Avoid AI Writing detector with no findings | Clear; recorded model reasoning preserved |
+| Typography | Geist, tabular numbers, full reasons in dialog, long position plan at 375px | Clear in inspected states |
+| Color | Explicit tooltip foreground/background; measured active contrast >=4.5:1 at all four sizes; failed decisions and delayed data have text labels | Clear within automated and visual checks |
+| UI polish | Flat model list, consistent separators, paired asset quotes, focus/hover states, reduced motion and refreshed social preview | Clear |
 
-## Findings
+## Resolved findings
 
-No actionable interface findings remain in the inspected scope. During implementation, the mobile model-row height was reduced to avoid hidden overflow, model reasons gained an explicit full-text action, the decision timestamp and historical venue became explicit, and the first-install cache was corrected to include the built JavaScript and CSS.
+| Severity | Location | Before | After |
+| --- | --- | --- | --- |
+| HIGH | `src/style.css:402`, `src/main.tsx:1169` | Active chart tooltip inherited light text on white | Explicit dark surface and light text; active contrast assertion, pointer, touch and keyboard checks |
+| MEDIUM | `src/main.tsx:363`, `src/style.css:1485` | A selector hid four of the five daily model decisions | All five decisions appear in one list; each opens its own reasoning and plan |
+| MEDIUM | `src/main.tsx:309`, `src/main.tsx:415` | First visit emphasized prices without explaining the app | Short purpose statement and model decisions first; market context follows |
+| MEDIUM | `src/main.tsx:516`, `src/main.tsx:1010` | Shared provider budget dominated public comparison | Removed budget feature and cost column; request diagnostics are collapsed in details. Server accounting unchanged |
 
 ## Verification
 
-Passed:
-
-- `CRP_URL=https://crp.keff.uk npm run test:ui`: 24 view/viewport combinations; no serious or critical axe findings, no horizontal overflow, no normal-size body overflow. Tested asset selection, model selection, replay selection and decision dialog dismissal. Evidence: `output/playwright/verification.json` and screenshots generated locally.
-- `CRP_URL=https://crp.keff.uk node scripts/check-pwa.mjs`: Chromium reported no installability errors. Manifest uses standalone display and includes 192/512 icons. Offline reload displayed a recoverable error; Retry restored the current data after reconnection. Loading, error and empty states had no serious or critical axe findings. Evidence: `output/playwright/pwa.json` and screenshots.
-- Root font resize to 200% at 640×600: no horizontal document overflow. This is a text/reflow check, not a claim of native browser zoom certification.
-- `npm run check`, financial-engine tests and production build passed. GitHub Actions and Cloudflare Workers Builds also completed successfully during publication.
-
-Not verified:
-
-- VoiceOver, TalkBack, other screen readers, actual device home-screen installation, forced-colors rendering and native browser 200% zoom.
-- A long-run profitability result. The UI displays a simulation and archived model observations; it does not establish a trading advantage.
+- TypeScript, 18 financial/data/budget tests and production build passed.
+- `npm run test:ui`: 24 view/viewport combinations, no serious or critical axe findings, no horizontal overflow, no body/main overflow at normal phone and desktop sizes.
+- Tested all five daily rows, model detail dismissal, historical replay, direct Backtest reload, asset selection, keyboard chart navigation, active tooltip contrast and 200% root-font reflow.
+- Browser-only fixtures exercise cash, BTC 2×, ETH 1×, provider failure and excluded late response. Verified copied position levels, long-plan dialog contrast, touch selection and chart-period change. Fixtures never write records or invoke a provider.
+- `scripts/check-pwa.mjs` verifies standalone installability, offline Retry and loading/error/empty states against the published build. Native iPhone installation, VoiceOver, TalkBack and native browser zoom remain outside the verified scope.
+- Updated `public/social-card.png` from the app using actual recorded production decisions, without generating new model outputs.
 
 ## Verdict
 
-Approve for the inspected domains and runtime boundary. No unreviewed domain; the device and assistive-technology checks listed above remain unverified.
-
-## Dark default update
-
-The user requested dark mode by default. Theme tokens, native control appearance, chart outlines, navigation, dialogs, PWA launch colors and the shell cache were updated together. All 24 view/viewport combinations passed contrast and overflow checks in Chromium, including the open decision dialog. A system set to light still rendered the dark interface. The direct `/#backtest` route loaded the benchmark and survived reload. No financial rules or recorded results changed.
+Approve within the inspected Chromium/browser boundary. Device installation and assistive-technology checks listed above remain unverified. This review concerns presentation and access to recorded data, not strategy profitability.
