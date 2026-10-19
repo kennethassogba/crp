@@ -71,6 +71,22 @@ try {
           .getByRole("button", { name: "Copier le plan", exact: true })
           .click();
       }
+      if ([0, 3, 4].includes(i))
+        assert.equal(
+          await dialog
+            .getByRole("button", { name: "Copier le plan", exact: true })
+            .isDisabled(),
+          true,
+        );
+      if (i === 4) {
+        await dialog
+          .getByRole("heading", { name: "Pas de position", exact: true })
+          .waitFor();
+        assert.equal(
+          await dialog.getByText("Entrée indicative", { exact: true }).count(),
+          0,
+        );
+      }
       if (i === 3)
         await dialog
           .getByText("Source de données indisponible.", { exact: true })

@@ -77,6 +77,7 @@ function plan(r: Run) {
     stopPct = a.stopPct,
     collateral = Math.min(10000, 200 / (leverage * (stopPct + 0.0014)));
   return {
+    referenceEquity: 10000,
     entry,
     stop: entry * (1 - stopPct),
     leverage,
@@ -160,7 +161,7 @@ export function Crp({
       ? (benchmark?.curve ?? [])
       : modelRuns.map((r) => ({ t: r.result.exitAt, equity: r.result.equity }));
   const priceData = (state.prices[asset] ?? []).slice(-period * 24),
-    selectedPlan = selected ? plan(selected) : null;
+    selectedPlan = selected?.status === "completed" ? plan(selected) : null;
   const moneyReturn = (v: number) => `${v >= 0 ? "+" : ""}${number(v, 2)} $`;
   return (
     <section className="crp-page">
@@ -568,7 +569,7 @@ export function Crp({
             </div>
             <p className="small muted">{datetime(selected.snapshot_at)}</p>
             <h3>
-              {selected.decision
+              {selected.status === "completed" && selected.decision
                 ? action(selected.decision.action)
                 : "Pas de position"}
             </h3>
@@ -635,6 +636,7 @@ export function Crp({
               </button>
               <button
                 className="button secondary"
+                disabled={!selectedPlan}
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(
