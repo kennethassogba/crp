@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "files": [
+          "src/fin/style.css"
+        ],
+        "createdAt": "2026-10-19T00:12:11.369Z",
+        "reason": "Agent: deliberate typography for the financial analysis interface; readable sans-serif follows the user brief for a restrained Notion-like interface."
+      }
+    ]
+  }
+}
