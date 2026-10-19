@@ -12,8 +12,8 @@ const routes = [
   ["/warrants/", "Warrants"],
   ["/warrants/methode/", "Analyser un warrant"],
   ["/warrants/suivi/", "Analyses enregistrées"],
-  ["/crp/", /^Comparaison/],
-  ["/crp/modeles/", /^Comparaison/],
+  ["/crp/", /^CRP$/],
+  ["/crp/modeles/", /^CRP$/],
   ["/crp/historique/", /^Historique/],
   ["/crp/methode/", "Règles CRP"],
   ["/donnees/", "Données"],
@@ -55,6 +55,10 @@ try {
           level: 1,
         })
         .waitFor();
+      if (["/crp/", "/crp/modeles/"].includes(path))
+        await page
+          .getByRole("group", { name: "Comparer les modèles", exact: true })
+          .waitFor();
       if (path === "/warrants/")
         await page.locator(".contract-button").first().waitFor();
       await scan(page, `${path} ${width}`);
@@ -69,6 +73,22 @@ try {
         });
     }
     await page.goto(base + "/warrants/");
+    await page
+      .getByRole("button", { name: /^NDX ·.*filtrer les contrats/ })
+      .click();
+    assert.equal(
+      await page
+        .getByLabel("Filtrer par sous-jacent", { exact: true })
+        .inputValue(),
+      "NDX",
+    );
+    await page.getByRole("button", { name: "Tous", exact: true }).click();
+    assert.equal(
+      await page
+        .getByLabel("Filtrer par sous-jacent", { exact: true })
+        .inputValue(),
+      "all",
+    );
     await page.getByLabel("Rechercher un warrant").fill("Z377S");
     await page.getByRole("button", { name: /Z377S/ }).click();
     const dialog = page.getByRole("dialog", { name: "Analyse du warrant" });
@@ -135,9 +155,7 @@ try {
       await page.getByRole("button", { name: "Ouvrir la navigation" }).click();
       const nav = page.getByRole("dialog", { name: "Navigation", exact: true });
       await nav.getByRole("link", { name: "CRP", exact: true }).click();
-      await page
-        .getByRole("heading", { name: /^Comparaison/, level: 1 })
-        .waitFor();
+      await page.getByRole("heading", { name: /^CRP$/, level: 1 }).waitFor();
       assert.equal(await nav.isVisible(), false);
     }
     assert.deepEqual(errors, []);
@@ -167,7 +185,7 @@ try {
   await d.getByRole("button", { name: "Enregistré", exact: true }).waitFor();
   await page.keyboard.press("Escape");
   await page.getByRole("link", { name: "CRP", exact: true }).first().click();
-  await page.getByRole("heading", { name: /^Comparaison/, level: 1 }).waitFor();
+  await page.getByRole("heading", { name: /^CRP$/, level: 1 }).waitFor();
   await page
     .getByRole("link", { name: /Warrants/ })
     .first()

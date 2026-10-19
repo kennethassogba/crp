@@ -169,13 +169,15 @@ export function Crp({
         <h1>
           {
             {
-              today: "Comparaison",
-              models: "Comparaison",
+              today: "CRP",
+              models: "CRP",
               history: "Historique",
               method: "Règles",
             }[view]
           }{" "}
-          <span className="heading-context">CRP</span>
+          {!["today", "models"].includes(view) && (
+            <span className="heading-context">CRP</span>
+          )}
         </h1>
         <button
           className="button secondary"

@@ -7,7 +7,7 @@ const page = await browser.newPage();
 try {
   await page.goto(base + "/crp/");
   await page
-    .getByRole("table", { name: /Comparaison des portefeuilles/ })
+    .getByRole("group", { name: "Comparer les modèles", exact: true })
     .waitFor();
   const colors = await page.evaluate(() => {
     const style = getComputedStyle(document.documentElement),
@@ -22,6 +22,7 @@ try {
       control: token("--control"),
       panel: token("--panel"),
       fill: token("--accent-fill"),
+      lossFill: token("--loss-fill"),
     };
   });
   const lum = (hex) => {
@@ -42,6 +43,7 @@ try {
     ["loss", colors.loss, colors.page, 4.5],
     ["accent", colors.accent, colors.page, 4.5],
     ["primary button", "#ffffff", colors.fill, 4.5],
+    ["negative badge", "#ffffff", colors.lossFill, 4.5],
     ["control border", colors.control, colors.panel, 3],
     ["Luna line", "#b5abff", colors.page, 3],
     ["Decision line", "#8ab4f8", colors.page, 3],

@@ -1,6 +1,6 @@
 {
   "date": "2026-10-20",
-  "stage": "Local verification before deployment, EUR-100 comparison and dark-only theme",
+  "stage": "Local verification before deployment, Apple Stocks-inspired interface",
   "typecheck": "passed",
   "tests": 37,
   "independentReferenceTests": 7,
@@ -251,84 +251,92 @@
     "colors": {
       "mode": "dark",
       "text": "#eeeff1",
-      "page": "#101113",
+      "page": "#000000",
       "muted": "#a2a4ac",
       "loss": "#ff9ca6",
-      "accent": "#b5abff",
+      "accent": "#8ac1ff",
       "control": "#626671",
-      "panel": "#161719",
-      "fill": "#6558cf"
+      "panel": "#111113",
+      "fill": "#215faa",
+      "lossFill": "#b73c4d"
     },
     "pairs": [
       {
         "name": "text",
         "fg": "#eeeff1",
-        "bg": "#101113",
+        "bg": "#000000",
         "minimum": 4.5,
-        "ratio": 16.4195405258022
+        "ratio": 18.25220409209775
       },
       {
         "name": "muted",
         "fg": "#a2a4ac",
-        "bg": "#101113",
+        "bg": "#000000",
         "minimum": 4.5,
-        "ratio": 7.594511893508201
+        "ratio": 8.442171743012468
       },
       {
         "name": "muted on panel",
         "fg": "#a2a4ac",
-        "bg": "#161719",
+        "bg": "#111113",
         "minimum": 4.5,
-        "ratio": 7.211152181117725
+        "ratio": 7.582218466815558
       },
       {
         "name": "loss",
         "fg": "#ff9ca6",
-        "bg": "#101113",
+        "bg": "#000000",
         "minimum": 4.5,
-        "ratio": 9.497913874650244
+        "ratio": 10.558021536404322
       },
       {
         "name": "accent",
-        "fg": "#b5abff",
-        "bg": "#101113",
+        "fg": "#8ac1ff",
+        "bg": "#000000",
         "minimum": 4.5,
-        "ratio": 9.206350514957995
+        "ratio": 11.152640388060943
       },
       {
         "name": "primary button",
         "fg": "#ffffff",
-        "bg": "#6558cf",
+        "bg": "#215faa",
         "minimum": 4.5,
-        "ratio": 5.454221717468024
+        "ratio": 6.398525575685906
+      },
+      {
+        "name": "negative badge",
+        "fg": "#ffffff",
+        "bg": "#b73c4d",
+        "minimum": 4.5,
+        "ratio": 5.574781499342138
       },
       {
         "name": "control border",
         "fg": "#626671",
-        "bg": "#161719",
+        "bg": "#111113",
         "minimum": 3,
-        "ratio": 3.1248830067814626
+        "ratio": 3.285680990438347
       },
       {
         "name": "Luna line",
         "fg": "#b5abff",
-        "bg": "#101113",
+        "bg": "#000000",
         "minimum": 3,
-        "ratio": 9.206350514957995
+        "ratio": 10.23391539357298
       },
       {
         "name": "Decision line",
         "fg": "#8ab4f8",
-        "bg": "#101113",
+        "bg": "#000000",
         "minimum": 3,
-        "ratio": 8.96409463328419
+        "ratio": 9.964620172560373
       },
       {
         "name": "Sol line",
         "fg": "#d8b484",
-        "bg": "#101113",
+        "bg": "#000000",
         "minimum": 3,
-        "ratio": 9.698933436228133
+        "ratio": 10.78147785411662
       }
     ]
   },
@@ -351,5 +359,7 @@
     "method": "normalized-return",
     "fxIncluded": false,
     "providerCostsIncluded": false
-  }
+  },
+  "styleReference": "https://support.apple.com/en-ie/guide/iphone/iph1ac0b1bc/ios",
+  "marketPreviewPeriod": "20 sessions; 21 recorded closes; same window for sparkline and change"
 }

@@ -36,7 +36,7 @@ La référence du 16 octobre 2026 reste dans `tests/fixtures/reference-snapshot.
 
 ## Interface
 
-Public Sans, mode sombre, navigation commune, tableau paginé, détails à la demande. Une seule entrée HTML, `index.html`. Les anciennes routes CRP et les liens `#models`, `#backtest` et `#method` restent lisibles. L’installation concerne désormais Fin ; les préférences et les analyses locales sont conservées.
+Interface inspirée d’Apple Bourse : liste compacte, mini-courbes issues des données, montants alignés et grand graphique du modèle sélectionné. Police système Apple si disponible, Public Sans ailleurs, mode sombre uniquement. Le bleu remplace le vert pour les gains. Une seule entrée HTML, `index.html`. Les anciennes routes CRP et les liens `#models`, `#backtest` et `#method` restent lisibles. L’installation concerne désormais Fin ; les préférences et les analyses locales sont conservées.
 
 ---
 
@@ -174,3 +174,12 @@ Le capital estimé additionne le capital clôturé et les positions ouvertes val
 L’API `/api/crp/comparison` est la source de l’écran. Le MCP public `https://fin.keff.uk/mcp` expose `get_crp_comparison`, `get_daily_decisions`, `get_backtest` et `get_warrant_catalog`. Les outils n’envoient aucun ordre et ne déclenchent aucun appel payant. Contrats dans `/openapi.json`, guide dans `/index.md`.
 
 Fin utilise uniquement le mode sombre, y compris la PWA installée. Le service worker conserve l’interface pour le hors connexion, mais ne met pas en cache les données financières.
+
+
+### Navigation inspirée de Bourse
+
+Sur CRP, choisir une ligne affiche le portefeuille et sa courbe. Les périodes filtrent les points enregistrés ; « Comparer les 3 » superpose les modèles. Les valeurs restent lisibles au survol, au toucher et au clavier. Le panneau de décision conserve le plan et le journal d’origine.
+
+Sur Warrants, les raccourcis des sous-jacents affichent le dernier cours de clôture et la variation sur 20 séances, calculée entre les 21 dernières clôtures. Ils filtrent le catalogue. Ils ne représentent pas un historique du prix des warrants.
+
+Référence visuelle : [Apple Bourse](https://support.apple.com/en-ie/guide/iphone/iph1ac0b1bc/ios). Aucun actif graphique Apple n’est embarqué.

@@ -13,7 +13,7 @@ const context = await browser.newContext({
 const page = await context.newPage();
 page.setDefaultTimeout(20_000);
 await page.goto(base);
-await page.getByRole("heading", { name: /^Comparaison/ }).waitFor();
+await page.getByRole("group", { name: "Comparer les modèles", exact: true }).waitFor();
 await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
 const cdp = await context.newCDPSession(page);
 const install = await cdp.send("Page.getInstallabilityErrors");
@@ -22,7 +22,7 @@ const manifest = await (
   await page.request.get(`${base}/manifest.webmanifest`)
 ).json();
 assert.equal(manifest.display, "standalone");
-assert.equal(manifest.theme_color, "#101113");
+assert.equal(manifest.theme_color, "#000000");
 assert.equal(
   await page.evaluate(
     () => getComputedStyle(document.documentElement).colorScheme,
@@ -41,7 +41,7 @@ await page.evaluate(async () => {
   );
 });
 await page.reload();
-await page.getByRole("heading", { name: /^Comparaison/ }).waitFor();
+await page.getByRole("group", { name: "Comparer les modèles", exact: true }).waitFor();
 await page.waitForLoadState("networkidle");
 await context.setOffline(true);
 await page.reload();
@@ -52,7 +52,7 @@ await page
 await page.screenshot({ path: "output/playwright/offline.png" });
 await context.setOffline(false);
 await page.getByRole("button", { name: "Réessayer", exact: true }).click();
-await page.getByRole("heading", { name: /^Comparaison/ }).waitFor();
+await page.getByRole("group", { name: "Comparer les modèles", exact: true }).waitFor();
 await context.close();
 
 // Intercept only browser responses to examine recoverable states. No model calls.
@@ -95,7 +95,7 @@ for (const state of ["loading", "error", "empty"]) {
   if (state === "error")
     await p.getByRole("button", { name: "Réessayer", exact: true }).waitFor();
   if (state === "empty")
-    await p.getByRole("heading", { name: /^Comparaison/ }).waitFor();
+    await p.getByRole("group", { name: "Comparer les modèles", exact: true }).waitFor();
   const scan = await new AxeBuilder({ page: p })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();

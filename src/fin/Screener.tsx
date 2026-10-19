@@ -11,6 +11,7 @@ import {
 import { parseCSV, validateProduct } from "../../lib/warrants.mjs";
 import type { Dataset, Observation, Product } from "./types";
 import { Detail } from "./Detail";
+import { MarketStrip } from "./MarketStrip";
 import {
   date,
   observedTime,
@@ -339,6 +340,7 @@ export function Screener({
           />
         </div>
       </div>
+      <MarketStrip dataset={dataset} selected={asset} onSelect={setAsset} />
       <div role="status" className={message ? "notice" : ""}>
         {message}
       </div>

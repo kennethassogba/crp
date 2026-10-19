@@ -1,47 +1,46 @@
-# Revue Fin — CRP à 100 € et mode sombre, 20 octobre 2026
+# Revue Fin — inspiration Apple Bourse, 20 octobre 2026
 
 ## Scope and coverage
 
-Périmètre : comparaison CRP, décisions détaillées, historique et règles, thème sombre partagé avec Warrants, navigation et PWA. Les parcours Warrants existants ont été rejoués sur les neuf routes. React 19, TypeScript, CSS partagé, Public Sans et Lucide conservés. Conventions : `AGENTS.md`, `DESIGN.md` et demande explicite de mode sombre du 20 octobre. Les six compétences better-* ont été chargées dans cette conversation ; elles ont guidé la revue. Textes français relus avec avoid-ai-writing, sans réécrire les réponses archivées des modèles.
+Périmètre : liste et sélection des trois modèles CRP, détail du portefeuille, périodes et comparaison des courbes, raccourcis des sous-jacents Warrants, thème partagé et PWA. Les neuf routes existantes ont été contrôlées à quatre largeurs. React, TypeScript, CSS partagé, navigation, API/MCP et moteur financier conservés. Conventions lues : `AGENTS.md` et `DESIGN.md` ; les six compétences better-* ont été chargées pour cette revue.
+
+Référence consultée : [Apple Bourse, liste et graphiques](https://support.apple.com/en-ie/guide/iphone/iph1ac0b1bc/ios). Le fond noir, les listes compactes, les montants alignés et la sélection qui conduit à un graphique reprennent cette direction. Les gains restent bleus selon la préférence sans vert. Aucun actif Apple n’est distribué avec l’application.
 
 | Domain | Evidence inspected | Result |
 | --- | --- | --- |
-| Accessibility | `src/fin/Comparison.tsx:107`, dialogues natifs, scans axe, restauration du focus, clavier, toucher dans `scripts/check-ui.mjs` | Aucun problème critical/serious dans les états Chromium contrôlés |
-| Layout | Neuf routes × quatre largeurs, trois largeurs CRP, texte CRP à 200 % et miroir RTL | Aucun débordement dans les cas testés ; grille adaptée à la taille du texte |
-| Writing | Base de 100 €, montants clôturés/en cours, dates, prix manquants, erreur modèle, méthode et budget | Distinctions explicites ; raisons archivées préservées |
-| Typography | Public Sans partagé, valeurs tabulaires, échelles, champs mobiles et captures | Police conservée ; pas de Geist ni de titre en serif |
-| Color | Mode sombre forcé, dix paires dans `output/playwright/contrast-dark.json`, scans axe | Texte et contrôles contrôlés conformes aux seuils AA ; aucun vert |
-| UI polish | Graphique comparatif, trois tracés nommés avec styles distincts, survol/toucher/clavier, fermeture du volet et PWA | Interactions testées ; aucune animation nécessaire à la compréhension |
+| Accessibility | Boutons natifs avec état sélectionné, graphique clavier/toucher/pointeur, dialogues, région de défilement et scans axe dans `check-ui.mjs` et `check-fin.mjs` | Aucun critical/serious dans les états Chromium testés |
+| Layout | Neuf routes à 1440, 768, 390 et 320 px ; CRP à trois largeurs, texte à 200 %, RTL | Deux panneaux lorsque le contenu tient, empilement sinon ; aucun débordement restant dans les contrôles |
+| Writing | Période des variations, capital estimé/clôturé, dates des clôtures, textes d’erreur et écrans vides | Textes courts et relus ; les raisons archivées des modèles sont conservées |
+| Typography | Police système Apple si disponible, Public Sans ailleurs, grandes valeurs tabulaires et niveaux de titres | Sans-serif conservé ; aucune police Apple téléchargée |
+| Color | Onze paires mesurées dans `output/playwright/contrast-dark.json`, scans axe et mode sombre forcé | Seuils AA vérifiés ; variations signées en plus de la couleur |
+| UI polish | Sélection instantanée, périodes, comparaison, filtre par sous-jacent, détails et restauration du focus | Interactions contrôlées ; graphiques sans animation décorative |
 
 ## Findings
 
-Constats résolus pendant cette révision. Le choix du mode sombre suit le brief ; le thème clair antérieur n’est pas traité comme une faute d’accessibilité.
+Constats résolus pendant l’implémentation, sans présenter la direction précédente comme une violation objective.
 
 | Severity | Domain | Location | Before | After | Why |
 | --- | --- | --- | --- | --- | --- |
-| HIGH | Layout | `src/fin/style.css:1952`, `src/fin/Comparison.tsx:107` | La première grille mobile débordait à 320 px avec texte à 200 % | Requête de conteneur fondée sur la taille de texte et onglets repliables sur plusieurs lignes | Les valeurs et actions doivent rester atteignables |
-| HIGH | Accessibility | `src/fin/Comparison.tsx:299`, `src/fin/Charts.tsx` | La sortie du pointeur tactile effaçait la valeur choisie après un tap | Réinitialisation seulement au départ de la souris ; lecture tactile persistante | Le toucher doit laisser le temps de lire les données |
-| MEDIUM | Writing | `lib/crp-performance.mjs:16`, `src/fin/Comparison.tsx:107` | Le gain réalisé de zéro masquait la présence de positions non clôturées | Capital estimé, gain net total et part en cours ; cours manquant affiché comme indisponible | Un résultat non encore clôturé doit être identifiable |
-| MEDIUM | Layout | `src/fin/Crp.tsx`, `src/fin/main.tsx` | Décisions et résultats répartis entre deux vues, cinq modèles | Un comparatif initial avec trois portefeuilles à 100 €, détails à la demande | Comparer les modèles sans changer de page |
-| MEDIUM | Writing | `lib/crp-performance.mjs:3`, règles CRP et API | Montants du journal USD à 10 000, sans base commune en euros à l’écran | Référence de 100 €, normalisation documentée, change et coûts modèles séparés | Éviter de présenter une conversion de devises ou un compte réel qui n’existe pas |
+| HIGH | Layout | `src/fin/style.css:2067`, `src/fin/MarketStrip.tsx:63` | Le texte masqué d’un bouton hors champ débordait du document à 390 px, son contenant de positionnement étant la page | Contenant positionné à l’intérieur de la liste défilante, région nommée et focusable, indication de défilement | Le contenu hors champ doit rester dans son propre défilement |
+| MEDIUM | Layout | `src/fin/Comparison.tsx:125` | Comparatif pleine largeur, suivi d’une courbe unique en dessous | Trois lignes de suivi et panneau sélectionné avec grande valeur et graphique ; empilement mobile | Lire les trois résultats, puis explorer un seul modèle sans ouvrir un dialogue |
+| MEDIUM | Writing | `src/fin/MarketStrip.tsx:48` | Première version : courbe sur 20 clôtures, variation chiffrée sur une seule séance | Courbe et variation sur les mêmes 20 séances, à partir de 21 clôtures, période visible | La variation et la courbe doivent représenter le même intervalle |
+| MEDIUM | Accessibility | `scripts/check-pwa.mjs:16`, `scripts/check-install.mjs:53` | Le nouveau titre CRP était aussi celui du chargement : l’attente du titre pouvait valider un écran non chargé | Les vérifications attendent la liste des modèles chargée avant de continuer | La reprise réseau doit être confirmée par des données, pas seulement par un titre |
 
 ## Verification
 
-Contrôles locaux exécutés :
+- Typage et build réussis ; 37 tests financiers/de collecte/de routage réussis. Le moteur et les règles de normalisation à 100 € ne changent pas.
+- `test:fin` : 36 combinaisons de routes/largeurs, filtre par raccourci de sous-jacent et retour à Tous, détails, simulateur, imports, analyses enregistrées, annulation et navigation.
+- `test:ui` : valeurs positives/négatives de fixtures, sélection des modèles, périodes, comparaison des trois courbes, cinq issues de décision, volet, focus, clavier, survol, toucher, historique, texte à 200 % et RTL.
+- `test:theme` : onze paires. Texte 18,25:1 ; secondaire 8,44:1 sur page et 7,58:1 sur panneau ; badge de perte 5,57:1 ; bouton primaire 6,40:1 ; limite de contrôle 3,29:1.
+- `test:install` : six groupes de cas ; `test:pwa` : installabilité Chromium, chargement, erreur, absence de décisions et reprise hors ligne. Manifest et barre du système noirs.
+- Smoke API/MCP : endpoints en lecture seule, comparaison à 100 €, catalogue et rejet des paramètres invalides.
 
-- `npm run check`, `npm test` : typage et 37 tests, dont neuf nouveaux contrôles de normalisation, valorisation, coûts, causalité, sources, stops, liquidation et relève quotidienne sans double comptage. La valorisation à l’horizon reproduit exactement le règlement du moteur existant.
-- `npm run test:fin` : 36 combinaisons de routes/largeurs, détail Warrants, simulateur, import, sauvegarde/annulation, persistance, navigation et récupération d’erreur.
-- `npm run test:ui` : comparaison à 100 €, gains positifs et négatifs de fixtures, espèces, BTC, ETH, échec, retard, détail, focus, clavier, souris, toucher, historique, texte à 200 % et RTL à trois largeurs. Les fixtures ne sont jamais écrites dans D1.
-- `npm run test:theme` : mode sombre et dix paires de contraste. Texte principal 16,42:1, secondaire 7,59:1 sur page et 7,21:1 sur panneau, perte 9,50:1, bouton principal 5,45:1, limite de contrôle 3,12:1. Trois tracés au-dessus de 8,9:1.
-- `npm run test:install` : six groupes de cas ; `npm run test:pwa` : installabilité Chromium, chargement, erreur, données vides et reprise réseau. Les données financières ne sont pas mises en cache par le service worker.
-- `npm run build` et smoke local : application unique, API publique, nouveaux outils MCP, validation des paramètres et refus des écritures.
+Captures et sorties dans `output/playwright/`. Les captures `fixture` utilisent des scénarios de test sans écriture D1. Les aperçus `stocks-preview` emploient les données publiques de production dans le rendu local ; ils ne sont pas des preuves de déploiement. Les captures `production` sont séparées.
 
-Captures et sorties : `output/playwright/`. Les valeurs de gain utilisées dans les captures nommées `fixture` sont des données de test. Les captures de production sont séparées.
+Écriture : une passe sur les libellés ajoutés, puis relecture française avec les consignes avoid-ai-writing. Aucun score anglais ne sert de validation du français. Les montants, dates, sources et réponses de modèles restent des données.
 
-Écriture : une passe de réduction et de clarification sur les nouveaux textes, puis relecture française. Aucun score de détecteur anglais n’est présenté comme une validation du français. Les cours, formules, références et réponses enregistrées ne sont pas des textes promotionnels.
-
-Not verified : installation sur appareil physique, VoiceOver/TalkBack et tous les moteurs de navigateur. Les 100 € sont une unité de comparaison, hors variation EUR/USD et minimums d’ordre. Ces contrôles ne prouvent aucune performance future ni possibilité d’exécution réelle.
+Not verified : installation sur appareil physique, Safari/VoiceOver et TalkBack. Les courbes relient les points enregistrés ; elles ne reproduisent pas un historique intrahoraire. Les données des sous-jacents sont des clôtures et les cotations de warrants des relevés datés.
 
 ## Verdict
 
-Approve dans le périmètre Chromium testé. Le journal, les dépenses historiques et le plafond fournisseur sont conservés. Aucun nouvel appel de modèle n’a été déclenché par les tests. Aucun avertissement de design n’a été masqué.
+Approve dans le périmètre Chromium inspecté. Aucun avertissement masqué. Aucune requête de modèle déclenchée par les tests.

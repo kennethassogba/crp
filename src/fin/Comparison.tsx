@@ -1,6 +1,7 @@
 import React, { useId, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { useChartWidth } from "./Charts";
+import { Sparkline } from "./Sparkline";
 import { euro, signedEuro, number } from "./format";
 import type { Run } from "./Crp";
 
@@ -92,118 +93,196 @@ export function ComparisonView({
   runs: Run[];
   onSelect: (r: Run) => void;
 }) {
-  const onlyCashClosed =
-    data.models.some((m) => m.settledDecisions > 0) &&
-    data.models.every((m) => m.settledPnl === 0 && m.trades === 0);
-  const open = data.models.some(
-    (m) => m.valuationAt !== null && m.pendingPnl !== null,
-  );
+  const [selectedId, setSelectedId] = useState(data.models[0]?.id ?? "luna");
+  const [period, setPeriod] = useState(0);
+  const [compare, setCompare] = useState(false);
+  const selected =
+    data.models.find((m) => m.id === selectedId) ?? data.models[0];
+  if (!selected)
+    return (
+      <p className="chart-empty">
+        Aucun modèle disponible. Actualiser les données.
+      </p>
+    );
+  const run = runs.find((r) => r.id === selected.latestRunId);
+  const plotted = (compare ? data.models : [selected]).map((m) => {
+    const all = m.curve;
+    if (!period || !data.asOf || all.length < 2) return m;
+    const cutoff = data.asOf - period * 86400000;
+    const before = all.filter((p) => p.t <= cutoff).at(-1);
+    const first = before ? all.indexOf(before) : 0;
+    return { ...m, curve: all.slice(first) };
+  });
+  const startLabel = data.startedAt
+    ? new Intl.DateTimeFormat("fr-FR", {
+        day: "numeric",
+        month: "long",
+        timeZone: "Europe/Paris",
+      }).format(data.startedAt)
+    : "En attente";
   return (
-    <>
-      <div className="experiment-context">
-        <span>
-          <strong>{euro(data.capital, 0)}</strong> au départ, par modèle
-        </span>
-        <span>
-          {data.startedAt
-            ? `Depuis le ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" }).format(data.startedAt)}`
-            : "Expérience en attente"}
-        </span>
-        <span className="status-chip">Simulation</span>
-      </div>
-      <div
-        className="comparison-table"
-        role="table"
-        aria-label="Comparaison des portefeuilles, base 100 euros"
-      >
-        <div className="comparison-labels" role="row">
-          <span role="columnheader">Modèle</span>
-          <span role="columnheader">Capital estimé</span>
-          <span role="columnheader">Gain net</span>
-          <span role="columnheader">Dernière décision</span>
-        </div>
-        {data.models.map((m) => {
-          const run = runs.find((r) => r.id === m.latestRunId);
-          return (
-            <div className="comparison-row" role="row" key={m.id}>
-              <div role="cell" className="comparison-model">
-                <span
-                  className={`model-dot model-${m.id}`}
-                  aria-hidden="true"
-                />
-                <div>
+    <div className="stock-comparison">
+      <div className="stock-layout">
+        <section
+          className="stock-watchlist"
+          aria-label="Portefeuilles des modèles"
+        >
+          <div className="watchlist-heading">
+            <h2>Modèles</h2>
+            <span>Base {euro(data.capital, 0)}</span>
+          </div>
+          <div
+            className="model-watchlist"
+            role="group"
+            aria-label="Comparer les modèles"
+          >
+            {data.models.map((m) => (
+              <button
+                key={m.id}
+                className="comparison-row stock-row"
+                aria-pressed={selected.id === m.id}
+                onClick={() => setSelectedId(m.id)}
+              >
+                <span className="stock-name">
                   <strong>{m.name}</strong>
-                  <small>
-                    {m.decisions} décision{m.decisions > 1 ? "s" : ""} ·{" "}
-                    {m.trades} position{m.trades > 1 ? "s" : ""} clôturée
-                    {m.trades > 1 ? "s" : ""}
-                  </small>
-                </div>
-              </div>
-              <div role="cell" className="comparison-capital">
-                <span className="mobile-label">Capital estimé</span>
-                <strong>
-                  {m.estimatedCapital === null
-                    ? "—"
-                    : euro(m.estimatedCapital, 2)}
-                </strong>
-                <small>{euro(m.settledCapital, 2)} clôturé</small>
-              </div>
-              <div role="cell" className="comparison-gain">
-                <span className="mobile-label">Gain net</span>
-                <strong className={gainClass(m.totalPnl)}>
-                  {m.totalPnl === null ? "—" : signedEuro(m.totalPnl, 2)}
-                </strong>
-                <small className={gainClass(m.pendingPnl)}>
-                  {m.pendingPnl === null
-                    ? "Cours manquant"
-                    : `${signedEuro(m.pendingPnl, 2)} en cours`}
-                </small>
-              </div>
-              <div role="cell" className="comparison-position">
-                <button
-                  className="position-button"
-                  aria-label={`Voir la décision de ${m.name} : ${position(m)}`}
-                  disabled={!run}
-                  onClick={() => run && onSelect(run)}
-                >
-                  <span>{position(m)}</span>
-                  <ArrowUpRight size={13} />
-                </button>
-                <small>
-                  {valuation(m)}
-                  {m.latestAt
-                    ? ` · ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" }).format(m.latestAt)}`
-                    : ""}
-                </small>
-              </div>
+                  <small>{position(m)}</small>
+                </span>
+                <Sparkline
+                  values={m.curve.map((p) => p.equity)}
+                  times={m.curve.map((p) => p.t)}
+                  className={gainClass(m.totalPnl)}
+                />
+                <span className="stock-values">
+                  <strong>
+                    {m.estimatedCapital === null
+                      ? "—"
+                      : euro(m.estimatedCapital, 2)}
+                  </strong>
+                  <span className={`change-badge ${gainClass(m.totalPnl)}`}>
+                    {m.totalPnl === null
+                      ? "Indisponible"
+                      : signedEuro(m.totalPnl, 2)}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="watchlist-caption">
+            {data.startedAt ? `Gain net depuis le ${startLabel}. Frais de marché inclus.` : "Chaque modèle commence avec 100 €. Première décision en attente."}
+          </p>
+          <a className="watchlist-method" href="/crp/methode/">
+            Comprendre la simulation <ArrowUpRight size={13} />
+          </a>
+        </section>
+        <section
+          className="stock-detail"
+          aria-label={`Portefeuille ${selected.name}`}
+        >
+          <div className="stock-detail-heading">
+            <div>
+              <h2>{selected.name}</h2>
+              <p>Portefeuille simulé · départ à {euro(data.capital, 0)}</p>
             </div>
-          );
-        })}
+            <button
+              className="button secondary position-button"
+              disabled={!run}
+              onClick={() => run && onSelect(run)}
+            >
+              Voir la décision
+              <ArrowUpRight size={14} />
+            </button>
+          </div>
+          <div className="stock-quote">
+            <strong>
+              {selected.estimatedCapital === null
+                ? "—"
+                : euro(selected.estimatedCapital, 2)}
+            </strong>
+            <p className={gainClass(selected.totalPnl)}>
+              {selected.totalPnl === null
+                ? "Valorisation indisponible"
+                : `${signedEuro(selected.totalPnl, 2)} (${selected.returnPct! > 0 ? "+" : ""}${number(selected.returnPct ?? 0, 2)} %)`}
+              {selected.totalPnl !== null && <span> depuis le début</span>}
+            </p>
+            <small>
+              {data.asOf
+                ? `Estimation au ${time(data.asOf)}`
+                : "Estimation en attente"}
+            </small>
+          </div>
+          <div className="stock-chart-toolbar">
+            <div
+              className="segmented stock-periods"
+              aria-label="Période du capital"
+            >
+              {[
+                [1, "1 J"],
+                [7, "1 S"],
+                [30, "1 M"],
+                [0, "Tout"],
+              ].map(([n, label]) => (
+                <button
+                  key={n}
+                  aria-pressed={period === n}
+                  onClick={() => setPeriod(Number(n))}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              className="compare-toggle"
+              aria-pressed={compare}
+              onClick={() => setCompare(!compare)}
+            >
+              Comparer les 3
+            </button>
+          </div>
+          <ComparisonChart
+            key={`${selected.id}:${compare}:${period}`}
+            models={plotted}
+          />
+          <dl className="stock-stats">
+            <div>
+              <dt>Capital clôturé</dt>
+              <dd>{euro(selected.settledCapital, 2)}</dd>
+            </div>
+            <div>
+              <dt>Gain en cours</dt>
+              <dd className={gainClass(selected.pendingPnl)}>
+                {selected.pendingPnl === null
+                  ? "Indisponible"
+                  : signedEuro(selected.pendingPnl, 2)}
+              </dd>
+            </div>
+            <div>
+              <dt>Dernière décision</dt>
+              <dd>{position(selected)}</dd>
+            </div>
+            <div>
+              <dt>Statut</dt>
+              <dd>{valuation(selected)}</dd>
+            </div>
+          </dl>
+          <details className="stock-explanation">
+            <summary>Comment lire ces résultats ?</summary>
+            <p>
+              Chaque modèle démarre à 100 € de référence. Le capital estimé
+              ajoute les résultats en cours au capital clôturé. Une décision en
+              espèces ne rapporte rien. Le change euro/dollar et les coûts des
+              modèles sont exclus.
+            </p>
+            <p>
+              Les courbes relient les points enregistrés, sans inventer de cours
+              intermédiaires. {selected.decisions} décisions sont enregistrées,
+              dont {selected.trades} positions clôturées. Le résultat en cours
+              peut encore changer.
+            </p>
+            <a href="/crp/methode/">Voir les règles et les frais</a>
+          </details>
+        </section>
       </div>
-      <div className="comparison-footnote">
-        <span>Frais de marché inclus · change exclu</span>
-        <span>
-          {data.asOf
-            ? `Valorisé au ${time(data.asOf)}`
-            : "Valorisation en attente"}
-        </span>
-      </div>
-      {onlyCashClosed && (
-        <p className="comparison-explanation">
-          Le gain clôturé est à zéro : les premières décisions sont restées en
-          espèces.
-          {open
-            ? " Les gains en cours sont inclus dans le capital estimé."
-            : ""}
-        </p>
-      )}
-      <div className="section-heading">
-        <h2>Évolution des 100 €</h2>
-        <span>Clôtures et estimation en cours</span>
-      </div>
-      <ComparisonChart models={data.models} />
-    </>
+    </div>
   );
 }
 
@@ -218,9 +297,9 @@ function ComparisonChart({ models }: { models: ComparisonModel[] }) {
   ].sort((a, b) => a - b);
   if (dates.length < 2)
     return (
-      <p className="empty-state">
-        La courbe apparaîtra après la première clôture. Chaque modèle démarre à
-        100 €.
+      <p className="chart-empty">
+        Pas encore assez de points pour cette période. Choisir « Tout » ou
+        attendre le prochain relevé.
       </p>
     );
   const values = models.flatMap((m) => m.curve.map((p) => p.equity));
@@ -232,7 +311,7 @@ function ComparisonChart({ models }: { models: ComparisonModel[] }) {
     span = width - 78;
   const x = (t: number) =>
     12 + ((t - dates[0]) / (dates.at(-1)! - dates[0])) * span;
-  const y = (v: number) => 186 - ((v - low) / (high - low)) * 154;
+  const y = (v: number) => 242 - ((v - low) / (high - low)) * 206;
   const index = Math.min(active ?? dates.length - 1, dates.length - 1);
   const current = dates[index];
   const pick = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -259,10 +338,10 @@ function ComparisonChart({ models }: { models: ComparisonModel[] }) {
   return (
     <div
       ref={ref}
-      className="interactive-chart comparison-chart"
+      className={`interactive-chart comparison-chart ${models.length === 1 ? `single-model ${gainClass(models[0].totalPnl)}` : ""}`}
       role="group"
       tabIndex={0}
-      aria-label="Capital des trois modèles. Flèches pour parcourir les dates."
+      aria-label="Évolution du capital. Flèches pour parcourir les dates."
       aria-describedby={id}
       onKeyDown={(e) => {
         if (!["Home", "End", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
@@ -299,9 +378,9 @@ function ComparisonChart({ models }: { models: ComparisonModel[] }) {
         })}
       </div>
       <svg
-        viewBox={`0 0 ${width} 223`}
+        viewBox={`0 0 ${width} 280`}
         role="img"
-        aria-label="Évolution du capital, chaque modèle part de 100 euros"
+        aria-label="Évolution du capital simulé, départ à 100 euros"
         onPointerMove={pick}
         onPointerDown={pick}
         onPointerLeave={(e) => {
@@ -313,11 +392,11 @@ function ComparisonChart({ models }: { models: ComparisonModel[] }) {
             <line
               x1={12}
               x2={width - 66}
-              y1={186 - q * 154}
-              y2={186 - q * 154}
+              y1={242 - q * 206}
+              y2={242 - q * 206}
               className="gridline"
             />
-            <text x={width - 58} y={190 - q * 154}>
+            <text x={width - 58} y={246 - q * 206}>
               {number(low + q * (high - low), 2)}
             </text>
           </g>
@@ -329,7 +408,15 @@ function ComparisonChart({ models }: { models: ComparisonModel[] }) {
               .map((p, j) => `${j ? "L" : "M"}${x(p.t)},${y(p.equity)}`)
               .join(" ")}
             className={`comparison-path model-${m.id}`}
-            strokeDasharray={i === 1 ? "6 4" : i === 2 ? "2 4" : undefined}
+            strokeDasharray={
+              models.length > 1
+                ? i === 1
+                  ? "6 4"
+                  : i === 2
+                    ? "2 4"
+                    : undefined
+                : undefined
+            }
           >
             <title>{m.name}</title>
           </path>
@@ -338,14 +425,14 @@ function ComparisonChart({ models }: { models: ComparisonModel[] }) {
           x1={x(current)}
           x2={x(current)}
           y1={28}
-          y2={186}
+          y2={242}
           className="crosshair"
         />
         {[0, 1].map((q) => (
           <text
             key={q}
             x={q ? width - 66 : 12}
-            y={216}
+            y={272}
             textAnchor={q ? "end" : "start"}
           >
             {time(q ? dates.at(-1)! : dates[0])}

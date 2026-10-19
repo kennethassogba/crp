@@ -302,8 +302,8 @@ export default {
         "/warrants/suivi/",
       ].includes(path);
       const titles = {
-        "/crp/": "Comparaison CRP · Fin",
-        "/crp/modeles/": "Modèles CRP · Fin",
+        "/crp/": "CRP · Fin",
+        "/crp/modeles/": "CRP · Fin",
         "/crp/historique/": "Historique CRP · Fin",
         "/crp/methode/": "Règles CRP · Fin",
         "/donnees/": "Données · Fin",

@@ -67,7 +67,7 @@ try {
     await p.route("**/api/state", (r) => r.fulfill({ json: state }));
     await p.goto(base + "/crp/");
     await p
-      .getByRole("table", { name: /Comparaison des portefeuilles/ })
+      .getByRole("group", { name: "Comparer les modèles", exact: true })
       .waitFor();
     assert.equal(await p.locator(".comparison-row").count(), 3);
     assert.match(
@@ -86,7 +86,19 @@ try {
       "dark",
     );
     for (let i = 0; i < 3; i++) {
-      await p.locator(".position-button").nth(i).click();
+      await p.locator(".comparison-row").nth(i).click();
+      assert.equal(
+        await p.locator(".comparison-row").nth(i).getAttribute("aria-pressed"),
+        "true",
+      );
+      await p
+        .getByRole("region", {
+          name: `Portefeuille ${state.models[i].name}`,
+          exact: true,
+        })
+        .getByRole("heading", { name: state.models[i].name, exact: true })
+        .waitFor();
+      await p.locator(".position-button").click();
       const dialog = p.getByRole("dialog", { name: "Décision enregistrée" });
       await dialog
         .getByRole("heading", { name: state.models[i].name, exact: true })
@@ -113,12 +125,29 @@ try {
       assert.equal(
         await p
           .locator(".position-button")
-          .nth(i)
           .evaluate((el) => el === document.activeElement),
         true,
       );
     }
-    const graph = p.getByRole("group", { name: /Capital des trois modèles/ });
+    await p
+      .getByRole("button", { name: "Comparer les 3", exact: true })
+      .click();
+    assert.equal(
+      await p
+        .getByRole("button", { name: "Comparer les 3", exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    await p.getByRole("button", { name: "1 J", exact: true }).click();
+    assert.equal(
+      await p
+        .getByRole("button", { name: "1 J", exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    await p.getByRole("button", { name: "Tout", exact: true }).click();
+    const graph = p.getByRole("group", { name: /Évolution du capital/ });
+    await graph.scrollIntoViewIfNeeded();
     await graph.focus();
     const before = await graph.locator("[role=status]").innerText();
     await p.keyboard.press("Home");
@@ -138,7 +167,10 @@ try {
       );
     }
     await scan(p);
-    await p.evaluate(() => { (document.activeElement)?.blur(); window.scrollTo(0, 0); });
+    await p.evaluate(() => {
+      document.activeElement?.blur();
+      window.scrollTo(0, 0);
+    });
     await p.screenshot({
       path: `output/playwright/crp-comparison-fixture-${width}.png`,
       fullPage: true,
@@ -163,7 +195,8 @@ try {
         to: state.asOf,
       });
       await p.reload();
-      await p.locator(".position-button").nth(1).click();
+      await p.locator(".comparison-row").nth(1).click();
+      await p.locator(".position-button").click();
       const dialog = p.getByRole("dialog", { name: "Décision enregistrée" });
       await dialog
         .getByRole("heading", { name: "Pas de position", exact: true })
@@ -220,7 +253,7 @@ try {
     ),
   );
   console.log(
-    "CRP: EUR-100 comparison, five outcomes, dialogs, keyboard/hover and history passed at three widths.",
+    "CRP: Stocks-style selection, EUR-100 values, periods, comparison, five outcomes and keyboard/touch passed at three widths.",
   );
 } finally {
   await browser.close();
