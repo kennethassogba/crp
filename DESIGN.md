@@ -2,7 +2,7 @@
 
 Application de recherche financière en français. Une navigation commune pour Warrants et CRP ; le tableau conduit au détail du contrat ou de la décision.
 
-- Public Sans, fond blanc et accent violet discret. Ne pas réintroduire Geist.
+- Public Sans, mode sombre uniquement (#101113), surfaces #161719 et accent violet discret. La demande explicite de mode sombre remplace le fond blanc antérieur. Ne pas réintroduire Geist.
 - Le nom Fin reste du texte. Pas de symbole décoratif, monogramme ni faux sélecteur d’espace.
 - Une seule entrée React, `src/fin/main.tsx`, et une feuille de styles commune.
 - Les résultats et les actions passent avant les explications. Mettre les calculs et les limites détaillés dans Méthode ou dans un volet explicite.

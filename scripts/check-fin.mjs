@@ -12,8 +12,8 @@ const routes = [
   ["/warrants/", "Warrants"],
   ["/warrants/methode/", "Analyser un warrant"],
   ["/warrants/suivi/", "Analyses enregistrées"],
-  ["/crp/", /^Décisions/],
-  ["/crp/modeles/", /^Modèles/],
+  ["/crp/", /^Comparaison/],
+  ["/crp/modeles/", /^Comparaison/],
   ["/crp/historique/", /^Historique/],
   ["/crp/methode/", "Règles CRP"],
   ["/donnees/", "Données"],
@@ -136,7 +136,7 @@ try {
       const nav = page.getByRole("dialog", { name: "Navigation", exact: true });
       await nav.getByRole("link", { name: "CRP", exact: true }).click();
       await page
-        .getByRole("heading", { name: /^Décisions/, level: 1 })
+        .getByRole("heading", { name: /^Comparaison/, level: 1 })
         .waitFor();
       assert.equal(await nav.isVisible(), false);
     }
@@ -167,7 +167,7 @@ try {
   await d.getByRole("button", { name: "Enregistré", exact: true }).waitFor();
   await page.keyboard.press("Escape");
   await page.getByRole("link", { name: "CRP", exact: true }).first().click();
-  await page.getByRole("heading", { name: /^Décisions/, level: 1 }).waitFor();
+  await page.getByRole("heading", { name: /^Comparaison/, level: 1 }).waitFor();
   await page
     .getByRole("link", { name: /Warrants/ })
     .first()

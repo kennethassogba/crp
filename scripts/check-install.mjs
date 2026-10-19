@@ -50,7 +50,7 @@ async function open({
   // Freeze before navigation so network latency cannot count as test engagement.
   if (freezeClock) await page.clock.pauseAt(new Date(initialTime + 1000));
   await page.goto(base);
-  await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
+  await page.getByRole("heading", { name: /^Comparaison/ }).waitFor();
   return { page, context };
 }
 async function nativeOffer(page, outcome = "dismissed") {
@@ -77,7 +77,7 @@ const button = (page) =>
   await nativeOffer(page);
   assert.equal(await button(page).count(), 0);
   await page.reload();
-  await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
+  await page.getByRole("heading", { name: /^Comparaison/ }).waitFor();
   assert.equal(
     await page.evaluate(
       (key) => JSON.parse(localStorage.getItem(key)).visits,
@@ -111,7 +111,7 @@ const button = (page) =>
   );
   assert.ok(snooze > 13.9 * 86_400_000 && snooze <= 14 * 86_400_000);
   await page.reload();
-  await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
+  await page.getByRole("heading", { name: /^Comparaison/ }).waitFor();
   await nativeOffer(page);
   assert.equal(await button(page).count(), 0);
   checks.push(

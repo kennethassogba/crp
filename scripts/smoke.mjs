@@ -7,6 +7,7 @@ for (const path of [
   "/social-card.png",
   "/icon-192.png",
   "/api/state",
+  "/api/crp/comparison",
   "/api/backtest",
   "/api/decisions",
   "/openapi.json",
@@ -22,7 +23,7 @@ for (const path of [
 }
 const state = await (await fetch(base + "/api/state")).json();
 assert.ok(state.budget.cap <= 15);
-assert.equal(state.models.length, 5);
+assert.equal(state.models.length, 3);
 assert.ok(state.asOf > 0);
 const markdown = await fetch(base + "/", {
   headers: { Accept: "text/markdown" },
@@ -35,7 +36,40 @@ const mcp = await (
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
   })
 ).json();
-assert.equal(mcp.result.tools.length, 2);
+assert.equal(mcp.result.tools.length, 4);
+for (const name of ["get_crp_comparison", "get_warrant_catalog"]) {
+  const r = await (
+    await fetch(base + "/mcp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: name,
+        method: "tools/call",
+        params: { name, arguments: {} },
+      }),
+    })
+  ).json();
+  assert.ok(r.result?.structuredContent, name);
+  if (name === "get_crp_comparison") {
+    assert.equal(r.result.structuredContent.capital, 100);
+    assert.equal(r.result.structuredContent.models.length, 3);
+    assert.equal(r.result.structuredContent.fxIncluded, false);
+  } else assert.ok(r.result.structuredContent.products.length > 0);
+}
+const invalidTool = await (
+  await fetch(base + "/mcp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
+      params: { name: "get_crp_comparison", arguments: { budget: 1000 } },
+    }),
+  })
+).json();
+assert.equal(invalidTool.error.code, -32602);
 const forbidden = await fetch(base + "/api/state", { method: "POST" });
 assert.equal(forbidden.status, 405);
 console.log(

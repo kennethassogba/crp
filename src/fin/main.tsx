@@ -30,8 +30,8 @@ const routes: Record<string, string> = {
   "/warrants/": "Warrants",
   "/warrants/methode/": "Méthode · warrants",
   "/warrants/suivi/": "Analyses enregistrées",
-  "/crp/": "Décisions · CRP",
-  "/crp/modeles/": "Modèles · CRP",
+  "/crp/": "Comparaison · CRP",
+  "/crp/modeles/": "Comparaison · CRP",
   "/crp/historique/": "Historique · CRP",
   "/crp/methode/": "Méthode · CRP",
   "/donnees/": "Données",
@@ -196,18 +196,17 @@ function App() {
           <ListFilter size={16} />
           Warrants{dataset && <small>{dataset.products.length}</small>}
         </a>
-        <a href="/crp/" aria-current={path === "/crp/" ? "page" : undefined}>
+        <a
+          href="/crp/"
+          aria-current={
+            ["/crp/", "/crp/modeles/"].includes(path) ? "page" : undefined
+          }
+        >
           <Activity size={16} />
           CRP
         </a>
         {isCrp && (
           <div className="subnav">
-            <a
-              href="/crp/modeles/"
-              aria-current={path === "/crp/modeles/" ? "page" : undefined}
-            >
-              Modèles
-            </a>
             <a
               href="/crp/historique/"
               aria-current={path === "/crp/historique/" ? "page" : undefined}
@@ -468,11 +467,18 @@ function Overview({
               CRP
               <ArrowRight size={17} />
             </h2>
-            <p>Cinq modèles · BTC, ETH ou espèces · simulation</p>
+            <p>Trois modèles · 100 € chacun · simulation</p>
           </div>
           <div>
             <strong>
-              {runs.filter((r) => r.status === "completed").length}/5
+              {
+                runs.filter(
+                  (r) =>
+                    r.status === "completed" &&
+                    state?.models.some((m) => m.id === r.model),
+                ).length
+              }
+              /{state?.models.length ?? 3}
               <small> décisions du {lastDay ? date(lastDay) : "jour"}</small>
             </strong>
             <span>Marché {timestamp(state?.asOf)}</span>
@@ -611,6 +617,36 @@ function DataPage({
           </ul>
         </section>
       ) : null}
+      <section>
+        <h2>Accès pour les agents</h2>
+        <p>
+          Le même comparatif CRP et le catalogue Warrants sont accessibles par
+          API et MCP, en lecture seule.
+        </p>
+        <div className="source-list">
+          <a href="/api/crp/comparison">
+            Comparaison CRP · JSON
+            <ArrowUpRight size={14} />
+          </a>
+          <a href="/openapi.json">
+            Documentation API
+            <ArrowUpRight size={14} />
+          </a>
+          <a href="/index.md">
+            Guide pour les agents
+            <ArrowUpRight size={14} />
+          </a>
+        </div>
+        <label className="agent-endpoint">
+          Adresse MCP
+          <input
+            aria-label="Adresse MCP"
+            readOnly
+            value="https://fin.keff.uk/mcp"
+            onFocus={(e) => e.currentTarget.select()}
+          />
+        </label>
+      </section>
       <div className="source-list">
         <a href="/research/snapshot.json" download>
           Télécharger les données

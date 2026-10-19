@@ -1,51 +1,47 @@
-# Revue de l’interface Fin — 20 octobre 2026
+# Revue Fin — CRP à 100 € et mode sombre, 20 octobre 2026
 
 ## Scope and coverage
 
-Périmètre : vue d’ensemble, liste et détail des warrants, import, simulateur de remboursement, modèles, contrat, analyses enregistrées, décisions/modèles/historique/règles CRP, données et installation. Chargement, erreur, liste vide, suppression annulable, navigation mobile et reprise hors ligne inclus. React 19, TypeScript, CSS partagé, Public Sans et Lucide. `AGENTS.md`, `DESIGN.md` et le brief du 20 octobre définissent les conventions. Aucun changement de stack.
-
-Les six compétences better-* ont été chargées. La revue porte sur l’interface rendue et ses parcours ; ce n’est pas une certification de rentabilité ou d’accessibilité sur tous les appareils.
+Périmètre : comparaison CRP, décisions détaillées, historique et règles, thème sombre partagé avec Warrants, navigation et PWA. Les parcours Warrants existants ont été rejoués sur les neuf routes. React 19, TypeScript, CSS partagé, Public Sans et Lucide conservés. Conventions : `AGENTS.md`, `DESIGN.md` et demande explicite de mode sombre du 20 octobre. Les six compétences better-* ont été chargées dans cette conversation ; elles ont guidé la revue. Textes français relus avec avoid-ai-writing, sans réécrire les réponses archivées des modèles.
 
 | Domain | Evidence inspected | Result |
 | --- | --- | --- |
-| Accessibility | `src/fin/Charts.tsx`, dialogues natifs, régions de tableaux nommées et focusables ; parcours clavier et axe dans `scripts/check-fin.mjs`, `check-ui.mjs`, `check-install.mjs`, `check-pwa.mjs` | Aucun HIGH restant dans Chromium testé |
-| Layout | Neuf routes à 1440, 768, 390 et 320 px ; captures du tableau, du détail et de CRP ; texte agrandi à 200 %, miroir RTL | Aucun débordement de page dans ces cas |
-| Writing | Textes de navigation et d’actions, dates des relevés, modèles, erreurs avec action, annulation de suppression ; réponses des modèles préservées | Textes français relus et abrégés |
-| Typography | Public Sans chargé ; valeurs tabulaires, formulaires et axes ; captures et famille calculée du navigateur | Geist retirée ; valeurs du graphique lisibles dans le composant redimensionné |
-| Color | Six paires calculées depuis les styles rendus dans `output/playwright/contrast.json`, plus les scans axe | Paires contrôlées conformes aux seuils AA applicables |
-| UI polish | Survol/toucher/clavier des graphiques, changement de scénario, états de filtre, dialogue/Escape, suivi/Annuler et navigation SPA | Parcours testés fonctionnels |
+| Accessibility | `src/fin/Comparison.tsx:107`, dialogues natifs, scans axe, restauration du focus, clavier, toucher dans `scripts/check-ui.mjs` | Aucun problème critical/serious dans les états Chromium contrôlés |
+| Layout | Neuf routes × quatre largeurs, trois largeurs CRP, texte CRP à 200 % et miroir RTL | Aucun débordement dans les cas testés ; grille adaptée à la taille du texte |
+| Writing | Base de 100 €, montants clôturés/en cours, dates, prix manquants, erreur modèle, méthode et budget | Distinctions explicites ; raisons archivées préservées |
+| Typography | Public Sans partagé, valeurs tabulaires, échelles, champs mobiles et captures | Police conservée ; pas de Geist ni de titre en serif |
+| Color | Mode sombre forcé, dix paires dans `output/playwright/contrast-dark.json`, scans axe | Texte et contrôles contrôlés conformes aux seuils AA ; aucun vert |
+| UI polish | Graphique comparatif, trois tracés nommés avec styles distincts, survol/toucher/clavier, fermeture du volet et PWA | Interactions testées ; aucune animation nécessaire à la compréhension |
 
 ## Findings
 
-Constats résolus pendant la refonte, classés par impact. Les changements de police et de marque suivent la demande explicite ; ils ne sont pas présentés comme des violations objectives de l’ancienne charte.
+Constats résolus pendant cette révision. Le choix du mode sombre suit le brief ; le thème clair antérieur n’est pas traité comme une faute d’accessibilité.
 
 | Severity | Domain | Location | Before | After | Why |
 | --- | --- | --- | --- | --- | --- |
-| HIGH | Accessibility | `src/fin/Crp.tsx`, `src/fin/Detail.tsx`, `.table-scroll` | Le tableau mobile défilait sans région clavier focusable ; axe a signalé `scrollable-region-focusable` à 390 px | Région nommée, tabindex=0 et indication de défilement | Le contenu débordant doit rester atteignable au clavier |
-| MEDIUM | Layout | `vite.config.ts`, `src/fin/main.tsx` | Deux entrées HTML et deux systèmes de navigation/styles | Une entrée React, une navigation et un style communs ; liens internes sans rechargement | Changer d’outil doit garder le contexte de recherche |
-| MEDIUM | Layout | `src/fin/Screener.tsx`, `src/fin/Detail.tsx` | Catalogue et fiche détaillée visibles simultanément, nombreuses explications sur l’écran initial | Tableau de dix lignes, tri/filtres, fiche à la demande, explications repliées | La liste sert à choisir ; le détail sert à comprendre le contrat |
-| MEDIUM | Accessibility | `src/fin/Charts.tsx` | Barres statiques et titres SVG, sans lecture des tranches au clavier | Lecture chiffrée stable au survol, au toucher et avec les flèches ; largeur du graphe mesurée | Une barre doit indiquer la tranche de gain et sa fréquence |
-| MEDIUM | Writing | `src/fin/main.tsx`, `src/fin/Method.tsx` | Les modalités de mise à jour étaient réparties entre avertissement et documentation | Page Données, distinction heure de relevé / heure de cotation, erreurs sources visibles | Permettre de savoir quels prix ont changé et quand |
-| MEDIUM | Typography | `src/fin/style.css`, `DESIGN.md` | Geist et styles CRP séparés | Public Sans partagé ; ancienne dépendance et exception retirées | Appliquer le choix de police demandé sur toute l’application |
-| LOW | UI polish | `src/fin/main.tsx`, icônes d’installation | Marque décorative et faux sélecteur d’espace | Nom Fin en texte, sans symbole ni sélecteur factice | Retirer les éléments sans action utile |
+| HIGH | Layout | `src/fin/style.css:1952`, `src/fin/Comparison.tsx:107` | La première grille mobile débordait à 320 px avec texte à 200 % | Requête de conteneur fondée sur la taille de texte et onglets repliables sur plusieurs lignes | Les valeurs et actions doivent rester atteignables |
+| HIGH | Accessibility | `src/fin/Comparison.tsx:299`, `src/fin/Charts.tsx` | La sortie du pointeur tactile effaçait la valeur choisie après un tap | Réinitialisation seulement au départ de la souris ; lecture tactile persistante | Le toucher doit laisser le temps de lire les données |
+| MEDIUM | Writing | `lib/crp-performance.mjs:16`, `src/fin/Comparison.tsx:107` | Le gain réalisé de zéro masquait la présence de positions non clôturées | Capital estimé, gain net total et part en cours ; cours manquant affiché comme indisponible | Un résultat non encore clôturé doit être identifiable |
+| MEDIUM | Layout | `src/fin/Crp.tsx`, `src/fin/main.tsx` | Décisions et résultats répartis entre deux vues, cinq modèles | Un comparatif initial avec trois portefeuilles à 100 €, détails à la demande | Comparer les modèles sans changer de page |
+| MEDIUM | Writing | `lib/crp-performance.mjs:3`, règles CRP et API | Montants du journal USD à 10 000, sans base commune en euros à l’écran | Référence de 100 €, normalisation documentée, change et coûts modèles séparés | Éviter de présenter une conversion de devises ou un compte réel qui n’existe pas |
 
 ## Verification
 
-Contrôles exécutés :
+Contrôles locaux exécutés :
 
-- `npm run check`, `npm test` : typage et 28 tests financiers, de collecte et de données.
-- `npm run test:fin` : 36 combinaisons de routes/largeurs ; histogramme clavier, simulateur, modèles, source DIC, fermeture/restauration du focus, budget, import valide/invalide, persistance du suivi, Annuler, navigation et retour navigateur, erreur récupérable, agrandissement de texte et RTL.
-- `npm run test:ui` : cinq issues de décisions CRP en fixtures de navigateur, plans, export, graphiques au pointeur/clavier, changement d’actif et historique à trois largeurs. Aucune décision fictive n’est écrite dans D1.
-- `npm run test:install` : six groupes de contrôles, dont les cinq largeurs, le délai, le refus, iOS simulé et le focus.
-- `npm run test:pwa` : installabilité Chromium, chargement/erreur/vide, fonctionnement de Réessayer après retour du réseau. Les données financières ne sont pas servies comme actuelles hors ligne.
-- `npm run build` et `CRP_URL=http://127.0.0.1:5185 node scripts/smoke.mjs` : build unique et API publique.
+- `npm run check`, `npm test` : typage et 36 tests, dont huit nouveaux contrôles de normalisation, valorisation, coûts, causalité, sources, stops et liquidation. La valorisation à l’horizon reproduit exactement le règlement du moteur existant.
+- `npm run test:fin` : 36 combinaisons de routes/largeurs, détail Warrants, simulateur, import, sauvegarde/annulation, persistance, navigation et récupération d’erreur.
+- `npm run test:ui` : comparaison à 100 €, gains positifs et négatifs de fixtures, espèces, BTC, ETH, échec, retard, détail, focus, clavier, souris, toucher, historique, texte à 200 % et RTL à trois largeurs. Les fixtures ne sont jamais écrites dans D1.
+- `npm run test:theme` : mode sombre et dix paires de contraste. Texte principal 16,42:1, secondaire 7,59:1 sur page et 7,21:1 sur panneau, perte 9,50:1, bouton principal 5,45:1, limite de contrôle 3,12:1. Trois tracés au-dessus de 8,9:1.
+- `npm run test:install` : six groupes de cas ; `npm run test:pwa` : installabilité Chromium, chargement, erreur, données vides et reprise réseau. Les données financières ne sont pas mises en cache par le service worker.
+- `npm run build` et smoke local : application unique, API publique, nouveaux outils MCP, validation des paramètres et refus des écritures.
 
-Mesures rendues sur blanc : texte 15,27:1 ; secondaire 5,84:1 ; perte 6,27:1 ; barres positives 4,25:1 ; barre de perte active 6,27:1 ; bordure d’entrée 3,46:1. Les seuils appliqués sont 4,5:1 pour le texte et 3:1 pour les graphiques et limites de contrôles.
+Captures et sorties : `output/playwright/`. Les valeurs de gain utilisées dans les captures nommées `fixture` sont des données de test. Les captures de production sont séparées.
 
-Écriture : deux passes sur les textes d’interface ; relecture française manuelle. 115 segments JSX modifiés ont été isolés du code, des URL et des réponses de modèles, puis passés à `normalize-quotes.js` avec le texte initial comme référence. Aucune différence de ponctuation n’a été nécessaire. Les règles du détecteur anglais ne sont pas présentées comme une validation automatique du français. Les formules, sources, prix datés et réponses enregistrées restent distincts des textes réécrits.
+Écriture : une passe de réduction et de clarification sur les nouveaux textes, puis relecture française. Aucun score de détecteur anglais n’est présenté comme une validation du français. Les cours, formules, références et réponses enregistrées ne sont pas des textes promotionnels.
 
-Not verified : installation sur appareil physique, VoiceOver/TalkBack, zoom natif de chaque navigateur et traduction dans d’autres langues. Les tests ne prouvent ni l’exécution d’un ordre aux prix relevés ni un avantage prédictif.
+Not verified : installation sur appareil physique, VoiceOver/TalkBack et tous les moteurs de navigateur. Les 100 € sont une unité de comparaison, hors variation EUR/USD et minimums d’ordre. Ces contrôles ne prouvent aucune performance future ni possibilité d’exécution réelle.
 
 ## Verdict
 
-Approve dans le périmètre Chromium, routes et états inspectés ci-dessus. Les limites matérielles et d’assistance listées restent hors de cette validation.
+Approve dans le périmètre Chromium testé. Le journal, les dépenses historiques et le plafond fournisseur sont conservés. Aucun nouvel appel de modèle n’a été déclenché par les tests. Aucun avertissement de design n’a été masqué.

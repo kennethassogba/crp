@@ -1,5 +1,6 @@
 import { snapshotAt, momentum, position, HOUR } from "../lib/strategy.mjs";
 import { MODELS } from "../lib/models.mjs";
+import { compareCrp } from "../lib/crp-performance.mjs";
 import { stateValue, setState, tick } from "./jobs.js";
 import { discovery, GUIDE, LINKS, TOOLS } from "./discovery.js";
 import { fetchJSON } from "../lib/market.mjs";
@@ -63,6 +64,11 @@ async function current(env, request) {
       ({ input, output, maxOutput, effort, endpoint, ...m }) => m,
     ),
     decisions: rows,
+    comparison: {
+      ...compareCrp(MODELS, rows, market),
+      stale: Date.now() - at > 2 * HOUR,
+      collectedAt: market.collectedAt,
+    },
     budget,
     scheduler: await stateValue(env, "scheduler"),
     prices: Object.fromEntries(
@@ -95,6 +101,21 @@ async function mcp(request, env) {
       400,
     );
   }
+  if (
+    !msg ||
+    Array.isArray(msg) ||
+    typeof msg !== "object" ||
+    msg.jsonrpc !== "2.0" ||
+    typeof msg.method !== "string"
+  )
+    return json(
+      {
+        jsonrpc: "2.0",
+        id: null,
+        error: { code: -32600, message: "Invalid JSON-RPC request" },
+      },
+      400,
+    );
   const { id, method, params } = msg;
   if (id === undefined) return new Response(null, { status: 202, headers });
   let result;
@@ -102,18 +123,34 @@ async function mcp(request, env) {
     result = {
       protocolVersion: "2025-11-25",
       capabilities: { tools: {} },
-      serverInfo: { name: "crp", version: "1.0.0" },
+      serverInfo: { name: "fin", version: "1.1.0" },
     };
   else if (method === "ping") result = {};
   else if (method === "tools/list") result = { tools: TOOLS };
   else if (
     method === "tools/call" &&
-    ["get_daily_decisions", "get_backtest"].includes(params?.name)
+    TOOLS.some((tool) => tool.name === params?.name)
   ) {
+    if (
+      params.arguments !== undefined &&
+      (params.arguments === null ||
+        typeof params.arguments !== "object" ||
+        Array.isArray(params.arguments) ||
+        Object.keys(params.arguments).length)
+    )
+      return json({
+        jsonrpc: "2.0",
+        id,
+        error: { code: -32602, message: "This tool accepts no arguments." },
+      });
     const data =
       params.name === "get_backtest"
         ? await assetJSON(env, request, "/data/backtest.json")
-        : await current(env, request);
+        : params.name === "get_warrant_catalog"
+          ? await assetJSON(env, request, "/research/snapshot.json")
+          : params.name === "get_crp_comparison"
+            ? (await current(env, request)).comparison
+            : await current(env, request);
     result = {
       content: [{ type: "text", text: JSON.stringify(data) }],
       structuredContent: data,
@@ -175,7 +212,7 @@ export default {
         return new Response(
           request.method === "HEAD"
             ? null
-            : "# fin — Projets finance\n\nWarrants : https://fin.keff.uk/warrants/\nMéthode : https://fin.keff.uk/research/protocole.md\nDonnées : https://fin.keff.uk/research/snapshot.json\nCRP : https://fin.keff.uk/crp/\nAPI CRP : https://fin.keff.uk/openapi.json\n\nRecherche exploratoire, cotations horodatées, aucun ordre transmis.\n",
+            : "# fin — Projets finance\n\nWarrants : https://fin.keff.uk/warrants/\nMéthode : https://fin.keff.uk/research/protocole.md\nDonnées : https://fin.keff.uk/research/snapshot.json\nCRP : https://fin.keff.uk/crp/\nComparaison base 100 EUR : https://fin.keff.uk/api/crp/comparison\nAPI : https://fin.keff.uk/openapi.json\nMCP : https://fin.keff.uk/mcp\nGuide agent : https://fin.keff.uk/index.md\n\nRecherche exploratoire, cotations horodatées, aucun ordre transmis.\n",
           {
             headers: {
               ...headers,
@@ -185,6 +222,8 @@ export default {
           },
         );
       if (path === "/api/state") return json(await current(env, request));
+      if (path === "/api/crp/comparison")
+        return json((await current(env, request)).comparison);
       if (path === "/api/source-health") {
         const cached = await caches.default.match(request);
         if (cached) return cached;
@@ -263,7 +302,7 @@ export default {
         "/warrants/suivi/",
       ].includes(path);
       const titles = {
-        "/crp/": "Décisions CRP · Fin",
+        "/crp/": "Comparaison CRP · Fin",
         "/crp/modeles/": "Modèles CRP · Fin",
         "/crp/historique/": "Historique CRP · Fin",
         "/crp/methode/": "Règles CRP · Fin",

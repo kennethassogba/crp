@@ -1,7 +1,39 @@
 const HOME = "https://fin.keff.uk";
 export const LINKS = `<${HOME}/index.md>; rel="alternate"; type="text/markdown", <${HOME}/openapi.json>; rel="service-desc", <${HOME}/.well-known/api-catalog>; rel="api-catalog", <${HOME}/.well-known/mcp/server-card.json>; rel="mcp-server-card", <${HOME}/.well-known/agent-skills/index.json>; rel="agent-skills"`;
-export const GUIDE = `# CRP\n\nBTC and ETH daily paper positions and model comparison. Public market data; no exchange account connected.\n\n## Read\nGET /api/state returns the latest market snapshot, model decisions, settlement records, budget, freshness and scheduler status. GET /api/backtest returns the 90-day deterministic historical benchmark. GET /api/decisions returns the decision journal. These endpoints never invoke a paid model.\n\n## Strategy\nLong BTC, long ETH or cash. Isolated leverage 1x or 2x. Stop distance is max(1%, 2 times hourly ATR14). Position size limits estimated stop loss plus execution fees to 2% of equity. Funding and price gaps may add losses. Daily snapshot at 08:00 UTC, entry at 09:00 UTC after the response is recorded, exit 24 hours later or earlier at stop. The initial live observation may use the current full hour and enter one hour later. A late response is excluded from performance.\n\n## Evidence\nHistorical rule benchmarks are separate from historical LLM replays and from prospective model results. Missing and failed model responses are never substituted with rule-based decisions. No expected return or confidence is guaranteed. Daily observations use Kraken Futures public trade, mark, index and hourly funding data. Archived backtests use Binance. Neither source requires account authentication. Non-cash positions cannot settle against another venue. Kraken funding uses published USD payments per base unit; Binance funding uses its published mark price and rate. Costs are assumptions: 0.05% taker fee and 0.02% slippage each side, plus subsequent observed funding. Hourly bars approximate execution; the liquidation model uses fixed 0.5% maintenance margin.\n\n## Automation and cost\nScheduled server jobs collect market data and record one position per model per day. No public endpoint creates a trade, calls a provider, changes a budget or places an exchange order. The lifetime provider budget is USD 15, reserved atomically before every request. Unknown request costs keep their reservation.\n\n## Models\nGPT-6 Luna, GPT-6 Luna via Decisions, GPT-5.6 Terra, GPT-6 Sol and GPT-6 Astra. Responses and API usage are recorded. A configured secret is required for model calls. Provider errors and missing credentials remain visible.\n\n## Links\nApplication: https://fin.keff.uk/crp/\nRepository: https://github.com/kennethassogba/crp\nOpenAPI: ${HOME}/openapi.json\nMCP: ${HOME}/mcp\nMethod: ${HOME}/method.md\n`;
+export const GUIDE = `# Fin\n\nWarrants research and BTC/ETH model comparison. Read-only, no order execution.\n\n## Read\nGET /api/crp/comparison returns exactly the comparison shown in the app: three portfolios starting at EUR 100 each, settled net gains, provisional marked gains, capital, source times and missing valuations. This is normalized return comparison: the original USD 10,000 simulation is rebased by 0.01; EUR/USD changes are not modeled. Execution fees, slippage and observed funding are included. Provider costs are separate in USD, not deducted from the portfolios. Failed or late responses have no position. GET /research/snapshot.json returns the observed warrant bid/ask catalog, contract terms, source timestamps, failures, asset histories and calculation assumptions. Observed quotes are not guaranteed executable prices.\n\nGET /api/state returns the latest market snapshot, model decisions, settlement records, budget, freshness and scheduler status. GET /api/backtest returns the 90-day deterministic historical benchmark. GET /api/decisions returns the decision journal. These endpoints never invoke a paid model.\n\n## Strategy\nLong BTC, long ETH or cash. Isolated leverage 1x or 2x. Stop distance is max(1%, 2 times hourly ATR14). Position size limits estimated stop loss plus execution fees to 2% of equity. Funding and price gaps may add losses. Daily snapshot at 08:00 UTC, entry at 09:00 UTC after the response is recorded, exit 24 hours later or earlier at stop. The initial live observation may use the current full hour and enter one hour later. A late response is excluded from performance.\n\n## Evidence\nHistorical rule benchmarks are separate from historical LLM replays and from prospective model results. Missing and failed model responses are never substituted with rule-based decisions. No expected return or confidence is guaranteed. Daily observations use Kraken Futures public trade, mark, index and hourly funding data. Archived backtests use Binance. Neither source requires account authentication. Non-cash positions cannot settle against another venue. Kraken funding uses published USD payments per base unit; Binance funding uses its published mark price and rate. Costs are assumptions: 0.05% taker fee and 0.02% slippage each side, plus subsequent observed funding. Hourly bars approximate execution; the liquidation model uses fixed 0.5% maintenance margin.\n\n## Automation and cost\nScheduled server jobs collect market data and record one position per model per day. No public endpoint creates a trade, calls a provider, changes a budget or places an exchange order. The lifetime provider budget is USD 15, reserved atomically before every request. Unknown request costs keep their reservation.\n\n## Models\nGPT-6 Luna, GPT-6 Luna via Decisions and GPT-6 Sol. Astra and Terra are retired; their journal records remain available but they receive no new requests. Responses and API usage are recorded. A configured secret is required for model calls. Provider errors and missing credentials remain visible.\n\n## Links\nApplication: https://fin.keff.uk/crp/\nRepository: https://github.com/kennethassogba/crp\nOpenAPI: ${HOME}/openapi.json\nMCP: ${HOME}/mcp\nMethod: ${HOME}/method.md\n`;
 export const TOOLS = [
+  {
+    name: "get_crp_comparison",
+    description:
+      "Read the app's three EUR-100 normalized portfolios, settled and provisional gains, missing valuations and currency/cost limits. No orders or paid calls.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      additionalProperties: false,
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  },
+  {
+    name: "get_warrant_catalog",
+    description:
+      "Read published warrant observations, bid/ask, timestamps, terms, histories and collection errors. Prices are observed, not guaranteed executable. No orders or paid calls.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      additionalProperties: false,
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  },
   {
     name: "get_daily_decisions",
     description:
@@ -33,15 +65,22 @@ export async function discovery(path) {
       type: "text/markdown; charset=utf-8",
     };
   if (path === "/.well-known/agent-skills/index.json") {
-    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(skill));
-    const digest = 'sha256:' + Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2,'0')).join('');
+    const hash = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(skill),
+    );
+    const digest =
+      "sha256:" +
+      Array.from(new Uint8Array(hash), (b) =>
+        b.toString(16).padStart(2, "0"),
+      ).join("");
     return {
       body: {
-        $schema: 'https://schemas.agentskills.io/discovery/0.2.0/schema.json',
+        $schema: "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
         skills: [
           {
             name: "read-positions",
-            type: 'skill-md',
+            type: "skill-md",
             description: "Read CRP paper positions and evaluation evidence.",
             url: `${HOME}/skills/read-positions/SKILL.md`,
             digest,
@@ -74,7 +113,7 @@ export async function discovery(path) {
           "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
         version: "1.0",
         protocolVersion: "2025-11-25",
-        serverInfo: { name: "crp", version: "1.0.0" },
+        serverInfo: { name: "fin", version: "1.1.0" },
         description: "Read BTC/ETH paper positions and evaluation evidence.",
         transport: { type: "streamable-http", endpoint: `${HOME}/mcp` },
         authentication: { required: false },
@@ -86,13 +125,21 @@ export async function discovery(path) {
       body: {
         openapi: "3.1.0",
         info: {
-          title: "CRP",
-          version: "1.0.0",
-          description: "Read-only paper position journal. No order execution.",
+          title: "Fin",
+          version: "1.1.0",
+          description:
+            "Read-only EUR-100 model comparison and warrant research. No order execution.",
         },
         servers: [{ url: HOME }],
         paths: Object.fromEntries(
-          ["/api/state", "/api/backtest", "/api/decisions", "/api/source-health"].map((p) => [
+          [
+            "/api/crp/comparison",
+            "/api/state",
+            "/api/backtest",
+            "/api/decisions",
+            "/api/source-health",
+            "/research/snapshot.json",
+          ].map((p) => [
             p,
             {
               get: {

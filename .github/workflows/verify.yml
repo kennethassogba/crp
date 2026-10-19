@@ -35,6 +35,7 @@ jobs:
           node scripts/seed-local.mjs
           npm run test:fin
           npm run test:ui
+          npm run test:theme
           npm run test:install
           npm run test:pwa
           CRP_URL=http://127.0.0.1:5185 npm run smoke

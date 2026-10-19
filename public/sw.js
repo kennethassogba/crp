@@ -1,4 +1,4 @@
-const CACHE = "fin-shell-v6";
+const CACHE = "fin-shell-v7";
 self.addEventListener("install", (event) =>
   event.waitUntil(
     (async () => {

@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowRight, Copy, Download, X } from "lucide-react";
 import { LineChart } from "./Charts";
-import { download, number, percent, date } from "./format";
+import { ComparisonView, type Comparison } from "./Comparison";
+import { compareCrp } from "../../lib/crp-performance.mjs";
+import { download, number, percent, date, euro, signedEuro } from "./format";
 
 type Candle = {
   t: number;
@@ -43,6 +45,7 @@ export type CrpState = {
   reference: any;
   models: { id: string; name: string; provider: string }[];
   decisions: Run[];
+  comparison?: Comparison;
   budget: { actual: number; committed: number; cap: number };
   scheduler: any;
   prices: Record<string, Candle[]>;
@@ -75,9 +78,12 @@ function plan(r: Run) {
   if (!a || ![1, 2].includes(leverage)) return null;
   const entry = a.price,
     stopPct = a.stopPct,
-    collateral = Math.min(10000, 200 / (leverage * (stopPct + 0.0014)));
+    collateral = Math.min(100, 2 / (leverage * (stopPct + 0.0014)));
   return {
-    referenceEquity: 10000,
+    referenceEquity: 100,
+    currency: "EUR",
+    basis: "normalized-return",
+    fxIncluded: false,
     entry,
     stop: entry * (1 - stopPct),
     leverage,
@@ -100,8 +106,6 @@ export function Crp({
 }) {
   const [selected, setSelected] = useState<Run | null>(null),
     dialog = useRef<HTMLDialogElement>(null),
-    [asset, setAsset] = useState("BTC"),
-    [period, setPeriod] = useState(7),
     [model, setModel] = useState("momentum"),
     [cohort, setCohort] = useState("live"),
     [page, setPage] = useState(0),
@@ -137,20 +141,6 @@ export function Crp({
         <p>Chargement des décisions…</p>
       </div>
     );
-  const latest =
-    state.decisions
-      .filter((r) => r.cohort === "live")
-      .reduce((at, r) => Math.max(at, r.snapshot_at), 0) || state.asOf;
-  const day = new Date(latest).toISOString().slice(0, 10),
-    daily = state.models.map((m) => ({
-      ...m,
-      run: state.decisions.find(
-        (r) =>
-          r.model === m.id &&
-          r.cohort === "live" &&
-          new Date(r.snapshot_at).toISOString().slice(0, 10) === day,
-      ),
-    }));
   const history = state.decisions.filter((r) => r.cohort === cohort),
     benchmark = report.results.find((r) => r.name === "Momentum");
   const modelRuns = history
@@ -158,19 +148,29 @@ export function Crp({
     .sort((a, b) => a.snapshot_at - b.snapshot_at);
   const curve =
     model === "momentum"
-      ? (benchmark?.curve ?? [])
-      : modelRuns.map((r) => ({ t: r.result.exitAt, equity: r.result.equity }));
-  const priceData = (state.prices[asset] ?? []).slice(-period * 24),
-    selectedPlan = selected?.status === "completed" ? plan(selected) : null;
-  const moneyReturn = (v: number) => `${v >= 0 ? "+" : ""}${number(v, 2)} $`;
+      ? (benchmark?.curve ?? []).map((p: any) => ({
+          ...p,
+          equity: p.equity / (report.rules.capital / 100),
+        }))
+      : [
+          { t: modelRuns[0]?.snapshot_at, equity: 100 },
+          ...modelRuns.map((r) => ({
+            t: r.result.exitAt,
+            equity: r.result.equity / 100,
+          })),
+        ].filter((p) => p.t);
+  const selectedPlan = selected?.status === "completed" ? plan(selected) : null;
+  const moneyReturn = (v: number) => signedEuro(v, 2);
+  const comparison = (state.comparison ??
+    compareCrp(state.models, state.decisions)) as Comparison;
   return (
     <section className="crp-page">
       <div className="page-heading">
         <h1>
           {
             {
-              today: "Décisions",
-              models: "Modèles",
+              today: "Comparaison",
+              models: "Comparaison",
               history: "Historique",
               method: "Règles",
             }[view]
@@ -191,14 +191,11 @@ export function Crp({
         </button>
       </div>
       <div className="view-tabs" aria-label="Vues CRP">
-        <a href="/crp/" aria-current={view === "today" ? "page" : undefined}>
-          Décisions
-        </a>
         <a
-          href="/crp/modeles/"
-          aria-current={view === "models" ? "page" : undefined}
+          href="/crp/"
+          aria-current={["today", "models"].includes(view) ? "page" : undefined}
         >
-          Modèles
+          Comparaison
         </a>
         <a
           href="/crp/historique/"
@@ -219,155 +216,12 @@ export function Crp({
           <button onClick={retry}>Réessayer</button>
         </p>
       )}
-      {view === "today" && (
-        <>
-          <div className="section-heading">
-            <h2>{date(day, true)}</h2>
-            <span className="muted">Portefeuille simulé de 10 000 $</span>
-          </div>
-          <div className="decision-list">
-            {daily.map((m) => (
-              <button
-                className="decision-row"
-                key={m.id}
-                disabled={!m.run}
-                onClick={() => setSelected(m.run!)}
-              >
-                <span>
-                  <strong>{m.name}</strong>
-                  <small>
-                    {m.run
-                      ? m.run.status === "completed"
-                        ? (m.run.decision?.reason ?? "Raison non fournie")
-                        : status(m.run)
-                      : "Décision pas encore publiée"}
-                  </small>
-                </span>
-                <span className="decision-action">
-                  {m.run?.status === "completed"
-                    ? action(m.run.decision?.action)
-                    : m.run
-                      ? status(m.run)
-                      : "En attente"}
-                  {m.run?.status === "completed" &&
-                    m.run.decision?.action !== "CASH" && <small>24 h</small>}
-                </span>
-                <ArrowRight size={15} />
-              </button>
-            ))}
-          </div>
-          <div className="section-heading market-heading">
-            <h2>Marché</h2>
-            <span className="muted">{datetime(state.asOf)}</span>
-          </div>
-          <div className="chart-toolbar">
-            <div className="segmented" aria-label="Actif">
-              {["BTC", "ETH"].map((a) => (
-                <button
-                  key={a}
-                  aria-pressed={asset === a}
-                  onClick={() => setAsset(a)}
-                >
-                  {a}
-                </button>
-              ))}
-            </div>
-            <strong>{usd(state.snapshot.assets[asset]?.price ?? 0)}</strong>
-            <div className="segmented period-selector" aria-label="Période">
-              {[1, 7, 30].map((n) => (
-                <button
-                  key={n}
-                  aria-pressed={period === n}
-                  onClick={() => setPeriod(n)}
-                >
-                  {n} j
-                </button>
-              ))}
-            </div>
-          </div>
-          <LineChart
-            values={priceData.map((p) => p.c)}
-            dates={priceData.map((p) => new Date(p.t).toISOString())}
-            name={`${asset}, ${period} jours`}
-          />
-          <p className="small muted">
-            Cinq modèles choisissent BTC, ETH ou espèces chaque jour. Aucun
-            ordre réel.
-          </p>
-        </>
-      )}
-      {view === "models" && (
-        <>
-          <div className="section-heading">
-            <h2>Résultats observés</h2>
-            <span className="muted">
-              Les décisions hors délai sont exclues.
-            </span>
-          </div>
-          <div
-            className="table-scroll"
-            tabIndex={0}
-            role="region"
-            aria-label="Tableau des résultats"
-          >
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Modèle</th>
-                  <th>Décisions</th>
-                  <th>Soldées</th>
-                  <th>Gain net simulé</th>
-                  <th>Gagnantes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.models.map((m) => {
-                  const all = state.decisions.filter(
-                      (r) => r.cohort === "live" && r.model === m.id,
-                    ),
-                    closed = all.filter((r) => r.result),
-                    last = closed
-                      .sort((a, b) => a.snapshot_at - b.snapshot_at)
-                      .at(-1);
-                  return (
-                    <tr key={m.id}>
-                      <th scope="row">
-                        {m.name}
-                        <small>{m.provider}</small>
-                      </th>
-                      <td>
-                        {all.filter((r) => r.status === "completed").length}
-                      </td>
-                      <td>{closed.length}</td>
-                      <td>
-                        {last
-                          ? moneyReturn(last.result.equity - 10000)
-                          : "En attente"}
-                      </td>
-                      <td>
-                        {closed.length
-                          ? percent(
-                              closed.filter((r) => r.result.pnl > 0).length /
-                                closed.length,
-                            )
-                          : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <details className="explainer">
-            <summary>Comment lire cette comparaison ?</summary>
-            <p>
-              Chaque modèle reçoit le même état du marché. Le résultat intègre
-              les hypothèses de frais, financement et entrée retardée décrites
-              dans les règles. Ce petit échantillon ne suffit pas à démontrer
-              une performance future.
-            </p>
-          </details>
-        </>
+      {["today", "models"].includes(view) && (
+        <ComparisonView
+          data={comparison}
+          runs={state.decisions}
+          onSelect={setSelected}
+        />
       )}
       {view === "history" && (
         <>
@@ -408,6 +262,7 @@ export function Crp({
             values={curve.map((p: any) => p.equity)}
             dates={curve.map((p: any) => new Date(p.t).toISOString())}
             name="Capital simulé"
+            unit="€"
           />
           {model === "momentum" ? (
             <>
@@ -437,7 +292,13 @@ export function Crp({
                       <tr key={r.name}>
                         <th scope="row">{r.name}</th>
                         <td>
-                          {usd(r.equity ?? r.curve?.at(-1)?.equity ?? 10000)}
+                          {euro(
+                            (r.equity ??
+                              r.curve?.at(-1)?.equity ??
+                              report.rules.capital) /
+                              (report.rules.capital / 100),
+                            2,
+                          )}
                         </td>
                         <td>{percent((r.returnPct ?? 0) / 100)}</td>
                         <td>{percent(Math.abs(r.maxDrawdown ?? 0) / 100)}</td>
@@ -502,7 +363,7 @@ export function Crp({
         <div className="reading">
           <h2>Une décision par jour</h2>
           <p>
-            À 08 h UTC, cinq configurations OpenAI reçoivent les mêmes cours,
+            À 08 h UTC, trois configurations OpenAI reçoivent les mêmes cours,
             variations, volumes et taux de financement de BTC et ETH. Elles
             choisissent un actif ou restent en espèces.
           </p>
@@ -515,7 +376,7 @@ export function Crp({
           <h2>Règles d’exécution</h2>
           <dl className="contract-grid">
             {[
-              ["Capital initial", usd(report.rules.capital)],
+              ["Capital initial par modèle", euro(100, 0)],
               ["Risque prévu par position", percent(report.rules.risk)],
               ["Levier maximal", `${report.rules.maxLeverage}×`],
               ["Sortie au plus tard", `${report.rules.horizonHours} heures`],
@@ -528,6 +389,30 @@ export function Crp({
               </div>
             ))}
           </dl>
+          <h2>Comment est calculé le capital ?</h2>
+          <p>
+            Chaque modèle commence avec 100 € de référence. Les rendements du
+            journal d’origine en dollars sont appliqués à ces 100 €, sans
+            modifier les décisions enregistrées. Le change euro/dollar n’est pas
+            simulé.
+          </p>
+          <p>
+            Le capital estimé ajoute au capital clôturé la valeur des positions
+            en cours, au dernier cours horaire disponible. Cette estimation
+            inclut une sortie au marché, les frais, le glissement et le
+            financement observé. Elle peut encore changer. Un cours manquant est
+            signalé ; il ne devient pas un gain de zéro.
+          </p>
+          <p>
+            Le gain clôturé reste à zéro tant que les décisions soldées sont en
+            espèces. Les coûts des modèles sont suivis séparément en dollars,
+            hors rendement du portefeuille. Un résultat historique ne prouve pas
+            une performance future.
+          </p>
+          <p>
+            Coûts modèles cumulés : {usd(state.budget.actual)} sur{" "}
+            {usd(state.budget.cap)} de plafond.
+          </p>
           <h2>Sources</h2>
           <p>
             Le suivi actuel utilise Kraken Futures. Le test Momentum conserve
@@ -574,9 +459,9 @@ export function Crp({
                 : "Pas de position"}
             </h3>
             <p className="decision-reason">
-              {selected.decision?.reason ??
-                selected.error ??
-                "Aucune raison enregistrée."}
+              {selected.status === "failed"
+                ? (selected.error ?? "La réponse du modèle a échoué.")
+                : (selected.decision?.reason ?? "Aucune raison enregistrée.")}
             </p>
             {selectedPlan && (
               <dl className="contract-grid">
@@ -584,7 +469,10 @@ export function Crp({
                   ["Entrée indicative", usd(selectedPlan.entry)],
                   ["Stop", usd(selectedPlan.stop)],
                   ["Levier", `${selectedPlan.leverage}×`],
-                  ["Exposition pour 10 000 $", usd(selectedPlan.notional)],
+                  [
+                    "Exposition sur la base de 100 €",
+                    euro(selectedPlan.notional, 2),
+                  ],
                   ["Entrée prévue", datetime(selected.entry_after)],
                   ["Sortie", "24 h après l’entrée"],
                 ].map(([k, v]) => (
@@ -599,16 +487,16 @@ export function Crp({
               <dl className="contract-grid">
                 <div>
                   <dt>Gain net simulé</dt>
-                  <dd>{moneyReturn(selected.result.pnl ?? 0)}</dd>
+                  <dd>{moneyReturn((selected.result.pnl ?? 0) / 100)}</dd>
                 </div>
                 <div>
                   <dt>Capital après sortie</dt>
-                  <dd>{usd(selected.result.equity)}</dd>
+                  <dd>{euro(selected.result.equity / 100, 2)}</dd>
                 </div>
               </dl>
             )}
             <details className="explainer">
-              <summary>Données de la décision</summary>
+              <summary>Journal d’origine (USD)</summary>
               <pre tabIndex={0}>
                 {JSON.stringify(
                   {

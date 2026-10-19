@@ -8,7 +8,7 @@ import {
   signedEuro,
 } from "./format";
 
-function useChartWidth(key: number) {
+export function useChartWidth(key: number) {
   const ref = useRef<HTMLDivElement>(null),
     [width, setWidth] = useState(790);
   useEffect(() => {
@@ -112,7 +112,9 @@ export function LineChart({
             ),
           );
         }}
-        onPointerLeave={() => setActive(null)}
+        onPointerLeave={(e) => {
+          if (e.pointerType === "mouse") setActive(null);
+        }}
         onPointerDown={(e) => {
           const box = e.currentTarget.getBoundingClientRect();
           setActive(

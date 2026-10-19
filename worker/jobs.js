@@ -113,7 +113,10 @@ export async function settle(env, market) {
 export async function tick(env) {
   const previous = await stateValue(env, "market");
   const market =
-    previous && previous.source === "Kraken Futures public REST" && previous.assets.BTC.funding[0]?.accrualHours === 1 && previous.to >= Math.floor(Date.now() / HOUR) * HOUR
+    previous &&
+    previous.source === "Kraken Futures public REST" &&
+    previous.assets.BTC.funding[0]?.accrualHours === 1 &&
+    previous.to >= Math.floor(Date.now() / HOUR) * HOUR
       ? previous
       : await collectKraken(10);
   if (market !== previous) await setState(env, "market", market);
@@ -144,9 +147,9 @@ export async function tick(env) {
     .first();
   if (previousRun?.entry_after + DAY > at + HOUR) return;
   const existing = await env.DB.prepare(
-    "SELECT snapshot_at,COUNT(*) AS n FROM runs WHERE cohort='live' AND snapshot_at>=? AND snapshot_at<? GROUP BY snapshot_at LIMIT 1",
+    `SELECT snapshot_at,COUNT(*) AS n FROM runs WHERE cohort='live' AND model IN (${MODELS.map(() => "?").join(",")}) AND snapshot_at>=? AND snapshot_at<? GROUP BY snapshot_at LIMIT 1`,
   )
-    .bind(day, day + DAY)
+    .bind(...MODELS.map((m) => m.id), day, day + DAY)
     .first();
   if (existing && Number(existing.n) >= MODELS.length) return;
   const snapshot = snapshotAt(market, existing?.snapshot_at ?? at);

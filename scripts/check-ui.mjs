@@ -2,131 +2,189 @@ import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
+import { compareCrp } from "../lib/crp-performance.mjs";
 const base = process.env.FIN_URL ?? "http://127.0.0.1:5185";
-const state = await (await fetch(base + "/api/state")).json();
-// Browser fixtures exercise five outcomes. They never write records or call a model.
-state.decisions = state.models.map((model, i) => ({
-  id: `fixture:${i}`,
-  model: model.id,
-  cohort: "live",
-  snapshot_at: state.asOf,
-  published_at: state.asOf + 1000,
-  entry_after: state.asOf + 3600000,
-  status: ["completed", "completed", "completed", "failed", "late"][i],
-  snapshot: state.snapshot,
-  decision:
-    i < 3
-      ? {
-          action: ["CASH", "BTC_2X", "ETH_1X"][i],
-          reason: "Raison enregistrée du modèle. ".repeat(20),
-        }
-      : i === 4
-        ? { action: "BTC_1X", reason: "Réponse reçue après la limite." }
-        : null,
-  error: i === 3 ? "Source de données indisponible." : undefined,
-  result:
-    i < 3
-      ? {
-          equity: 10000,
-          pnl: 0,
-          exitAt: state.asOf,
-          action: ["CASH", "BTC_2X", "ETH_1X"][i],
-        }
-      : null,
-}));
+const original = await (await fetch(base + "/api/state")).json();
+const actions = ["CASH", "BTC_2X", "ETH_1X"];
+const fixture = () => {
+  const state = structuredClone(original);
+  state.stale = false;
+  state.decisions = state.models.map((model, i) => ({
+    id: `fixture:${i}`,
+    model: model.id,
+    cohort: "live",
+    snapshot_at: state.asOf - 2 * 86400000,
+    published_at: state.asOf - 2 * 86400000 + 1000,
+    entry_after: state.asOf - 2 * 86400000 + 3600000,
+    status: "completed",
+    snapshot: state.snapshot,
+    decision: {
+      action: actions[i],
+      reason: "Raison enregistrée du modèle. ".repeat(20),
+    },
+    result: {
+      equity: [10000, 10625, 9700][i],
+      pnl: [0, 625, -300][i],
+      exitAt: state.asOf - 86400000,
+      action: actions[i],
+      fees: 1,
+      funding: 0.5,
+    },
+  }));
+  state.comparison = compareCrp(state.models, state.decisions, {
+    to: state.asOf,
+  });
+  return state;
+};
 const browser = await chromium.launch(),
   checks = [];
+async function scan(p) {
+  const result = await new AxeBuilder({ page: p })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  assert.deepEqual(
+    result.violations
+      .filter((v) => ["critical", "serious"].includes(v.impact))
+      .map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) })),
+    [],
+  );
+  assert.ok(
+    await p.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  );
+}
 try {
   for (const width of [1440, 390, 320]) {
     const c = await browser.newContext({
-        viewport: { width, height: 900 },
+        viewport: { width, height: 1000 },
         serviceWorkers: "block",
         reducedMotion: "reduce",
+        hasTouch: width <= 390,
       }),
       p = await c.newPage();
+    let state = fixture();
     await p.route("**/api/state", (r) => r.fulfill({ json: state }));
     await p.goto(base + "/crp/");
-    await p.getByRole("heading", { name: /^Décisions/, level: 1 }).waitFor();
-    assert.equal(await p.locator(".decision-list>.decision-row").count(), 5);
-    for (let i = 0; i < 5; i++) {
-      await p.locator(".decision-list>.decision-row").nth(i).click();
+    await p
+      .getByRole("table", { name: /Comparaison des portefeuilles/ })
+      .waitFor();
+    assert.equal(await p.locator(".comparison-row").count(), 3);
+    assert.match(
+      await p.locator(".comparison-row").nth(1).innerText(),
+      /106,25/,
+    );
+    assert.match(await p.locator(".comparison-row").nth(1).innerText(), /6,25/);
+    assert.match(
+      await p.locator(".comparison-row").nth(2).innerText(),
+      /97,00/,
+    );
+    assert.equal(
+      await p.evaluate(
+        () => getComputedStyle(document.documentElement).colorScheme,
+      ),
+      "dark",
+    );
+    for (let i = 0; i < 3; i++) {
+      await p.locator(".position-button").nth(i).click();
       const dialog = p.getByRole("dialog", { name: "Décision enregistrée" });
       await dialog
         .getByRole("heading", { name: state.models[i].name, exact: true })
         .waitFor();
       if (i === 1) {
-        const entry = state.snapshot.assets.BTC.price;
-        assert.match(
-          await dialog.innerText(),
-          new RegExp(
-            new Intl.NumberFormat("fr-FR", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })
-              .format(entry)
-              .replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-          ),
-        );
+        await dialog
+          .getByText("Exposition sur la base de 100 €", { exact: true })
+          .waitFor();
+        assert.ok(!(await dialog.innerText()).includes("10 000"));
         await dialog
           .getByRole("button", { name: "Copier le plan", exact: true })
           .click();
       }
-      if ([0, 3, 4].includes(i))
+      if (i === 0)
         assert.equal(
           await dialog
             .getByRole("button", { name: "Copier le plan", exact: true })
             .isDisabled(),
           true,
         );
-      if (i === 4) {
-        await dialog
-          .getByRole("heading", { name: "Pas de position", exact: true })
-          .waitFor();
-        assert.equal(
-          await dialog.getByText("Entrée indicative", { exact: true }).count(),
-          0,
-        );
-      }
-      if (i === 3)
-        await dialog
-          .getByText("Source de données indisponible.", { exact: true })
-          .waitFor();
-      const scan = await new AxeBuilder({ page: p })
-        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-        .analyze();
-      assert.deepEqual(
-        scan.violations
-          .filter((v) => ["critical", "serious"].includes(v.impact))
-          .map((v) => v.id),
-        [],
-      );
+      await scan(p);
       await p.keyboard.press("Escape");
       await dialog.waitFor({ state: "hidden" });
       assert.equal(
         await p
-          .locator(".decision-list>.decision-row")
+          .locator(".position-button")
           .nth(i)
           .evaluate((el) => el === document.activeElement),
         true,
       );
     }
-    const graph = p.getByRole("group", { name: /BTC, 7 jours/ });
+    const graph = p.getByRole("group", { name: /Capital des trois modèles/ });
     await graph.focus();
-    const before = await graph.locator(".chart-readout").innerText();
+    const before = await graph.locator("[role=status]").innerText();
     await p.keyboard.press("Home");
-    assert.notEqual(await graph.locator(".chart-readout").innerText(), before);
-    const svg = graph.locator("svg"),
-      box = await svg.boundingBox();
-    await p.mouse.move(box.x + box.width * 0.4, box.y + 100);
-    const hovered = await graph.locator(".chart-readout").innerText();
-    await p.mouse.move(box.x + box.width * 0.7, box.y + 100);
-    assert.notEqual(await graph.locator(".chart-readout").innerText(), hovered);
-    await p.getByRole("button", { name: "ETH", exact: true }).click();
-    await p.getByRole("group", { name: /ETH, 7 jours/ }).waitFor();
-    await p.getByRole("link", { name: "Modèles", exact: true }).last().click();
-    await p
-      .getByRole("heading", { name: "Résultats observés", exact: true })
-      .waitFor();
+    assert.notEqual(await graph.locator("[role=status]").innerText(), before);
+    const box = await graph.locator("svg").boundingBox();
+    await p.mouse.move(box.x + box.width * 0.1, box.y + 80);
+    const hovered = await graph.locator("[role=status]").innerText();
+    await p.mouse.move(box.x + box.width * 0.9, box.y + 80);
+    assert.notEqual(await graph.locator("[role=status]").innerText(), hovered);
+    if (width <= 390) {
+      await p.touchscreen.tap(box.x + box.width * 0.1, box.y + 70);
+      const touched = await graph.locator("[role=status]").innerText();
+      await p.touchscreen.tap(box.x + box.width * 0.9, box.y + 70);
+      assert.notEqual(
+        await graph.locator("[role=status]").innerText(),
+        touched,
+      );
+    }
+    await scan(p);
+    await p.evaluate(() => { (document.activeElement)?.blur(); window.scrollTo(0, 0); });
+    await p.screenshot({
+      path: `output/playwright/crp-comparison-fixture-${width}.png`,
+      fullPage: true,
+    });
+    await p.evaluate(() => (document.documentElement.style.fontSize = "200%"));
+    await scan(p);
+    await p.evaluate(() => {
+      document.documentElement.style.fontSize = "";
+      document.documentElement.dir = "rtl";
+    });
+    await scan(p);
+    await p.evaluate(() => (document.documentElement.dir = "ltr"));
+    for (const failure of ["failed", "late"]) {
+      state = fixture();
+      Object.assign(state.decisions[1], {
+        status: failure,
+        result: null,
+        error:
+          failure === "failed" ? "Source de données indisponible." : undefined,
+      });
+      state.comparison = compareCrp(state.models, state.decisions, {
+        to: state.asOf,
+      });
+      await p.reload();
+      await p.locator(".position-button").nth(1).click();
+      const dialog = p.getByRole("dialog", { name: "Décision enregistrée" });
+      await dialog
+        .getByRole("heading", { name: "Pas de position", exact: true })
+        .waitFor();
+      assert.equal(
+        await dialog
+          .getByRole("button", { name: "Copier le plan", exact: true })
+          .isDisabled(),
+        true,
+      );
+      assert.equal(
+        await dialog.getByText("Entrée indicative", { exact: true }).count(),
+        0,
+      );
+      if (failure === "failed")
+        await dialog
+          .getByText("Source de données indisponible.", { exact: true })
+          .waitFor();
+      await scan(p);
+      await p.keyboard.press("Escape");
+    }
     await p
       .getByRole("link", { name: "Historique", exact: true })
       .last()
@@ -140,17 +198,16 @@ try {
     await p
       .getByRole("heading", { name: "Journal des décisions", exact: true })
       .waitFor();
-    assert.ok(
-      await p.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth + 1,
-      ),
-    );
+    await scan(p);
     checks.push({
       width,
-      fixtureDecisions: 5,
+      models: 3,
+      baseEUR: 100,
+      decisionOutcomes: ["cash", "BTC_2X", "ETH_1X", "failed", "late"],
       keyboard: "passed",
       hover: "passed",
-      modelHistory: "passed",
+      history: "passed",
+      theme: "dark",
     });
     await c.close();
   }
@@ -163,7 +220,7 @@ try {
     ),
   );
   console.log(
-    "Unified CRP: five decision outcomes, plans, dialogs, charts and history passed at three widths.",
+    "CRP: EUR-100 comparison, five outcomes, dialogs, keyboard/hover and history passed at three widths.",
   );
 } finally {
   await browser.close();

@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
+import { compareCrp } from "../lib/crp-performance.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 
 const base = process.env.CRP_URL ?? "http://127.0.0.1:5185/crp";
@@ -12,7 +13,7 @@ const context = await browser.newContext({
 const page = await context.newPage();
 page.setDefaultTimeout(20_000);
 await page.goto(base);
-await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
+await page.getByRole("heading", { name: /^Comparaison/ }).waitFor();
 await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
 const cdp = await context.newCDPSession(page);
 const install = await cdp.send("Page.getInstallabilityErrors");
@@ -21,6 +22,13 @@ const manifest = await (
   await page.request.get(`${base}/manifest.webmanifest`)
 ).json();
 assert.equal(manifest.display, "standalone");
+assert.equal(manifest.theme_color, "#101113");
+assert.equal(
+  await page.evaluate(
+    () => getComputedStyle(document.documentElement).colorScheme,
+  ),
+  "dark",
+);
 assert.ok(manifest.icons.some((i) => i.sizes === "512x512"));
 // The first load registers the worker after modules have loaded. A controlled
 // online reload primes development modules as well as production assets.
@@ -33,7 +41,7 @@ await page.evaluate(async () => {
   );
 });
 await page.reload();
-await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
+await page.getByRole("heading", { name: /^Comparaison/ }).waitFor();
 await page.waitForLoadState("networkidle");
 await context.setOffline(true);
 await page.reload();
@@ -44,7 +52,7 @@ await page
 await page.screenshot({ path: "output/playwright/offline.png" });
 await context.setOffline(false);
 await page.getByRole("button", { name: "Réessayer", exact: true }).click();
-await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
+await page.getByRole("heading", { name: /^Comparaison/ }).waitFor();
 await context.close();
 
 // Intercept only browser responses to examine recoverable states. No model calls.
@@ -74,6 +82,7 @@ for (const state of ["loading", "error", "empty"]) {
       const response = await route.fetch();
       const data = await response.json();
       data.decisions = [];
+      data.comparison = compareCrp(data.models, []);
       await route.fulfill({ response, json: data });
     }
   });
@@ -86,7 +95,7 @@ for (const state of ["loading", "error", "empty"]) {
   if (state === "error")
     await p.getByRole("button", { name: "Réessayer", exact: true }).waitFor();
   if (state === "empty")
-    await p.getByRole("heading", { name: /^Décisions/ }).waitFor();
+    await p.getByRole("heading", { name: /^Comparaison/ }).waitFor();
   const scan = await new AxeBuilder({ page: p })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();
