@@ -1,0 +1,58 @@
+export type Product = {
+  id: string;
+  isin: string;
+  underlying: string;
+  direction: "call" | "put";
+  strike: number;
+  ratio: number;
+  bid: number;
+  ask: number;
+  currency: "USD" | "EUR";
+  expiry: string;
+  quoteAt: string;
+  issuer?: string;
+  commission?: number;
+  commissionPct?: number;
+  commissionMin?: number;
+  minOrder?: number;
+  style?: string;
+  venueVerified?: boolean;
+  source?: string;
+  sourceUrl?: string;
+  brokerUrl?: string;
+  kidUrl?: string;
+};
+export type History = {
+  name: string;
+  symbol: string;
+  dates: string[];
+  closes: number[];
+  source: string;
+  sourceUrl: string;
+  collectedAt: string;
+};
+export type Dataset = {
+  version: string;
+  analysisDate: string;
+  quoteDate: string;
+  collectedAt: string;
+  fx: number;
+  products: Product[];
+  assets: Record<string, History>;
+  limits?: Record<string, string>;
+};
+export type Observation = {
+  id: string;
+  at: string;
+  analysisDate: string;
+  product: Product;
+  budget: number;
+  fx: number;
+  multiple: number;
+  neutral: boolean;
+  spot: number;
+  expected: number;
+  probability: number;
+  quantity: number;
+  note: string;
+};

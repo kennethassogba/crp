@@ -2,7 +2,7 @@ import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
-const base = process.env.CRP_URL ?? "http://127.0.0.1:5185";
+const base = process.env.CRP_URL ?? "http://127.0.0.1:5185/crp";
 await mkdir("output/playwright", { recursive: true });
 const evidence = [];
 const failures = [];

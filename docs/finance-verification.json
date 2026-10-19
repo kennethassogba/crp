@@ -1,0 +1,247 @@
+{
+  "date": "2026-10-19",
+  "typecheck": "passed",
+  "financialTests": 25,
+  "researchReferenceTests": 7,
+  "financeUI": {
+    "base": "http://127.0.0.1:5185",
+    "views": [
+      {
+        "width": 1440,
+        "height": 1000,
+        "path": "/",
+        "box": {
+          "width": 1440,
+          "scroll": 1440
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 1440,
+        "height": 1000,
+        "path": "/warrants/",
+        "box": {
+          "width": 1440,
+          "scroll": 1440
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 1440,
+        "height": 1000,
+        "path": "/warrants/methode/",
+        "box": {
+          "width": 1440,
+          "scroll": 1440
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 1440,
+        "height": 1000,
+        "path": "/warrants/suivi/",
+        "box": {
+          "width": 1440,
+          "scroll": 1440
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 1024,
+        "height": 900,
+        "path": "/",
+        "box": {
+          "width": 1024,
+          "scroll": 1024
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 1024,
+        "height": 900,
+        "path": "/warrants/",
+        "box": {
+          "width": 1024,
+          "scroll": 1024
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 1024,
+        "height": 900,
+        "path": "/warrants/methode/",
+        "box": {
+          "width": 1024,
+          "scroll": 1024
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 1024,
+        "height": 900,
+        "path": "/warrants/suivi/",
+        "box": {
+          "width": 1024,
+          "scroll": 1024
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 768,
+        "height": 900,
+        "path": "/",
+        "box": {
+          "width": 768,
+          "scroll": 768
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 768,
+        "height": 900,
+        "path": "/warrants/",
+        "box": {
+          "width": 768,
+          "scroll": 768
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 768,
+        "height": 900,
+        "path": "/warrants/methode/",
+        "box": {
+          "width": 768,
+          "scroll": 768
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 768,
+        "height": 900,
+        "path": "/warrants/suivi/",
+        "box": {
+          "width": 768,
+          "scroll": 768
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "path": "/",
+        "box": {
+          "width": 390,
+          "scroll": 390
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "path": "/warrants/",
+        "box": {
+          "width": 390,
+          "scroll": 390
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "path": "/warrants/methode/",
+        "box": {
+          "width": 390,
+          "scroll": 390
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "path": "/warrants/suivi/",
+        "box": {
+          "width": 390,
+          "scroll": 390
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 320,
+        "height": 760,
+        "path": "/",
+        "box": {
+          "width": 320,
+          "scroll": 320
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 320,
+        "height": 760,
+        "path": "/warrants/",
+        "box": {
+          "width": 320,
+          "scroll": 320
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 320,
+        "height": 760,
+        "path": "/warrants/methode/",
+        "box": {
+          "width": 320,
+          "scroll": 320
+        },
+        "seriousIssues": 0
+      },
+      {
+        "width": 320,
+        "height": 760,
+        "path": "/warrants/suivi/",
+        "box": {
+          "width": 320,
+          "scroll": 320
+        },
+        "seriousIssues": 0
+      }
+    ],
+    "interactions": "passed",
+    "sourceQuotes": "frozen 2026-10-16",
+    "execution": "none"
+  },
+  "crpUICombinations": 30,
+  "crpPWA": {
+    "base": "http://127.0.0.1:5185/crp",
+    "install": {
+      "installabilityErrors": []
+    },
+    "states": [
+      {
+        "state": "loading",
+        "seriousViolations": 0
+      },
+      {
+        "state": "error",
+        "seriousViolations": 0
+      },
+      {
+        "state": "empty",
+        "seriousViolations": 0
+      }
+    ],
+    "offlineRetry": "passed"
+  },
+  "benchmark": {
+    "at": "2026-10-19T00:04:27.200Z",
+    "node": "v24.13.0",
+    "count": 10000,
+    "elapsedMs": 19243.068356,
+    "peakRssMiB": 86.60546875,
+    "scenarioGroups": 5,
+    "scope": "Repeated evaluations of the six reference contracts, five models per evaluation, shared scenarios; excludes bootstrap, network, browser rendering and a genuinely distinct 10000-contract universe."
+  },
+  "reproductionArchive": "Extracted in a fresh temporary directory; seven reference tests and batch screening passed.",
+  "live": "Pending deployment verification; local checks do not prove deployment."
+}

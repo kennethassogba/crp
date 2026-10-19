@@ -1,0 +1,174 @@
+{
+  "quote": {
+    "mnemonic": "Z377S",
+    "isin": "DE000FG35JX0",
+    "strike": 225.0,
+    "parity": 20.0,
+    "ask": 0.26,
+    "bid": 0.25,
+    "expiry": "2026-12-18",
+    "payment": "2026-12-28",
+    "quote_date": "2026-10-16",
+    "commission": 0.0,
+    "source": "https://www.sgbourse.fr/product-details/z377s",
+    "bourso": "https://www.boursorama.com/bourse/produits-de-bourse/cours/warrants/3rPDE000FG35JX0"
+  },
+  "quantity": 11538,
+  "cost": 2999.88,
+  "cash": 0.11999999999989086,
+  "fx_assumption": 1.124,
+  "spot": 186.02999877929688,
+  "data": {
+    "NDX": {
+      "rows": 1255,
+      "first": "2021-10-18",
+      "last": "2026-10-16",
+      "close": 29187.55078125,
+      "annual_realized_vol": {
+        "20": 0.18586139963957782,
+        "60": 0.18412353099419299,
+        "252": 0.19753373317594133,
+        "1254": 0.23149081791016723
+      }
+    },
+    "NVDA": {
+      "rows": 1255,
+      "first": "2021-10-18",
+      "last": "2026-10-16",
+      "close": 214.1300048828125,
+      "annual_realized_vol": {
+        "20": 0.24810214824650167,
+        "60": 0.3678645877813154,
+        "252": 0.37151313717263273,
+        "1254": 0.5150892100864005
+      }
+    },
+    "TSLA": {
+      "rows": 1255,
+      "first": "2021-10-18",
+      "last": "2026-10-16",
+      "close": 354.7200012207031,
+      "annual_realized_vol": {
+        "20": 0.3144092063279369,
+        "60": 0.3857269043467561,
+        "252": 0.45135912943859907,
+        "1254": 0.5979603008136135
+      }
+    },
+    "AMD": {
+      "rows": 1255,
+      "first": "2021-10-18",
+      "last": "2026-10-16",
+      "close": 528.75,
+      "annual_realized_vol": {
+        "20": 0.5553106128485188,
+        "60": 0.6298427280394274,
+        "252": 0.6732756161916201,
+        "1254": 0.5706759639367507
+      }
+    },
+    "PLTR": {
+      "rows": 1255,
+      "first": "2021-10-18",
+      "last": "2026-10-16",
+      "close": 186.02999877929688,
+      "annual_realized_vol": {
+        "20": 0.42096230384587685,
+        "60": 0.7198882612328245,
+        "252": 0.58958194671665,
+        "1254": 0.6582278057659883
+      }
+    }
+  },
+  "empirical_5y_zero_mean": {
+    "observations_overlapping": 1212,
+    "historical_mean_gross": 1.1164496553099963,
+    "net_expected_eur": 833.6674218799008,
+    "p_profit": 0.16501650165016502,
+    "p_fivefold": 0.09735973597359736,
+    "p_total_loss": 0.8094059405940595
+  },
+  "empirical_1y_zero_mean": {
+    "observations_overlapping": 210,
+    "historical_mean_gross": 1.0267525992637208,
+    "net_expected_eur": -15.323801852185975,
+    "p_profit": 0.18571428571428572,
+    "p_fivefold": 0.08095238095238096,
+    "p_total_loss": 0.8047619047619048
+  },
+  "bootstrap_95_interval_5y_zero_mean": {
+    "net_expected_eur": [
+      -882.1593946500539,
+      2426.1180268283106
+    ],
+    "p_profit": [
+      0.11716171617161716,
+      0.21122112211221122
+    ],
+    "p_fivefold": [
+      0.04950495049504951,
+      0.1551155115511551
+    ],
+    "p_total_loss": [
+      0.7615305280528053,
+      0.8572607260726073
+    ]
+  },
+  "gbm_sensitivity": {
+    "20": {
+      "vol_annual": 0.42096230384587685,
+      "mu_annual": 0.0,
+      "net_expected_eur": -1807.418408595991,
+      "p_profit": 0.0885171509747682,
+      "p_fivefold": 0.027735616942782704,
+      "p_total_loss": 0.8848693677233087
+    },
+    "60": {
+      "vol_annual": 0.7198882612328245,
+      "mu_annual": 0.0,
+      "net_expected_eur": 1721.3874771020066,
+      "p_profit": 0.18796298146265572,
+      "p_fivefold": 0.11200227967170107,
+      "p_total_loss": 0.787438087318166
+    },
+    "252": {
+      "vol_annual": 0.58958194671665,
+      "mu_annual": 0.0,
+      "net_expected_eur": 27.90062953302057,
+      "p_profit": 0.1532838951978383,
+      "p_fivefold": 0.07693113892919712,
+      "p_total_loss": 0.8199479739098517
+    },
+    "1254": {
+      "vol_annual": 0.6582278057659883,
+      "mu_annual": 0.0,
+      "net_expected_eur": 899.1261382615638,
+      "p_profit": 0.17304492203087385,
+      "p_fivefold": 0.09617075919268542,
+      "p_total_loss": 0.8012531227680096
+    }
+  },
+  "threshold_profit_usd": 230.8448,
+  "threshold_fivefold_usd": 254.224,
+  "immediate_spread_loss_eur": 115.38000000000011,
+  "settlement_scenarios_net_eur": {
+    "225": -2999.88,
+    "230": -433.598861209965,
+    "235": 2132.68227758007,
+    "240": 4698.963416370106,
+    "250": 9831.525693950174,
+    "254.224": 11999.519999999993,
+    "260": 14964.087971530247,
+    "275": 22662.93138790035
+  },
+  "limitations": [
+    "Frozen Friday indicative quotes, not executable Monday quotes.",
+    "No proven forecasting edge; exploratory candidate selection.",
+    "Historical overlapping return windows are not independent trades.",
+    "43 trading days approximates the calendar horizon; historical regimes may not recur.",
+    "Bootstrap interval is conditional on empirical model and does not capture all model or selection uncertainty.",
+    "FX held constant; no issuer default, tax, extraordinary termination, account-plan or opportunity costs modeled.",
+    "At settlement no resale spread is added; issuer costs are embedded in the purchase quote.",
+    "Interim x5 resale probabilities require a separate volatility and spread process."
+  ]
+}

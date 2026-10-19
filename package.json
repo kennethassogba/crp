@@ -13,7 +13,13 @@
     "backtest": "node scripts/backtest.mjs",
     "deploy": "cf deploy",
     "smoke": "node scripts/smoke.mjs",
-    "test:install": "node scripts/check-install.mjs"
+    "test:install": "node scripts/check-install.mjs",
+    "test:research": "node --test tests/warrants.test.mjs",
+    "test:fin": "node scripts/check-fin.mjs",
+    "research:collect": "node scripts/research-collect.mjs",
+    "research:screen": "node scripts/research-screen.mjs",
+    "research:package": "python3 scripts/package-research.py",
+    "test:pwa": "node scripts/check-pwa.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",

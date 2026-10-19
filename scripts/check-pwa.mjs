@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 
-const base = process.env.CRP_URL ?? "http://127.0.0.1:5185";
+const base = process.env.CRP_URL ?? "http://127.0.0.1:5185/crp";
 const browser = await chromium.launch({ headless: true });
 await mkdir("output/playwright", { recursive: true });
 const context = await browser.newContext({
@@ -24,6 +24,15 @@ const manifest = await (
 ).json();
 assert.equal(manifest.display, "standalone");
 assert.ok(manifest.icons.some((i) => i.sizes === "512x512"));
+// The first load registers the worker after modules have loaded. A controlled
+// online reload primes development modules as well as production assets.
+await page.evaluate(async () => {
+  if (navigator.serviceWorker.controller) return;
+  await new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }));
+});
+await page.reload();
+await page.getByRole("heading", { name: "Today’s decisions", exact: true }).waitFor();
+await page.waitForLoadState('networkidle');
 await context.setOffline(true);
 await page.reload();
 await page.getByRole("button", { name: "Retry", exact: true }).waitFor();

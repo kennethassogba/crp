@@ -1,10 +1,33 @@
+# fin · Projets finance
+
+[Ouvrir fin](https://fin.keff.uk/) · [Warrants](https://fin.keff.uk/warrants/) · [Méthode](https://fin.keff.uk/warrants/methode/) · [CRP](https://fin.keff.uk/crp/)
+
+`fin.keff.uk` est le point d’entrée. CRP est conservé sous `/crp/`, Warrants sous `/warrants/`. L’ancien domaine `crp.keff.uk` redirige vers le nouveau ; les APIs CRP gardent leurs chemins `/api/`. Le Worker, D1 et le journal existants sont conservés.
+
+## Warrants
+
+Le screener importe des catalogues CSV ou des jeux JSON jusqu’à 10 000 produits, calcule les remboursements à échéance et compare les modèles historiques et lognormaux. Le détail applique un bootstrap par blocs. Les observations sauvegardées et les imports restent dans le navigateur ; aucun ordre ni appel LLM n’est lancé par cette miniapp.
+
+Les cotations incluses sont des instantanés vérifiés le 16 octobre 2026. Aucun flux temps réel de warrants n’est connecté. Le collecteur actualise seulement les historiques publics, sauf import explicite d’un CSV de cotations. Une espérance estimée positive n’est pas présentée comme un avantage validé. [Protocole complet](docs/warrants-method.md).
+
+```sh
+npm run research:collect -- --output output/nouveau-snapshot.json
+npm run research:screen -- --input output/nouveau-snapshot.json --bootstrap
+npm run test:research
+npm run test:fin
+```
+
+Les deux entrées HTML sont séparées, afin que les styles et le service worker de CRP restent dans son périmètre. Le stockage local d’un domaine ne se transfère pas à un autre ; les anciennes installations PWA et leurs préférences doivent être réinstallées sur la nouvelle origine si nécessaire.
+
+---
+
 # CRP
 
 Daily BTC and ETH paper positions, with five OpenAI configurations and a recorded outcome for each decision.
 
-[Open CRP](https://crp.keff.uk) · [Method](https://crp.keff.uk/method.md) · [Public API](https://crp.keff.uk/openapi.json)
+[Open CRP](https://fin.keff.uk/crp/) · [Method](https://fin.keff.uk/method.md) · [Public API](https://fin.keff.uk/openapi.json)
 
-![CRP interface](https://crp.keff.uk/social-card.png)
+![CRP interface](https://fin.keff.uk/social-card.png)
 
 ## What it does
 
@@ -106,7 +129,7 @@ For another account, replace the account, database and domain in `cloudflare.con
 
 Install CRP from the browser’s app installation menu. On iOS, use Share → Add to Home Screen.
 
-The interface opens in dark mode. [Backtest](https://crp.keff.uk/#backtest) links directly to the historical benchmark; model replays are under Models → Historical replay.
+The interface opens in dark mode. [Backtest](https://fin.keff.uk/crp/#backtest) links directly to the historical benchmark; model replays are under Models → Historical replay.
 
 The PWA uses a single viewport at normal desktop and phone sizes, native selects and dialogs, safe-area insets, reduced-motion support and a mobile bottom navigation. Short screens and zoom may scroll so that controls remain reachable. The service worker caches the shell and static assets, while API responses remain network-only to avoid presenting offline decisions as current.
 

@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-19T00:04:27.200Z",
+  "node": "v24.13.0",
+  "count": 10000,
+  "elapsedMs": 19243.068356,
+  "peakRssMiB": 86.60546875,
+  "scenarioGroups": 5,
+  "scope": "Repeated evaluations of the six reference contracts, five models per evaluation, shared scenarios; excludes bootstrap, network, browser rendering and a genuinely distinct 10000-contract universe."
+}

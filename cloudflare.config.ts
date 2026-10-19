@@ -18,7 +18,7 @@ export default defineConfig({
       }),
       OPENAI_API_KEY: bindings.secret(),
     },
-    domains: ["crp.keff.uk"],
+    domains: ["fin.keff.uk", "crp.keff.uk"],
     triggers: [triggers.scheduled({ schedule: "*/15 * * * *" })],
     workersDev: true,
     observability: {

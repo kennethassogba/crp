@@ -4,6 +4,7 @@ import { stateValue, setState, tick } from "./jobs.js";
 import { discovery, GUIDE, LINKS, TOOLS } from "./discovery.js";
 import { fetchJSON } from "../lib/market.mjs";
 import { collectKraken } from "../lib/kraken.mjs";
+import { legacyRedirect, htmlEntry } from "../lib/site-routing.mjs";
 
 const headers = {
   "X-Content-Type-Options": "nosniff",
@@ -130,7 +131,16 @@ async function mcp(request, env) {
 }
 export default {
   async fetch(request, env) {
-    const path = new URL(request.url).pathname;
+    const url = new URL(request.url);
+    const path = url.pathname;
+    const redirect = legacyRedirect(url);
+    if (redirect) return Response.redirect(redirect, 308);
+    if (
+      ["/crp", "/warrants", "/warrants/methode", "/warrants/suivi"].includes(
+        path,
+      )
+    )
+      return Response.redirect(new URL(path + "/" + url.search, url).href, 308);
     try {
       if (path === "/mcp") return await mcp(request, env);
       if (!["GET", "HEAD"].includes(request.method))
@@ -155,34 +165,70 @@ export default {
         path === "/" &&
         (request.headers.get("Accept") ?? "").includes("text/markdown")
       )
-        return new Response(request.method === "HEAD" ? null : GUIDE, {
-          headers: {
-            ...headers,
-            "Content-Type": "text/markdown",
-            Vary: "Accept",
+        return new Response(
+          request.method === "HEAD"
+            ? null
+            : "# fin — Projets finance\n\nWarrants : https://fin.keff.uk/warrants/\nMéthode : https://fin.keff.uk/research/protocole.md\nDonnées : https://fin.keff.uk/research/snapshot.json\nCRP : https://fin.keff.uk/crp/\nAPI CRP : https://fin.keff.uk/openapi.json\n\nRecherche exploratoire, cotations horodatées, aucun ordre transmis.\n",
+          {
+            headers: {
+              ...headers,
+              "Content-Type": "text/markdown",
+              Vary: "Accept",
+            },
           },
-        });
+        );
       if (path === "/api/state") return json(await current(env, request));
       if (path === "/api/source-health") {
         const cached = await caches.default.match(request);
         if (cached) return cached;
-        const checks = await Promise.all([
-          ["Binance", "https://fapi.binance.com/fapi/v1/time"],
-          ["OKX", "https://www.okx.com/api/v5/public/time"],
-          ["Kraken Futures", "https://futures.kraken.com/derivatives/api/v3/tickers"],
-        ].map(async ([source, url]) => {
-          try {
-            const result = await fetchJSON(url);
-            return { source, ok: true, keys: Object.keys(result), at: Date.now() };
-          } catch (error) {
-            return { source, ok: false, error: error.message, at: Date.now() };
-          }
-        }));
+        const checks = await Promise.all(
+          [
+            ["Binance", "https://fapi.binance.com/fapi/v1/time"],
+            ["OKX", "https://www.okx.com/api/v5/public/time"],
+            [
+              "Kraken Futures",
+              "https://futures.kraken.com/derivatives/api/v3/tickers",
+            ],
+          ].map(async ([source, url]) => {
+            try {
+              const result = await fetchJSON(url);
+              return {
+                source,
+                ok: true,
+                keys: Object.keys(result),
+                at: Date.now(),
+              };
+            } catch (error) {
+              return {
+                source,
+                ok: false,
+                error: error.message,
+                at: Date.now(),
+              };
+            }
+          }),
+        );
         let live;
         try {
           const market = await collectKraken(10);
-          live = { ok: true, source: market.source, to: market.to, assets: Object.fromEntries(Object.entries(market.assets).map(([asset, s]) => [asset, { bars: s.bars.length, marks: s.marks.length, funding: s.funding.length }])) };
-        } catch (error) { live = { ok: false, error: error.message }; }
+          live = {
+            ok: true,
+            source: market.source,
+            to: market.to,
+            assets: Object.fromEntries(
+              Object.entries(market.assets).map(([asset, s]) => [
+                asset,
+                {
+                  bars: s.bars.length,
+                  marks: s.marks.length,
+                  funding: s.funding.length,
+                },
+              ]),
+            ),
+          };
+        } catch (error) {
+          live = { ok: false, error: error.message };
+        }
         const response = json({ checks, live });
         response.headers.set("Cache-Control", "public, max-age=600");
         await caches.default.put(request, response.clone());
@@ -195,13 +241,48 @@ export default {
       if (path.startsWith("/api/"))
         return json({ error: "Endpoint not found. Read /openapi.json." }, 404);
       const response = await env.ASSETS.fetch(
-        path === "/"
-          ? new Request(new URL("/index.html", request.url), request)
+        htmlEntry(path)
+          ? new Request(new URL(htmlEntry(path), request.url), request)
           : request,
       );
-      const next = new Response(response.body, response);
+      const financePage = [
+        "/warrants/",
+        "/warrants/methode/",
+        "/warrants/suivi/",
+      ].includes(path);
+      const titles = {
+        "/warrants/": "Warrants · fin",
+        "/warrants/methode/": "Méthode de recherche · fin",
+        "/warrants/suivi/": "Suivi de recherche · fin",
+      };
+      const rendered =
+        financePage && response.ok
+          ? new HTMLRewriter()
+              .on('link[rel="canonical"]', {
+                element(el) {
+                  el.setAttribute("href", "https://fin.keff.uk" + path);
+                },
+              })
+              .on('meta[property="og:url"]', {
+                element(el) {
+                  el.setAttribute("content", "https://fin.keff.uk" + path);
+                },
+              })
+              .on('meta[property="og:title"]', {
+                element(el) {
+                  el.setAttribute("content", titles[path]);
+                },
+              })
+              .on("title", {
+                element(el) {
+                  el.setInnerContent(titles[path]);
+                },
+              })
+              .transform(response)
+          : response;
+      const next = new Response(rendered.body, rendered);
       Object.entries(headers).forEach(([k, v]) => next.headers.set(k, v));
-      if (path === "/") {
+      if (["/index.html", "/crp.html"].includes(htmlEntry(path))) {
         next.headers.set("Cache-Control", "no-store");
         next.headers.set("Vary", "Accept");
       }
@@ -232,14 +313,19 @@ export default {
   async scheduled(_controller, env, ctx) {
     ctx.waitUntil(
       tick(env).catch(async (error) => {
-        const message = error instanceof Error ? error.message : "Unknown error";
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
         console.error(
           JSON.stringify({
             event: "scheduled_failed",
             error: message,
           }),
         );
-        await setState(env, "scheduler", { at: Date.now(), status: "failed", error: message });
+        await setState(env, "scheduler", {
+          at: Date.now(),
+          status: "failed",
+          error: message,
+        });
       }),
     );
   },

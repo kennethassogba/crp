@@ -2,6 +2,13 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { cloudflare } from "@cloudflare/vite-plugin";
 export default defineConfig({
+  environments: {
+    client: {
+      build: {
+        rollupOptions: { input: { fin: "index.html", crp: "crp.html" } },
+      },
+    },
+  },
   plugins: [
     react(),
     cloudflare({ experimental: { newConfig: true }, inspectorPort: false }),

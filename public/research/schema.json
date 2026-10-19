@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "fin research snapshot v1",
+  "type": "object",
+  "required": [
+    "version",
+    "analysisDate",
+    "fx",
+    "products",
+    "assets"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "analysisDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "quoteDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "fx": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "products": {
+      "type": "array",
+      "maxItems": 10000,
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "isin",
+          "underlying",
+          "direction",
+          "strike",
+          "ratio",
+          "bid",
+          "ask",
+          "currency",
+          "expiry",
+          "quoteAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "isin": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}[A-Z0-9]{9}[0-9]$"
+          },
+          "underlying": {
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "call",
+              "put"
+            ]
+          },
+          "strike": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "ratio": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "bid": {
+            "type": "number",
+            "minimum": 0
+          },
+          "ask": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "currency": {
+            "enum": [
+              "EUR",
+              "USD"
+            ]
+          },
+          "expiry": {
+            "type": "string",
+            "format": "date"
+          },
+          "quoteAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "commission": {
+            "type": "number",
+            "minimum": 0
+          },
+          "commissionPct": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minOrder": {
+            "type": "number",
+            "minimum": 0
+          },
+          "commissionMin": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "name",
+          "symbol",
+          "dates",
+          "closes",
+          "source",
+          "sourceUrl",
+          "collectedAt"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "dates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date"
+            },
+            "minItems": 100,
+            "maxItems": 10000
+          },
+          "closes": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "minItems": 100,
+            "maxItems": 10000
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "collectedAt": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

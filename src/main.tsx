@@ -137,7 +137,7 @@ function App() {
   useEffect(() => {
     load();
     if ("serviceWorker" in navigator)
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register("/crp/sw.js", { scope: "/crp/" }).catch(() => {});
   }, []);
   useEffect(() => {
     const navigate = () => {
@@ -227,7 +227,7 @@ function App() {
         Skip to workspace
       </a>
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="CRP home">
+        <a className="brand" href="/crp/" aria-label="CRP home">
           <span className="brand-mark">
             <i />
             <i />
@@ -269,7 +269,7 @@ function App() {
       <div className="workspace">
         <header className="topbar">
           <div className="breadcrumb">
-            <span>CRP</span>
+            <a href="/" aria-label="Finance home" title="Retour à fin">CRP</a>
             <span className="slash">/</span>
             <h1>{NAV.find((n) => n.id === view)?.label}</h1>
           </div>

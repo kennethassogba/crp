@@ -1,4 +1,4 @@
-name: Verify CRP
+name: Verify Finance
 on:
   push:
     branches: [main]
@@ -33,6 +33,8 @@ jobs:
           curl --retry 30 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:5185/ > /dev/null
           curl --silent http://127.0.0.1:5185/api/state > /dev/null
           node scripts/seed-local.mjs
+          npm run test:fin
           npm run test:ui
           npm run test:install
+          npm run test:pwa
           CRP_URL=http://127.0.0.1:5185 npm run smoke

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-const base = process.env.CRP_URL ?? "https://crp.keff.uk";
+const base = process.env.CRP_URL ?? "https://fin.keff.uk";
 for (const path of [
   "/",
   "/manifest.webmanifest",
