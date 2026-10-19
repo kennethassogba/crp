@@ -44,3 +44,8 @@ Not verified : installation sur appareil physique, Safari/VoiceOver et TalkBack.
 ## Verdict
 
 Approve dans le périmètre Chromium inspecté. Aucun avertissement masqué. Aucune requête de modèle déclenchée par les tests.
+
+
+### Suivi du hook — état sélectionné
+
+Les deux signalements `side-tab` de la ligne de modèle sélectionnée (sens normal et RTL) ont été corrigés : suppression des ombres internes latérales de 3 px. Le fond sélectionné est conservé, accompagné d’une coche Lucide décorative. L’état accessible reste fourni par `aria-pressed`. Aucun ignore ajouté.

@@ -1739,10 +1739,6 @@ pre {
 }
 .stock-row[aria-pressed="true"] {
   background: var(--surface);
-  box-shadow: inset 3px 0 var(--accent);
-}
-[dir="rtl"] .stock-row[aria-pressed="true"] {
-  box-shadow: inset -3px 0 var(--accent);
 }
 .stock-name {
   min-inline-size: 0;
@@ -1753,6 +1749,11 @@ pre {
   font-weight: 650;
   font-size: 1rem;
   line-height: 1.4;
+}
+.selection-check {
+  margin-inline-start: 6px;
+  vertical-align: middle;
+  color: var(--muted);
 }
 .stock-name > small {
   display: block;

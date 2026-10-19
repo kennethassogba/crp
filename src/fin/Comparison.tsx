@@ -1,5 +1,5 @@
 import React, { useId, useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Check } from "lucide-react";
 import { useChartWidth } from "./Charts";
 import { Sparkline } from "./Sparkline";
 import { euro, signedEuro, number } from "./format";
@@ -144,7 +144,12 @@ export function ComparisonView({
                 onClick={() => setSelectedId(m.id)}
               >
                 <span className="stock-name">
-                  <strong>{m.name}</strong>
+                  <strong>
+                    {m.name}
+                    {selected.id === m.id && (
+                      <Check className="selection-check" size={13} aria-hidden="true" />
+                    )}
+                  </strong>
                   <small>{position(m)}</small>
                 </span>
                 <Sparkline
