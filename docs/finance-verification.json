@@ -2,7 +2,7 @@
   "date": "2026-10-20",
   "stage": "Local verification before deployment, EUR-100 comparison and dark-only theme",
   "typecheck": "passed",
-  "tests": 36,
+  "tests": 37,
   "independentReferenceTests": 7,
   "archiveReproduction": "Not rerun in this revision; warrant engine and archive unchanged",
   "finance": {

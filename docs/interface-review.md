@@ -29,7 +29,7 @@ Constats résolus pendant cette révision. Le choix du mode sombre suit le brief
 
 Contrôles locaux exécutés :
 
-- `npm run check`, `npm test` : typage et 36 tests, dont huit nouveaux contrôles de normalisation, valorisation, coûts, causalité, sources, stops et liquidation. La valorisation à l’horizon reproduit exactement le règlement du moteur existant.
+- `npm run check`, `npm test` : typage et 37 tests, dont neuf nouveaux contrôles de normalisation, valorisation, coûts, causalité, sources, stops, liquidation et relève quotidienne sans double comptage. La valorisation à l’horizon reproduit exactement le règlement du moteur existant.
 - `npm run test:fin` : 36 combinaisons de routes/largeurs, détail Warrants, simulateur, import, sauvegarde/annulation, persistance, navigation et récupération d’erreur.
 - `npm run test:ui` : comparaison à 100 €, gains positifs et négatifs de fixtures, espèces, BTC, ETH, échec, retard, détail, focus, clavier, souris, toucher, historique, texte à 200 % et RTL à trois largeurs. Les fixtures ne sont jamais écrites dans D1.
 - `npm run test:theme` : mode sombre et dix paires de contraste. Texte principal 16,42:1, secondaire 7,59:1 sur page et 7,21:1 sur panneau, perte 9,50:1, bouton principal 5,45:1, limite de contrôle 3,12:1. Trois tracés au-dessus de 8,9:1.

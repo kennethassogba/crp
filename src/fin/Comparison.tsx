@@ -63,17 +63,25 @@ const position = (m: ComparisonModel) =>
           ? "Espèces"
           : m.action.replace("_", " · ").replace("X", "×");
 const valuation = (m: ComparisonModel) =>
-  m.valuationStatus === "waiting-entry"
-    ? "Entrée à venir"
-    : m.valuationStatus === "unavailable"
-      ? "Valorisation indisponible"
-      : ["stopped", "liquidated", "expired"].includes(m.valuationStatus)
-        ? "Sortie à confirmer"
-        : m.action === "CASH"
-          ? "Aucune position"
-          : m.valuationStatus === "open"
-            ? "Position ouverte"
-            : "Position clôturée";
+  m.latestStatus === "missing"
+    ? "Pas encore de décision"
+    : m.latestStatus === "failed"
+      ? "Décision non exécutée"
+      : m.latestStatus === "late"
+        ? "Décision exclue"
+        : m.latestStatus === "reserved"
+          ? "Calcul en cours"
+          : m.valuationStatus === "waiting-entry"
+            ? "Entrée à venir"
+            : m.valuationStatus === "unavailable"
+              ? "Valorisation indisponible"
+              : ["stopped", "liquidated", "expired"].includes(m.valuationStatus)
+                ? "Sortie à confirmer"
+                : m.action === "CASH"
+                  ? "Décision en espèces"
+                  : m.valuationStatus === "open"
+                    ? "Position ouverte"
+                    : "Position clôturée";
 
 export function ComparisonView({
   data,

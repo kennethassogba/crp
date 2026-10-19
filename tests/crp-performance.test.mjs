@@ -209,3 +209,21 @@ test("overlapping unsettled positions never produce an invented aggregate", () =
   assert.equal(result.models[0].estimatedCapital, null);
   assert.equal(result.models[0].valuationStatus, "unavailable");
 });
+
+test("a new decision awaiting entry does not hide the previous open position", () => {
+  const prior = run("prior", "luna", "BTC_1X");
+  const next = run("next", "luna", "BTC_2X", null, {
+    snapshot_at: at + DAY,
+    entry_after: entryAt + DAY,
+  });
+  for (const hours of [23, 24]) {
+    const market = fixture(hours);
+    const model = compareCrp(MODELS, [prior, next], market).models[0];
+    const expected =
+      markPosition(prior.decision, prior.snapshot, market).pnl * 0.01;
+    assert.equal(model.valuationStatus, "waiting-entry");
+    assert.equal(model.pendingPnl, expected);
+    assert.ok(model.estimatedCapital > 100);
+    assert.equal(model.latestRunId, "next");
+  }
+});
