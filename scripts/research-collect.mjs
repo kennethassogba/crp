@@ -50,6 +50,25 @@ for (const [id, old] of Object.entries(data.assets)) {
     console.error(`${id}: ${error.message}; previous history retained`);
   }
 }
+try {
+  const response = await fetch(
+    "https://query1.finance.yahoo.com/v8/finance/chart/EURUSD=X?range=5d&interval=1d",
+    { signal: AbortSignal.timeout(20000) },
+  );
+  if (!response.ok) throw Error(`HTTP ${response.status}`);
+  const chart = (await response.json()).chart?.result?.[0];
+  const value = chart?.indicators?.quote?.[0]?.close
+    ?.filter((x) => Number.isFinite(x) && x > 0)
+    .at(-1);
+  if (!(value > 0)) throw Error("Invalid EUR/USD");
+  data.fx = value;
+  data.fxAt = new Date(chart.timestamp.at(-1) * 1000).toISOString();
+  data.fxSource = "Yahoo Finance EURUSD=X";
+  console.log(`EURUSD: ${value}`);
+} catch (error) {
+  failures.push("EURUSD");
+  console.error(`EURUSD: ${error.message}; previous rate retained`);
+}
 if (args.includes("--quotes")) {
   const rows = parseCSV(await readFile(resolve(arg("--quotes")), "utf8"));
   data.products = rows;

@@ -12,9 +12,7 @@ const context = await browser.newContext({
 const page = await context.newPage();
 page.setDefaultTimeout(20_000);
 await page.goto(base);
-await page
-  .getByRole("heading", { name: "Today’s decisions", exact: true })
-  .waitFor();
+await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
 await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
 const cdp = await context.newCDPSession(page);
 const install = await cdp.send("Page.getInstallabilityErrors");
@@ -28,21 +26,25 @@ assert.ok(manifest.icons.some((i) => i.sizes === "512x512"));
 // online reload primes development modules as well as production assets.
 await page.evaluate(async () => {
   if (navigator.serviceWorker.controller) return;
-  await new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }));
+  await new Promise((resolve) =>
+    navigator.serviceWorker.addEventListener("controllerchange", resolve, {
+      once: true,
+    }),
+  );
 });
 await page.reload();
-await page.getByRole("heading", { name: "Today’s decisions", exact: true }).waitFor();
-await page.waitForLoadState('networkidle');
+await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
+await page.waitForLoadState("networkidle");
 await context.setOffline(true);
 await page.reload();
-await page.getByRole("button", { name: "Retry", exact: true }).waitFor();
-await page.getByRole("link", { name: "Open dataset", exact: true }).waitFor();
+await page.getByRole("button", { name: "Réessayer", exact: true }).waitFor();
+await page
+  .getByRole("link", { name: "Télécharger les données", exact: true })
+  .waitFor();
 await page.screenshot({ path: "output/playwright/offline.png" });
 await context.setOffline(false);
-await page.getByRole("button", { name: "Retry", exact: true }).click();
-await page
-  .getByRole("heading", { name: "Today’s decisions", exact: true })
-  .waitFor();
+await page.getByRole("button", { name: "Réessayer", exact: true }).click();
+await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
 await context.close();
 
 // Intercept only browser responses to examine recoverable states. No model calls.
@@ -79,14 +81,12 @@ for (const state of ["loading", "error", "empty"]) {
   if (state === "loading")
     await p
       .getByRole("status")
-      .filter({ hasText: "Loading recorded" })
+      .filter({ hasText: "Chargement des décisions" })
       .waitFor();
   if (state === "error")
-    await p.getByRole("button", { name: "Retry", exact: true }).waitFor();
+    await p.getByRole("button", { name: "Réessayer", exact: true }).waitFor();
   if (state === "empty")
-    await p
-      .getByRole("heading", { name: "Today’s decisions", exact: true })
-      .waitFor();
+    await p.getByRole("heading", { name: /^Décisions/ }).waitFor();
   const scan = await new AxeBuilder({ page: p })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();

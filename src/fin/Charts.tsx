@@ -1,7 +1,181 @@
-import React from "react";
-import { euro, number, percent, signedEuro } from "./format";
-import benchmark from "./home-chart.json";
+import React, { useEffect, useId, useRef, useState } from "react";
+import {
+  date,
+  observedTime,
+  euro,
+  number,
+  percent,
+  signedEuro,
+} from "./format";
 
+function useChartWidth(key: number) {
+  const ref = useRef<HTMLDivElement>(null),
+    [width, setWidth] = useState(790);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) =>
+      setWidth(Math.max(260, Math.round(entry.contentRect.width))),
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [key]);
+  return { ref, width };
+}
+
+export function LineChart({
+  values,
+  dates,
+  name,
+  unit = "$",
+}: {
+  values: number[];
+  dates: string[];
+  name: string;
+  unit?: string;
+}) {
+  const [active, setActive] = useState<number | null>(null),
+    id = useId(),
+    { ref, width } = useChartWidth(values.length);
+  useEffect(() => setActive(null), [name, values.length]);
+  if (values.length < 2)
+    return (
+      <p className="chart-empty">
+        Pas encore assez de points pour tracer une courbe.
+      </p>
+    );
+  const low = Math.min(...values),
+    high = Math.max(...values),
+    range = Math.max(high - low, high * 0.001, 1),
+    min = low - range * 0.12,
+    max = high + range * 0.12;
+  const span = width - 76,
+    x = (i: number) => 12 + (i / (values.length - 1)) * span,
+    y = (v: number) => 188 - ((v - min) / (max - min)) * 156;
+  const path = values
+      .map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`)
+      .join(" "),
+    index = active ?? values.length - 1;
+  const value = (v: number) =>
+    unit === "€" ? euro(v, 2) : `${number(v, 2)} ${unit}`;
+  return (
+    <div
+      ref={ref}
+      className="interactive-chart line-chart"
+      tabIndex={0}
+      role="group"
+      aria-label={`${name}. Utiliser les flèches pour parcourir les dates.`}
+      aria-describedby={id}
+      onKeyDown={(e) => {
+        if (["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)) {
+          e.preventDefault();
+          setActive(
+            e.key === "Home"
+              ? 0
+              : e.key === "End"
+                ? values.length - 1
+                : Math.max(
+                    0,
+                    Math.min(
+                      values.length - 1,
+                      index + (e.key === "ArrowRight" ? 1 : -1),
+                    ),
+                  ),
+          );
+        }
+      }}
+    >
+      <div className="chart-readout" id={id} role="status">
+        <span>
+          {dates[index].includes("T")
+            ? observedTime(dates[index])
+            : date(dates[index], true)}
+        </span>
+        <strong>{value(values[index])}</strong>
+      </div>
+      <svg
+        viewBox={`0 0 ${width} 225`}
+        role="img"
+        aria-label={`${name}, de ${value(values[0])} à ${value(values.at(-1)!)}`}
+        onPointerMove={(e) => {
+          const box = e.currentTarget.getBoundingClientRect();
+          setActive(
+            Math.max(
+              0,
+              Math.min(
+                values.length - 1,
+                Math.round(
+                  ((((e.clientX - box.left) / box.width) * width - 12) / span) *
+                    (values.length - 1),
+                ),
+              ),
+            ),
+          );
+        }}
+        onPointerLeave={() => setActive(null)}
+        onPointerDown={(e) => {
+          const box = e.currentTarget.getBoundingClientRect();
+          setActive(
+            Math.max(
+              0,
+              Math.min(
+                values.length - 1,
+                Math.round(
+                  ((((e.clientX - box.left) / box.width) * width - 12) / span) *
+                    (values.length - 1),
+                ),
+              ),
+            ),
+          );
+        }}
+      >
+        {[0, 0.5, 1].map((q) => (
+          <g key={q}>
+            <line
+              x1="12"
+              x2={width - 64}
+              y1={188 - q * 156}
+              y2={188 - q * 156}
+              className="gridline"
+            />
+            <text x={width - 54} y={192 - q * 156}>
+              {number(min + q * (max - min), 0)}
+            </text>
+          </g>
+        ))}
+        <path d={path} className="price-path" />
+        {active !== null && (
+          <line
+            x1={x(index)}
+            x2={x(index)}
+            y1="25"
+            y2="188"
+            className="crosshair"
+          />
+        )}
+        <circle
+          cx={x(index)}
+          cy={y(values[index])}
+          r="4"
+          className="price-dot"
+        />
+        {[0, 0.5, 1].map((q) => (
+          <text
+            key={q}
+            x={12 + q * span}
+            y="217"
+            textAnchor={q === 0 ? "start" : q === 1 ? "end" : "middle"}
+          >
+            {date(dates[Math.round(q * (values.length - 1))])}
+          </text>
+        ))}
+      </svg>
+      <span className="chart-instruction">
+        Survoler, toucher ou utiliser les flèches.
+      </span>
+    </div>
+  );
+}
 export function PriceChart({
   closes,
   dates,
@@ -11,59 +185,12 @@ export function PriceChart({
   dates: string[];
   name: string;
 }) {
-  const data = closes.slice(-252),
-    min = Math.min(...data) * 0.97,
-    max = Math.max(...data) * 1.03;
-  const path = data
-    .map(
-      (v, i) =>
-        `${i ? "L" : "M"}${40 + (i / (data.length - 1)) * 710},${178 - ((v - min) / (max - min)) * 145}`,
-    )
-    .join(" ");
   return (
-    <svg
-      viewBox="0 0 800 215"
-      role="img"
-      aria-label={`${name}, clôtures sur un an, dernière valeur ${number(data.at(-1)!, 2)}`}
-      className="price-chart"
-    >
-      {[0, 1, 2].map((i) => (
-        <g key={i}>
-          <line
-            x1="40"
-            x2="750"
-            y1={33 + i * 72.5}
-            y2={33 + i * 72.5}
-            className="gridline"
-          />
-          <text x="760" y={37 + i * 72.5}>
-            {number(max - (i / 2) * (max - min))}
-          </text>
-        </g>
-      ))}
-      <path d={path} className="price-path" />
-      <circle
-        cx="750"
-        cy={178 - ((data.at(-1)! - min) / (max - min)) * 145}
-        r="3"
-        className="price-dot"
-      />
-      {[0, 0.25, 0.5, 0.75, 1].map((q, i) => (
-        <text
-          key={i}
-          x={40 + q * 710}
-          y="207"
-          textAnchor={i === 0 ? "start" : i === 4 ? "end" : "middle"}
-        >
-          {new Intl.DateTimeFormat("fr-FR", {
-            month: "short",
-            timeZone: "UTC",
-          }).format(
-            new Date(dates.slice(-252)[Math.round(q * (data.length - 1))]),
-          )}
-        </text>
-      ))}
-    </svg>
+    <LineChart
+      values={closes.slice(-252)}
+      dates={dates.slice(-252)}
+      name={name}
+    />
   );
 }
 export function Distribution({
@@ -73,105 +200,125 @@ export function Distribution({
   net: number[];
   budget: number;
 }) {
-  const upper = budget * 10,
+  const [active, setActive] = useState(0),
+    id = useId(),
+    { ref, width: chartWidth } = useChartWidth(net.length);
+  const plotWidth = chartWidth - 56,
+    step = plotWidth / 30,
+    upper = budget * 10,
+    width = (upper + budget) / 30,
     bins = Array.from({ length: 30 }, () => 0);
   net.forEach(
-    (v) =>
-      bins[
-        Math.min(
-          29,
-          Math.max(
-            0,
-            Math.floor(((Math.min(v, upper) + budget) / (upper + budget)) * 30),
-          ),
-        )
-      ]++,
+    (v) => bins[Math.max(0, Math.min(29, Math.floor((v + budget) / width)))]++,
   );
-  const top = Math.max(...bins),
-    zero = 48 + (budget / (upper + budget)) * 690;
+  const top = Math.max(1, ...bins),
+    label = (i: number) =>
+      i === 29
+        ? `Au moins ${signedEuro(-budget + i * width)}`
+        : `${signedEuro(-budget + i * width)} à ${signedEuro(-budget + (i + 1) * width)}`;
   return (
-    <figure className="distribution">
+    <div
+      ref={ref}
+      className="interactive-chart distribution"
+      role="group"
+      tabIndex={0}
+      aria-label="Gains nets à l’échéance. Utiliser les flèches pour explorer les tranches."
+      aria-describedby={id}
+      onKeyDown={(e) => {
+        if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
+          e.preventDefault();
+          setActive(
+            e.key === "Home"
+              ? 0
+              : e.key === "End"
+                ? 29
+                : Math.max(
+                    0,
+                    Math.min(29, active + (e.key === "ArrowRight" ? 1 : -1)),
+                  ),
+          );
+        }
+      }}
+    >
+      <div className="chart-readout" role="status" id={id}>
+        <span>{label(active)}</span>
+        <strong>
+          {percent(bins[active] / net.length)}
+          <small>
+            {" "}
+            · {number(bins[active])}/{number(net.length)} scénarios
+          </small>
+        </strong>
+      </div>
       <svg
-        viewBox="0 0 790 235"
+        viewBox={`0 0 ${chartWidth} 230`}
         role="img"
-        aria-label={`Distribution historique : ${percent(net.filter((v) => v <= -budget * 0.99).length / net.length)} des scénarios perdent presque toute la mise. La dernière barre regroupe les gains supérieurs à dix fois le budget.`}
+        aria-label={`Distribution de ${number(net.length)} scénarios de gain net`}
       >
         {[0, 0.5, 1].map((q) => (
           <g key={q}>
             <line
-              className="gridline"
               x1="48"
-              x2="738"
+              x2={chartWidth - 8}
               y1={185 - q * 150}
               y2={185 - q * 150}
+              className="gridline"
             />
-            <text x="37" y={189 - q * 150} textAnchor="end">
+            <text x="39" y={189 - q * 150} textAnchor="end">
               {percent((q * top) / net.length, 0)}
             </text>
           </g>
         ))}
         {bins.map((v, i) => (
-          <rect
+          <g
             key={i}
-            x={48 + i * 23}
-            y={185 - (v / top) * 150}
-            width="18"
-            height={Math.max(1, (v / top) * 150)}
-            rx="2"
-            className={i < 3 ? "hist-loss" : "hist-gain"}
+            onPointerEnter={() => setActive(i)}
+            onPointerDown={() => setActive(i)}
           >
-            <title>
-              {v} scénarios · {percent(v / net.length)}
-            </title>
-          </rect>
+            <rect
+              x={48 + i * step}
+              y="25"
+              width={step}
+              height="162"
+              fill="transparent"
+            />
+            <rect
+              x={48 + i * step + 2}
+              y={185 - (v / top) * 150}
+              width={Math.max(2, step * 0.75)}
+              height={Math.max(1, (v / top) * 150)}
+              rx="2"
+              className={`${-budget + (i + 1) * width <= 0 ? "hist-loss" : "hist-gain"} ${active === i ? "is-active" : ""}`}
+            >
+              <title>
+                {label(i)} : {percent(v / net.length)}, {v} scénarios
+              </title>
+            </rect>
+          </g>
         ))}
-        <line x1={zero} x2={zero} y1="25" y2="190" className="zero-line" />
-        <text x="48" y="216">
-          {signedEuro(-budget)}
-        </text>
-        <text x="245" y="216">
-          {euro(budget * 2)}
-        </text>
-        <text x="452" y="216">
-          {euro(budget * 5)}
-        </text>
-        <text x="738" y="216" textAnchor="end">
-          ≥ {euro(upper)}
-        </text>
+        <line
+          x1={48 + (budget / (upper + budget)) * plotWidth}
+          x2={48 + (budget / (upper + budget)) * plotWidth}
+          y1="25"
+          y2="190"
+          className="zero-line"
+        />
+        {(chartWidth < 480 ? [0, 14, 29] : [0, 10, 20, 29]).map((i) => (
+          <text
+            key={i}
+            x={i === 29 ? chartWidth - 8 : 48 + i * step}
+            y="218"
+            textAnchor={i === 0 ? "start" : i === 29 ? "end" : "middle"}
+          >
+            {i === 29 ? "≥ " : ""}
+            {signedEuro(-budget + i * width)}
+          </text>
+        ))}
       </svg>
-      <figcaption>
-        Distribution des gains nets à l’échéance. La dernière barre regroupe les
-        gains ≥ {euro(upper)}.
-      </figcaption>
-    </figure>
-  );
-}
-export function MiniChart({ kind }: { kind: "warrants" | "crp" }) {
-  const curve = benchmark.curve,
-    low = Math.min(...curve),
-    high = Math.max(...curve);
-  const line = curve
-    .map(
-      (v, i) =>
-        `${i ? "L" : "M"}${(i / (curve.length - 1)) * 220},${85 - ((v - low) / Math.max(1, high - low)) * 78}`,
-    )
-    .join(" ");
-  return (
-    <svg viewBox="0 0 220 92" aria-hidden="true" className="mini-chart">
-      {[20, 45, 70].map((y) => (
-        <line key={y} x1="0" x2="220" y1={y} y2={y} className="gridline" />
-      ))}
-      {kind === "warrants" ? (
-        <>
-          <path
-            d="M0 76 L65 76 L92 76 L120 58 L150 38 L185 15 L215 0"
-            className="price-path"
-          />
-          <line x1="92" x2="92" y1="5" y2="85" className="zero-line" />
-        </>
-      ) : (
-        <path d={line} className="price-path" />
-      )}
-    </svg>
+      <span className="chart-instruction">
+        Chaque barre regroupe une tranche de gain net, après frais et avant
+        impôts.
+      </span>
+    </div>
   );
 }

@@ -50,9 +50,7 @@ async function open({
   // Freeze before navigation so network latency cannot count as test engagement.
   if (freezeClock) await page.clock.pauseAt(new Date(initialTime + 1000));
   await page.goto(base);
-  await page
-    .getByRole("heading", { name: "Today’s decisions", exact: true })
-    .waitFor();
+  await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
   return { page, context };
 }
 async function nativeOffer(page, outcome = "dismissed") {
@@ -71,7 +69,7 @@ async function nativeOffer(page, outcome = "dismissed") {
   assert.equal(await page.evaluate(() => window.installDefaultPrevented), true);
 }
 const button = (page) =>
-  page.getByRole("button", { name: "Install app", exact: true });
+  page.getByRole("button", { name: "Installer", exact: true });
 
 // Three distinct visits; quick reloads do not increase the count.
 {
@@ -79,9 +77,7 @@ const button = (page) =>
   await nativeOffer(page);
   assert.equal(await button(page).count(), 0);
   await page.reload();
-  await page
-    .getByRole("heading", { name: "Today’s decisions", exact: true })
-    .waitFor();
+  await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
   assert.equal(
     await page.evaluate(
       (key) => JSON.parse(localStorage.getItem(key)).visits,
@@ -115,9 +111,7 @@ const button = (page) =>
   );
   assert.ok(snooze > 13.9 * 86_400_000 && snooze <= 14 * 86_400_000);
   await page.reload();
-  await page
-    .getByRole("heading", { name: "Today’s decisions", exact: true })
-    .waitFor();
+  await page.getByRole("heading", { name: /^Décisions/ }).waitFor();
   await nativeOffer(page);
   assert.equal(await button(page).count(), 0);
   checks.push(
@@ -143,10 +137,10 @@ for (const outcome of ["accepted", "error"]) {
     );
   } else {
     await page
-      .getByRole("dialog", { name: "Install CRP", exact: true })
-      .getByText(/reload the page and try again/)
+      .getByRole("dialog", { name: "Installer Fin", exact: true })
+      .getByText(/recharger la page puis réessayer/)
       .waitFor();
-    await page.getByRole("button", { name: "Got it", exact: true }).click();
+    await page.getByRole("button", { name: "Fermer", exact: true }).click();
     assert.equal(await button(page).count(), 0);
   }
   await context.close();
@@ -199,8 +193,11 @@ for (const width of [320, 375, 390, 768, 1440]) {
     path: `output/playwright/install-offer-${width}.png`,
   });
   await button(page).click();
-  const dialog = page.getByRole("dialog", { name: "Install CRP", exact: true });
-  await dialog.getByText("Add to Home Screen", { exact: true }).waitFor();
+  const dialog = page.getByRole("dialog", {
+    name: "Installer Fin",
+    exact: true,
+  });
+  await dialog.getByText("Sur l’écran d’accueil", { exact: true }).waitFor();
   const issues = (
     await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
@@ -217,7 +214,7 @@ for (const width of [320, 375, 390, 768, 1440]) {
   await button(page).waitFor({ state: "hidden" });
   assert.equal(
     await page
-      .getByRole("button", { name: "Download evidence", exact: true })
+      .getByRole("button", { name: "Actualiser les données", exact: true })
       .evaluate((el) => el === document.activeElement),
     true,
   );
@@ -253,7 +250,10 @@ checks.push(
   await page.clock.runFor(180_000);
   await button(page).waitFor();
   await page
-    .getByRole("button", { name: "Dismiss install suggestion", exact: true })
+    .getByRole("button", {
+      name: "Masquer la proposition d’installation",
+      exact: true,
+    })
     .click();
   assert.equal(await button(page).count(), 0);
   checks.push("Storage-denied fallback without crashes");

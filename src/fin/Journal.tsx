@@ -14,12 +14,8 @@ export function Journal({
     <section className="journal-page">
       <div className="page-heading">
         <div>
-          <div className="eyebrow">Observations prospectives</div>
-          <h1>Suivi de recherche</h1>
-          <p>
-            Les hypothèses enregistrées avant le résultat. Conservées dans ce
-            navigateur.
-          </p>
+          <h1>Analyses enregistrées</h1>
+          <p>Prix et hypothèses conservés dans ce navigateur.</p>
         </div>
         <button
           className="button secondary"
@@ -37,13 +33,10 @@ export function Journal({
       {!rows.length ? (
         <div className="empty-state">
           <Bookmark size={26} />
-          <h2>Aucune observation enregistrée</h2>
-          <p>
-            Depuis un warrant, utiliser « Enregistrer l’analyse » pour figer son
-            prix et ses hypothèses.
-          </p>
+          <h2>Aucune analyse enregistrée</h2>
+          <p>Ouvrir un contrat puis choisir « Enregistrer l’analyse ».</p>
           <a className="button" href="/warrants/">
-            Ouvrir le screener
+            Voir les warrants
           </a>
         </div>
       ) : (
@@ -79,7 +72,7 @@ export function Journal({
                   <dd>{euro(r.budget)}</dd>
                 </div>
                 <div>
-                  <dt>Espérance estimée</dt>
+                  <dt>Gain moyen estimé</dt>
                   <dd>{signedEuro(r.expected)}</dd>
                 </div>
                 <div>

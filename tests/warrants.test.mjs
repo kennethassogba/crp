@@ -15,7 +15,9 @@ import {
 } from "../lib/warrants.mjs";
 import { htmlEntry, legacyRedirect } from "../lib/site-routing.mjs";
 const data = JSON.parse(
-  await readFile(new URL("../public/research/snapshot.json", import.meta.url)),
+  await readFile(
+    new URL("./fixtures/reference-snapshot.json", import.meta.url),
+  ),
 );
 const p = data.products.find((p) => p.id === "Z377S"),
   h = data.assets.PLTR;
@@ -104,7 +106,7 @@ test("legacy hostname redirects to scoped CRP, keeping API and query paths", () 
     "https://fin.keff.uk/api/state?x=1",
   );
   assert.equal(legacyRedirect(new URL("https://fin.keff.uk/")), null);
-  assert.equal(htmlEntry("/crp/"), "/crp.html");
+  assert.equal(htmlEntry("/crp/"), "/index.html");
   assert.equal(htmlEntry("/warrants/methode/"), "/index.html");
   assert.equal(htmlEntry("/not-a-page"), null);
 });

@@ -3,7 +3,6 @@ import {
   ArrowDownToLine,
   ArrowUpRight,
   ChevronRight,
-  CircleHelp,
   FileUp,
   Search,
   SlidersHorizontal,
@@ -12,39 +11,57 @@ import {
 import { parseCSV, validateProduct } from "../../lib/warrants.mjs";
 import type { Dataset, Observation, Product } from "./types";
 import { Detail } from "./Detail";
-import { date, download, euro, number, percent, signedEuro } from "./format";
+import {
+  date,
+  observedTime,
+  download,
+  euro,
+  number,
+  percent,
+  signedEuro,
+} from "./format";
 
 export function Screener({
   dataset,
   setDataset,
   onSave,
+  active = true,
 }: {
+  active?: boolean;
   dataset: Dataset;
   setDataset: (d: Dataset) => void;
   onSave: (r: Observation) => void;
 }) {
   const [budget, setBudget] = useState(3000),
     [fx, setFx] = useState(dataset.fx),
-    [multiple, setMultiple] = useState(5);
-  const [asOf, setAsOf] = useState(dataset.analysisDate),
+    [multiple, setMultiple] = useState(5),
+    [asOf, setAsOf] = useState(dataset.analysisDate),
     [neutral, setNeutral] = useState(true);
   const [rows, setRows] = useState<any[]>([]),
-    [selected, setSelected] = useState("Z377S");
-  const [detail, setDetail] = useState<any>(null),
-    [interval, setInterval] = useState<any>(null);
-  const [screening, setScreening] = useState(true),
+    [selected, setSelected] = useState(
+      dataset.products.find((p) => p.id === "Z377S")?.id ??
+        dataset.products[0]?.id ??
+        "",
+    ),
+    [detail, setDetail] = useState<any>(null),
+    [interval, setInterval] = useState<any>(null),
     [busy, setBusy] = useState(true),
-    [error, setError] = useState("");
+    [screening, setScreening] = useState(true),
+    [error, setError] = useState(""),
+    [message, setMessage] = useState("");
   const [query, setQuery] = useState(""),
-    [filter, setFilter] = useState("all"),
-    [asset, setAsset] = useState("all");
-  const [page, setPage] = useState(0),
+    [asset, setAsset] = useState("all"),
+    [filter, setFilter] = useState("current"),
+    [sort, setSort] = useState("multiple"),
+    [page, setPage] = useState(0),
+    [open, setOpen] = useState(false),
     [saved, setSaved] = useState(false),
-    [showSettings, setShowSettings] = useState(false);
-  const [editingAsk, setEditingAsk] = useState<number | null>(null),
-    [importMessage, setImportMessage] = useState("");
-  const [catalogueOpen, setCatalogueOpen] = useState(false);
-  const file = useRef<HTMLInputElement>(null);
+    [editingAsk, setEditingAsk] = useState<number | null>(null);
+  const file = useRef<HTMLInputElement>(null),
+    drawer = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (!active) setOpen(false);
+  }, [active]);
   const options = useMemo(
     () => ({ budget, fx, multiple, asOf, neutral }),
     [budget, fx, multiple, asOf, neutral],
@@ -54,10 +71,14 @@ export function Screener({
   const product = useMemo(
     () =>
       original
-        ? { ...original, ...(editingAsk != null ? { ask: editingAsk } : {}) }
+        ? { ...original, ...(editingAsk !== null ? { ask: editingAsk } : {}) }
         : null,
     [original, editingAsk],
   );
+  useEffect(() => {
+    setFx(dataset.fx);
+    setAsOf(dataset.analysisDate);
+  }, [dataset.fx, dataset.analysisDate]);
   useEffect(() => {
     setScreening(true);
     setError("");
@@ -71,19 +92,18 @@ export function Screener({
       setScreening(false);
     };
     worker.onerror = () => {
-      setError(
-        "Le calcul a échoué. Réduire le catalogue ou recharger la page.",
-      );
+      setError("Calcul interrompu. Réduire le catalogue ou recharger.");
       setScreening(false);
     };
     worker.postMessage({ type: "screen", dataset, options });
     return () => worker.terminate();
   }, [dataset, options]);
   useEffect(() => {
-    if (!product) return;
+    if (!product || !open) return;
     setBusy(true);
-    setSaved(false);
+    setDetail(null);
     setInterval(null);
+    setSaved(false);
     const worker = new Worker(
       new URL("./research.worker.ts", import.meta.url),
       { type: "module" },
@@ -97,20 +117,22 @@ export function Screener({
       setBusy(false);
     };
     worker.onerror = () => {
-      setError(
-        "L’analyse détaillée est indisponible. Les autres produits restent consultables.",
-      );
+      setError("Analyse interrompue. Fermer le détail et réessayer.");
       setBusy(false);
     };
     const timer = setTimeout(
       () => worker.postMessage({ type: "detail", product, dataset, options }),
-      100,
+      80,
     );
     return () => {
       clearTimeout(timer);
       worker.terminate();
     };
-  }, [dataset, options, product]);
+  }, [dataset, product, options, open]);
+  useEffect(() => {
+    if (open) drawer.current?.showModal();
+    else drawer.current?.close();
+  }, [open]);
   const visible = useMemo(
     () =>
       rows
@@ -122,66 +144,60 @@ export function Screener({
                 .includes(query.toLowerCase())) &&
             (asset === "all" || p.underlying === asset) &&
             (filter !== "positive" || r.long?.expected > 0) &&
-            (filter !== "validate" || r.status === "À valider"),
+            (filter !== "validate" || r.status === "À valider") &&
+            (filter !== "current" ||
+              (r.quoteAge <= 1 &&
+                r.historyAge <= 1 &&
+                !!p.observedAt &&
+                !r.error)),
         )
-        .sort(
-          (a, b) =>
-            (b.result.long?.expected ?? -Infinity) -
-            (a.result.long?.expected ?? -Infinity),
+        .sort((a, b) =>
+          sort === "multiple"
+            ? (b.result.long?.multiple ?? -1) - (a.result.long?.multiple ?? -1)
+            : sort === "expected"
+              ? (b.result.long?.expected ?? -Infinity) -
+                (a.result.long?.expected ?? -Infinity)
+              : sort === "spread"
+                ? (a.result.spread ?? Infinity) - (b.result.spread ?? Infinity)
+                : (b.result.pessimistic ?? -Infinity) -
+                  (a.result.pessimistic ?? -Infinity),
         ),
-    [rows, query, filter, asset],
+    [rows, query, asset, filter, sort],
   );
-  useEffect(() => setPage(0), [query, filter, asset, dataset]);
-  const select = (id: string) => {
+  useEffect(() => setPage(0), [query, asset, filter, sort]);
+  const openProduct = (id: string) => {
     setSelected(id);
     setEditingAsk(null);
-    setDetail(null);
-    setCatalogueOpen(false);
+    setOpen(true);
   };
   async function importFile(event: React.ChangeEvent<HTMLInputElement>) {
     const f = event.target.files?.[0];
     if (!f) return;
     setError("");
-    setImportMessage("");
+    setMessage("");
     try {
-      if (f.size > 4_000_000) throw Error("Fichier limité à 4 Mo");
+      if (f.size > 4000000) throw Error("Fichier limité à 4 Mo.");
       const text = await f.text();
       let next: Dataset;
       if (f.name.toLowerCase().endsWith(".csv"))
         next = {
           ...dataset,
-          products: parseCSV(text).map((p) => ({
+          products: parseCSV(text).map((p: any) => ({
             ...p,
-            id: p.id,
-            isin: p.isin,
-            underlying: p.underlying,
-            direction: p.direction === "put" ? "put" : "call",
-            currency: p.currency === "EUR" ? "EUR" : "USD",
-            strike: Number(p.strike),
-            ratio: Number(p.ratio),
-            bid: Number(p.bid),
-            ask: Number(p.ask),
-            expiry: p.expiry,
-            quoteAt: p.quoteAt,
-            commission: Number(p.commission ?? 0),
-            commissionPct: Number(p.commissionPct ?? 0),
-            commissionMin: Number(p.commissionMin ?? 0),
-            minOrder: Number(p.minOrder ?? 0),
-          })),
+            venueVerified: false,
+            contractVerified: false,
+          })) as Product[],
         };
       else {
         next = JSON.parse(text);
         if (
-          !next ||
-          !Array.isArray(next.products) ||
+          !next?.products?.length ||
+          next.products.length > 10000 ||
           !next.assets ||
-          !Number.isFinite(next.fx) ||
-          next.fx <= 0 ||
+          !(next.fx > 0) ||
           !Number.isFinite(Date.parse(next.analysisDate))
         )
-          throw Error("JSON invalide. Utiliser le schéma documenté.");
-        if (!next.products.length || next.products.length > 10000)
-          throw Error("Importer entre 1 et 10 000 produits");
+          throw Error("JSON invalide. Utiliser le modèle d’import.");
         const seen = new Set();
         for (const p of next.products) {
           const errors = validateProduct(p);
@@ -191,7 +207,7 @@ export function Screener({
             );
           seen.add(p.isin);
         }
-        for (const [key, h] of Object.entries(next.assets)) {
+        for (const [key, h] of Object.entries(next.assets))
           if (
             !Array.isArray(h.closes) ||
             !Array.isArray(h.dates) ||
@@ -200,24 +216,40 @@ export function Screener({
             h.closes.length > 10000 ||
             h.closes.some((x) => !Number.isFinite(x) || x <= 0) ||
             h.dates.some(
-              (x, i) =>
-                !Number.isFinite(Date.parse(x)) ||
-                (i > 0 && x <= h.dates[i - 1]),
+              (d, i) =>
+                !Number.isFinite(Date.parse(d)) ||
+                (i > 0 && d <= h.dates[i - 1]),
             )
           )
-            throw Error(`Historique ${key} invalide ou non chronologique`);
-        }
+            throw Error(
+              `Historique ${key} invalide. Vérifier les dates et les cours.`,
+            );
       }
-      if (!next.products.length) throw Error("Le catalogue est vide");
+      next = {
+        ...next,
+        quotesCollection: undefined,
+        importedAt: new Date().toISOString(),
+        quoteDate: next.products
+          .map((p) => p.quoteAt.slice(0, 10))
+          .sort()
+          .at(-1)!,
+      };
       setDataset(next);
+      setQuery("");
+      setAsset("all");
+      setPage(0);
       setSelected(next.products[0].id);
-      setEditingAsk(null);
+      setFilter("all");
       setDetail(null);
-      setImportMessage(
-        `${number(next.products.length)} produits importés. Traitement local ; aucun fichier envoyé au serveur.`,
+      setMessage(
+        `${number(next.products.length)} produits importés dans ce navigateur.`,
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Import impossible");
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Import impossible. Vérifier le format du fichier.",
+      );
     }
     event.target.value = "";
   }
@@ -236,257 +268,347 @@ export function Screener({
       expected: detail.long.expected,
       probability: detail.long.multiple,
       quantity: detail.quantity,
-      note: `Moteur 1.0.0 · analyse au ${asOf} · prix source ${product.quoteAt}${editingAsk != null ? " · prix saisi manuellement" : ""}`,
+      note: `Moteur 1.0.0 · données au ${asOf} · relevé ${product.quoteAt}${editingAsk !== null ? " · prix manuel" : ""}`,
     });
     setSaved(true);
   }
+  const snapshot = dataset.quotesCollection;
   return (
-    <>
+    <section className="screener-page" hidden={!active}>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">Recherche sur produits cotés</div>
           <h1>Warrants</h1>
-          <p>Comparer le prix d’un pari à sa distribution de gains.</p>
+          <p>
+            {dataset.importedAt
+              ? `Import local · ${dataset.products.length} contrats`
+              : snapshot
+                ? `${snapshot.observed} prix · ${snapshot.added} nouveaux`
+                : "Catalogue de référence"}
+            <a href="/donnees/">
+              {snapshot
+                ? `Relevé ${observedTime(snapshot.at)}`
+                : `Prix du ${date(dataset.quoteDate)}`}
+              <ArrowUpRight size={12} />
+            </a>
+          </p>
         </div>
         <div className="heading-actions">
-          <a className="text-link" href="/warrants/methode/">
-            Lire la méthode <ArrowUpRight size={14} />
-          </a>
-          <button className="button" onClick={() => file.current?.click()}>
-            <FileUp size={15} /> Importer
+          {dataset.importedAt && (
+            <button
+              className="button secondary"
+              onClick={async () => {
+                try {
+                  const r = await fetch("/research/snapshot.json", {
+                    cache: "no-store",
+                  });
+                  if (!r.ok) throw Error();
+                  setDataset(await r.json());
+                  setMessage("Catalogue public chargé.");
+                  setFilter("current");
+                } catch {
+                  setError("Catalogue public indisponible. Réessayer.");
+                }
+              }}
+            >
+              Catalogue public
+            </button>
+          )}
+          <button
+            className="button secondary"
+            onClick={() => file.current?.click()}
+          >
+            <FileUp size={14} />
+            Importer
+          </button>
+          <button
+            className="icon-button"
+            aria-label="Télécharger le catalogue"
+            onClick={() =>
+              download("fin-catalogue.json", JSON.stringify(dataset, null, 2))
+            }
+          >
+            <ArrowDownToLine size={16} />
           </button>
           <input
+            className="visually-hidden"
             ref={file}
             type="file"
             accept=".csv,.json"
             onChange={importFile}
             aria-label="Importer un catalogue CSV ou JSON"
-            className="visually-hidden"
           />
         </div>
       </div>
-      <div className="snapshot-line">
-        <span className="snapshot-dot" />
-        <span>
-          Prix de référence du <strong>{date(dataset.quoteDate)}</strong>
-        </span>
-        <span className="snapshot-note">
-          Calcul au {date(asOf)} · aucun flux temps réel connecté
-        </span>
+      <div role="status" className={message ? "notice" : ""}>
+        {message}
       </div>
       {error && (
-        <div role="alert" className="error-notice">
+        <div className="notice error-notice" role="alert">
           {error}
           <button
-            onClick={() => setError("")}
             aria-label="Fermer le message d’erreur"
+            className="icon-button"
+            onClick={() => setError("")}
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         </div>
       )}
-      {importMessage && (
-        <div role="status" className="import-notice">
-          {importMessage}
-        </div>
-      )}
-      <div className="research-layout">
-        <section
-          className={`catalogue-panel ${catalogueOpen ? "catalogue-open" : ""}`}
-          aria-label="Catalogue de warrants"
-        >
-          <div className="catalogue-header">
-            <h2>
-              Catalogue <span>{dataset.products.length}</span>
-            </h2>
-            <span className="mobile-selection">{original?.id}</span>
-            <button
-              className="mobile-catalogue-toggle"
-              aria-expanded={catalogueOpen}
-              onClick={() => setCatalogueOpen(!catalogueOpen)}
-            >
-              {catalogueOpen ? "Fermer" : "Choisir"}
-            </button>
-            <button
-              className="icon-button"
-              aria-label="Télécharger le catalogue"
-              onClick={() =>
-                download("fin-catalogue.json", JSON.stringify(dataset, null, 2))
-              }
-            >
-              <ArrowDownToLine size={16} />
-            </button>
-          </div>
-          <label className="search-field">
-            <Search size={15} />
-            <input
-              type="search"
-              placeholder="ISIN, code ou sous-jacent"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              aria-label="Rechercher un warrant"
-            />
-          </label>
-          <div className="catalogue-filters">
-            <select
-              aria-label="Filtrer par sous-jacent"
-              value={asset}
-              onChange={(e) => setAsset(e.target.value)}
-            >
-              <option value="all">Tous les sous-jacents</option>
-              {Object.entries(dataset.assets).map(([id, h]) => (
-                <option key={id} value={id}>
-                  {h.name}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Filtrer les résultats"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="all">Tous les résultats</option>
-              <option value="positive">Espérance historique &gt; 0</option>
-              <option value="validate">Modèles positifs · à valider</option>
-            </select>
-          </div>
-          <div className="catalogue-label">
-            <span>Produit / échéance</span>
-            <span>Espérance nette</span>
-          </div>
-          <div className="product-list" aria-busy={screening}>
-            {screening && !rows.length ? (
-              <p role="status" className="list-status">
-                Analyse du catalogue…
-              </p>
-            ) : !visible.length ? (
-              <div className="list-status">
-                <CircleHelp size={20} />
-                <h3>Aucun résultat</h3>
-                <p>
-                  Modifier les filtres. Une espérance positive ne suffit pas à
-                  valider un avantage.
-                </p>
-                <button
-                  className="text-link"
-                  onClick={() => {
-                    setQuery("");
-                    setFilter("all");
-                    setAsset("all");
-                  }}
-                >
-                  Réinitialiser les filtres
-                </button>
-              </div>
-            ) : (
-              visible
-                .slice(page * 30, page * 30 + 30)
-                .map(({ product: p, result: r }) => (
-                  <button
-                    key={p.isin}
-                    className={`product-row ${selected === p.id ? "selected" : ""}`}
-                    onClick={() => select(p.id)}
-                    aria-pressed={selected === p.id}
-                  >
-                    <span
-                      className={`asset-monogram asset-${p.underlying.toLowerCase()}`}
-                      aria-hidden="true"
-                    >
-                      {p.underlying === "NDX" ? "N" : p.underlying.slice(0, 1)}
-                    </span>
-                    <span className="product-name">
-                      <strong>
-                        {p.id} <small>{p.direction.toUpperCase()}</small>
-                      </strong>
-                      <span>
-                        {dataset.assets[p.underlying]?.name ?? p.underlying} ·{" "}
-                        {p.expiry.slice(5).split("-").reverse().join("/")}
-                      </span>
-                      <span className="row-status">{r.error ?? r.status}</span>
-                    </span>
-                    <span className="product-result">
-                      <strong
-                        className={
-                          r.long?.expected >= 0 ? "positive" : "negative"
-                        }
-                      >
-                        {r.long ? signedEuro(r.long.expected) : "—"}
-                      </strong>
-                      <small>{euro(p.ask, p.ask < 0.1 ? 3 : 2)} / unité</small>
-                    </span>
-                    <ChevronRight size={13} />
-                  </button>
-                ))
-            )}
-          </div>
-          {visible.length > 30 && (
-            <div className="pagination">
-              <button disabled={!page} onClick={() => setPage(page - 1)}>
-                Précédent
-              </button>
-              <span>
-                {page + 1} / {Math.ceil(visible.length / 30)}
-              </span>
-              <button
-                disabled={(page + 1) * 30 >= visible.length}
-                onClick={() => setPage(page + 1)}
+      <div className="toolbar research-toolbar">
+        <label className="search-field">
+          <Search size={15} />
+          <input
+            type="search"
+            placeholder="Code, ISIN, sous-jacent"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Rechercher un warrant"
+          />
+        </label>
+        <label className="inline-label">
+          Budget
+          <input
+            type="number"
+            min="1"
+            max="10000000"
+            step="100"
+            value={budget}
+            onChange={(e) => setBudget(Number(e.target.value))}
+            aria-label="Budget"
+          />
+          <span>€</span>
+        </label>
+        <label className="inline-label">
+          Cible
+          <select
+            value={multiple}
+            onChange={(e) => setMultiple(Number(e.target.value))}
+            aria-label="Cible"
+          >
+            {[2, 5, 10].map((n) => (
+              <option key={n} value={n}>
+                ×{n}
+              </option>
+            ))}
+          </select>
+        </label>
+        <details className="filter-disclosure">
+          <summary>
+            <SlidersHorizontal size={14} />
+            Filtres
+          </summary>
+          <div className="filter-fields">
+            <label>
+              Sous-jacent
+              <select
+                aria-label="Filtrer par sous-jacent"
+                value={asset}
+                onChange={(e) => setAsset(e.target.value)}
               >
-                Suivant
-              </button>
-            </div>
-          )}
-          <div className="catalogue-bottom">
-            <p>
-              Classement exploratoire par espérance sur cinq ans. Aucun produit
-              n’est présenté comme un avantage validé.
-            </p>
+                <option value="all">Tous</option>
+                {Object.entries(dataset.assets).map(([id, h]) => (
+                  <option key={id} value={id}>
+                    {h.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Résultats
+              <select
+                aria-label="Filtrer les résultats"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="current">Relevés récents</option>
+                <option value="all">Tous les contrats</option>
+                <option value="positive">Gain moyen historique positif</option>
+                <option value="validate">Positif dans les cinq modèles</option>
+              </select>
+            </label>
             <a href="/research/catalogue.csv" download>
-              Modèle CSV <ArrowDownToLine size={12} />
+              Modèle CSV
             </a>
           </div>
-        </section>
-        <div className="analysis-column">
-          <div className="settings-bar">
-            <div className="budget-control">
-              <label htmlFor="budget">Budget</label>
-              <span>
-                <input
-                  id="budget"
-                  type="number"
-                  min="1"
-                  max="10000000"
-                  step="100"
-                  value={budget}
-                  onChange={(e) => setBudget(Number(e.target.value))}
-                />
-                <b>€</b>
-              </span>
-            </div>
-            <div className="multiple-control">
-              <label htmlFor="multiple">Cible</label>
-              <select
-                id="multiple"
-                value={multiple}
-                onChange={(e) => setMultiple(Number(e.target.value))}
-              >
-                <option value={2}>×2</option>
-                <option value={5}>×5</option>
-                <option value={10}>×10</option>
-              </select>
-            </div>
+        </details>
+      </div>
+      <div className="list-heading">
+        <span role="status">
+          {screening ? "Calcul…" : `${visible.length} contrats`}
+        </span>
+        <label>
+          Trier
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            aria-label="Trier les warrants"
+          >
+            <option value="models">Modèle le plus défavorable</option>
+            <option value="multiple">Chance de ×{multiple}</option>
+            <option value="expected">Gain moyen sur cinq ans</option>
+            <option value="spread">Spread le plus faible</option>
+          </select>
+        </label>
+      </div>
+      <div className="warrant-table-wrap" aria-busy={screening}>
+        <table className="data-table warrant-table">
+          <thead>
+            <tr>
+              <th>Contrat</th>
+              <th className="column-expiry">Échéance</th>
+              <th className="column-price">Prix d’achat</th>
+              <th>Chance ×{multiple}</th>
+              <th className="column-mean">
+                Gain moyen<small>Historique 5 ans</small>
+              </th>
+              <th className="column-risk">Perte totale</th>
+              <th className="column-agreement">Modèles positifs</th>
+              <th>
+                <span className="visually-hidden">Détail</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible
+              .slice(page * 10, page * 10 + 10)
+              .map(({ product: p, result: r }) => {
+                const models = [
+                    r.long,
+                    r.short,
+                    r.model20,
+                    r.model60,
+                    r.model252,
+                  ].filter(Boolean),
+                  positive = models.filter((m) => m.expected > 0).length;
+                return (
+                  <tr key={p.isin} onClick={() => openProduct(p.id)}>
+                    <th scope="row">
+                      <button
+                        className="contract-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openProduct(p.id);
+                        }}
+                      >
+                        <strong>{p.id}</strong>
+                        <span>
+                          {dataset.assets[p.underlying]?.name ?? p.underlying}
+                          <small>
+                            {p.direction === "call" ? "Hausse" : "Baisse"}
+                          </small>
+                        </span>
+                      </button>
+                    </th>
+                    <td className="column-expiry">
+                      {date(p.expiry, true)}
+                      <small>{r.days ?? "—"} j</small>
+                    </td>
+                    <td className="column-price">
+                      {euro(p.ask, p.ask < 0.1 ? 3 : 2)}
+                      {!p.observedAt && <small>Ancien prix</small>}
+                    </td>
+                    <td>{r.long ? percent(r.long.multiple) : "—"}</td>
+                    <td className="column-mean">
+                      {r.long ? signedEuro(r.long.expected) : "—"}
+                    </td>
+                    <td className="column-risk">
+                      {r.long ? percent(r.long.zero) : "—"}
+                    </td>
+                    <td className="column-agreement">
+                      <span className="model-agreement">
+                        {positive}/{models.length || 5}
+                      </span>
+                    </td>
+                    <td>
+                      <ChevronRight size={14} />
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+        {!screening && !visible.length && (
+          <div className="empty-state">
+            <h2>Aucun résultat</h2>
+            <p>Essayer un autre filtre ou importer un catalogue.</p>
             <button
-              className={`settings-toggle ${showSettings ? "active" : ""}`}
-              aria-expanded={showSettings}
-              aria-controls="research-settings"
-              onClick={() => setShowSettings(!showSettings)}
+              className="button secondary"
+              onClick={() => {
+                setQuery("");
+                setFilter("all");
+                setAsset("all");
+              }}
             >
-              <SlidersHorizontal size={14} /> Hypothèses
+              Réinitialiser les filtres
             </button>
           </div>
-          {showSettings && (
-            <div id="research-settings" className="settings-expanded">
+        )}
+        {screening && !rows.length && (
+          <p className="empty-state" role="status">
+            Calcul du catalogue…
+          </p>
+        )}
+      </div>
+      <div className="list-footer">
+        <span>
+          Estimations historiques à l’échéance, après frais et avant impôts.
+          Ouvrir un contrat pour tester les hypothèses.
+        </span>
+        {visible.length > 10 && (
+          <div className="pagination">
+            <button disabled={!page} onClick={() => setPage(page - 1)}>
+              Précédent
+            </button>
+            <span>
+              {page + 1}/{Math.ceil(visible.length / 10)}
+            </span>
+            <button
+              disabled={(page + 1) * 10 >= visible.length}
+              onClick={() => setPage(page + 1)}
+            >
+              Suivant
+            </button>
+          </div>
+        )}
+      </div>
+      <dialog
+        ref={drawer}
+        className="detail-dialog"
+        aria-label="Analyse du warrant"
+        onCancel={() => setOpen(false)}
+        onClose={() => setOpen(false)}
+      >
+        <div className="dialog-topbar">
+          <span>
+            Warrants <ChevronRight size={13} />
+            {selected}
+          </span>
+          <button
+            className="icon-button"
+            aria-label="Fermer l’analyse"
+            onClick={() => setOpen(false)}
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="detail-settings">
+          <label>
+            Budget
+            <input
+              type="number"
+              value={budget}
+              min="1"
+              max="10000000"
+              step="100"
+              onChange={(e) => setBudget(Number(e.target.value))}
+            />
+            <span>€</span>
+          </label>
+          <details>
+            <summary>Hypothèses</summary>
+            <div className="settings-expanded">
               <label>
-                Date de calcul
+                Date de référence
                 <input
                   type="date"
                   value={asOf}
@@ -509,7 +631,7 @@ export function Screener({
                 <input
                   type="number"
                   min=".001"
-                  step=".01"
+                  step=".001"
                   value={editingAsk ?? product?.ask ?? 0}
                   onChange={(e) => setEditingAsk(Number(e.target.value))}
                 />
@@ -519,45 +641,37 @@ export function Screener({
                   type="checkbox"
                   checked={neutral}
                   onChange={(e) => setNeutral(e.target.checked)}
-                />{" "}
+                />
                 Retirer la hausse moyenne passée
               </label>
-              {editingAsk != null && (
-                <p>
-                  Prix modifié manuellement ; la cotation source garde son
-                  horodatage.{" "}
-                  <button
-                    className="text-link"
-                    onClick={() => setEditingAsk(null)}
-                  >
-                    Rétablir
-                  </button>
-                </p>
-              )}
             </div>
-          )}
-          {busy && !detail ? (
-            <div className="analysis-loading" role="status">
-              <span className="loading-line" />
-              <h2>Calcul de la distribution</h2>
-              <p>Scénarios historiques, frais et incertitude.</p>
-            </div>
-          ) : (
-            product && (
-              <Detail
-                product={product}
-                result={detail}
-                interval={interval}
-                dataset={dataset}
-                options={options}
-                busy={busy}
-                onSave={save}
-                saved={saved}
-              />
-            )
-          )}
+          </details>
         </div>
-      </div>
-    </>
+        {error && (
+          <p className="notice" role="alert">
+            {error} Fermer le détail puis réessayer.
+          </p>
+        )}
+        {busy ? (
+          <div className="analysis-loading" role="status">
+            Calcul des scénarios et de l’incertitude…
+          </div>
+        ) : (
+          product && (
+            <Detail
+              key={product.isin}
+              product={product}
+              result={detail}
+              interval={interval}
+              dataset={dataset}
+              options={options}
+              busy={busy}
+              onSave={save}
+              saved={saved}
+            />
+          )
+        )}
+      </dialog>
+    </section>
   );
 }

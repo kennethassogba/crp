@@ -1,0 +1,43 @@
+name: Daily warrant research
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: warrant-collection
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Collect public quotes and discover contracts
+        run: node scripts/research-quotes.mjs
+      - name: Collect complete daily histories and exchange rate
+        run: npm run research:collect
+      - run: npm test
+      - run: npm run research:package
+      - name: Publish observed data
+        run: |
+          git config user.name 'fin-research[bot]'
+          git config user.email 'fin-research[bot]@users.noreply.github.com'
+          git add public/research/snapshot.json public/research/recherche.zip public/research/protocole.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update daily warrant observations'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: source-observations
+          path: output/research-sources/
+          retention-days: 14

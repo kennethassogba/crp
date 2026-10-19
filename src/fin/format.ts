@@ -32,3 +32,12 @@ export function download(
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+export const observedTime = (s: string) =>
+  new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris",
+  }).format(new Date(s));

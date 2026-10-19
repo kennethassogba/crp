@@ -5,7 +5,7 @@ export default defineConfig({
   environments: {
     client: {
       build: {
-        rollupOptions: { input: { fin: "index.html", crp: "crp.html" } },
+        rollupOptions: { input: { fin: "index.html" } },
       },
     },
   },

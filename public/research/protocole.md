@@ -12,7 +12,7 @@ Pour chaque contrat : ISIN, code, sous-jacent, sens, strike, ratio multiplicatif
 
 Pour chaque sous-jacent : dates strictement croissantes et clôtures positives, ajustées des splits ; source et date de collecte. Les dividendes ne sont pas réinvestis dans ces données. Pour une publication automatisée, vérifier les droits d'utilisation du fournisseur et conserver les réponses brutes avec leur empreinte.
 
-Le jeu de référence comporte six contrats et cinq historiques, du 18 octobre 2021 au 16 octobre 2026. Les cotations ont été vérifiées le 16 octobre chez SG ; Q433S, Q439S et Z377S ont aussi été vérifiés sur leur page Bourso avec le badge BoursoMarkets. La disponibilité et le tarif des autres contrats restent à vérifier chez le courtier. Aucun flux temps réel de warrants n'est connecté. Actualiser les historiques ne rafraîchit jamais l'horodatage des cotations.
+Le jeu de référence, conservé séparément dans tests/fixtures/reference-snapshot.json, comporte six contrats et cinq historiques, du 18 octobre 2021 au 16 octobre 2026. Les cotations ont été vérifiées le 16 octobre chez SG ; Q433S, Q439S et Z377S ont aussi été vérifiés sur leur page Bourso avec le badge BoursoMarkets. La disponibilité et le tarif des autres contrats restent à vérifier chez le courtier. Le catalogue courant vient de relevés publics quotidiens. Leurs dates ne remplacent jamais celles du jeu de référence.
 
 ## Quantité et coûts
 
@@ -76,7 +76,7 @@ Mesure locale du 19 octobre 2026 : 10 000 évaluations répétées des six contr
 
 Architecture cible : collecteur autorisé -> archive brute horodatée -> normalisation ISIN -> vérification DIC -> scénarios partagés -> filtres fixés -> validation -> registre prospectif. Utiliser des clés d'idempotence (ISIN, timestamp, version de source). Écrire les nouveaux snapshots atomiquement. Conserver les anciennes cotations en cas de panne sans modifier leur fraîcheur. Limiter la concurrence et respecter les limites du fournisseur.
 
-Un LLM peut extraire des champs de DIC ou rechercher une date de résultats, avec source et contrôle déterministe. Il ne doit pas inventer une cotation ou une probabilité. Cette miniapp ne lance aucun appel LLM.
+Un LLM peut extraire des champs de DIC ou rechercher une date de résultats, avec source et contrôle déterministe. Il ne doit pas inventer une cotation ou une probabilité. Warrants ne lance aucun appel LLM.
 
 ## Validation hors échantillon et comparaisons multiples
 
@@ -97,7 +97,7 @@ Le bouton Enregistrer fige contrat, prix, instant, date d'analyse et hypothèses
     npm run research:screen -- --input output/nouveau-snapshot.json --bootstrap --output output/classement.json
     npm run test:research
 
-Le collecteur historique appelle le chart API public Yahoo avec 5y/1d, refuse une réponse courte et retire une séance en cours si les métadonnées du fournisseur l'identifient. Il garde l'ancien historique en cas de panne et sort avec un code d'échec. Cette interface publique n'offre pas ici de SLA et peut refuser des requêtes. Le CLI n'importe une nouvelle cotation que via --quotes ; il ne se connecte à aucun compte courtier. Ne pas publier un snapshot partiellement actualisé comme une référence homogène.
+Le collecteur historique appelle le chart API public Yahoo avec 5y/1d, refuse une réponse courte et retire une séance en cours si les métadonnées du fournisseur l'identifient. Il garde l'ancien historique en cas de panne et sort avec un code d'échec. Cette interface publique n'offre pas ici de SLA et peut refuser des requêtes. research-quotes.mjs relève séparément les fourchettes publiques Bourso et découvre des contrats, sans compte courtier. Ne pas publier un snapshot partiellement actualisé comme une référence homogène.
 
 CSV (UTF-8, virgule ou point-virgule ; cellules avec guillemets autorisées) :
 
@@ -129,3 +129,15 @@ La positivité n'est donc pas robuste. Ce contrôle sert à empêcher le moteur 
 ## Migration du site
 
 fin.keff.uk accueille les projets ; /warrants/ la recherche sur warrants et /crp/ l'application existante. crp.keff.uk redirige vers fin.keff.uk/crp/. Les APIs CRP gardent leur chemin /api/ ; le Worker, D1 et son journal sont conservés. Le stockage local et les installations PWA appartiennent à l'origine : les préférences de l'ancien domaine ne se transfèrent pas automatiquement vers le nouveau.
+
+## Collecte quotidienne publiée
+
+La tâche GitHub Actions research-daily.yml démarre à 22 h 30 UTC du lundi au vendredi. Elle relève les contrats suivis, puis lit les deux premières pages de résultats Société Générale pour Nasdaq-100, Nvidia, Tesla, AMD et Palantir. Elle examine les maturités de 14 à 120 jours, sélectionne jusqu’à trois calls et trois puts par actif au spread relatif le plus faible et suit jusqu’à 100 contrats. Cette présélection dépend du classement du site source ; elle ne constitue ni un scan exhaustif ni une sélection sans biais.
+
+Chaque fiche doit confirmer l’ISIN, le sous-jacent exact, la devise, le strike, la parité, le sens, la maturité, un statut actif, l’absence de quanto et une fourchette positive non inversée. Un filtre inconnu peut être ignoré par un site ; la vérification du sous-jacent dans la fiche est donc obligatoire. Les nouveaux produits gardent contractVerified=false tant que leur DIC n’a pas été vérifié. L’exercice européen standard reste une hypothèse de calcul visible dans le détail.
+
+quoteAt et observedAt désignent l’heure du relevé de la page. sourceQuoteAt reste nul lorsque la source ne fournit pas l’heure du carnet. Ne pas présenter ce champ comme une cotation garantie à cet instant. Les réponses brutes et leur SHA-256 sont archivés dans les artefacts GitHub pendant 14 jours. Les dates et URL de provenance sont incluses dans snapshot.json. Un relevé ancien n’est pas rajeuni en cas d’échec.
+
+Le collecteur recharge ensuite les cinq historiques quotidiens et le taux public EURUSD=X. La source publique peut être retardée, indisponible ou modifier son HTML. Aucun contrat non reconnu n’est complété par un LLM. L’app recalcule les estimations sur le dernier jeu publié ; elle ne met pas à jour les probabilités enregistrées dans le suivi.
+
+La collecte ne nécessite pas d’appel de modèle. CRP conserve ses propres décisions payantes et son plafond existant. Le journal local des analyses conserve son identifiant de stockage. La suppression d’une analyse offre Annuler ; un import local reste actif jusqu’au retour explicite au catalogue public.

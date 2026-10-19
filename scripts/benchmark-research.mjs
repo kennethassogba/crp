@@ -1,7 +1,7 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { analyze } from "../lib/warrants.mjs";
 const data = JSON.parse(
-  await readFile("public/research/snapshot.json", "utf8"),
+  await readFile("tests/fixtures/reference-snapshot.json", "utf8"),
 );
 const count = Number(process.argv[2] ?? 10000);
 if (!Number.isInteger(count) || count < 1 || count > 100000)

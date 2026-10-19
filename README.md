@@ -1,23 +1,42 @@
-# fin · Projets finance
+# Fin
 
-[Ouvrir fin](https://fin.keff.uk/) · [Warrants](https://fin.keff.uk/warrants/) · [Méthode](https://fin.keff.uk/warrants/methode/) · [CRP](https://fin.keff.uk/crp/)
+[Application](https://fin.keff.uk/) · [Warrants](https://fin.keff.uk/warrants/) · [CRP](https://fin.keff.uk/crp/) · [Sources et dates](https://fin.keff.uk/donnees/)
 
-`fin.keff.uk` est le point d’entrée. CRP est conservé sous `/crp/`, Warrants sous `/warrants/`. L’ancien domaine `crp.keff.uk` redirige vers le nouveau ; les APIs CRP gardent leurs chemins `/api/`. Le Worker, D1 et le journal existants sont conservés.
+Une application React, une navigation, une feuille de styles et un dépôt public pour Warrants et CRP. Le Worker `crp-keff`, la base D1 et le journal CRP restent en place. `crp.keff.uk` redirige vers `fin.keff.uk/crp/` ; les APIs gardent leurs chemins `/api/`.
 
 ## Warrants
 
-Le screener importe des catalogues CSV ou des jeux JSON jusqu’à 10 000 produits, calcule les remboursements à échéance et compare les modèles historiques et lognormaux. Le détail applique un bootstrap par blocs. Les observations sauvegardées et les imports restent dans le navigateur ; aucun ordre ni appel LLM n’est lancé par cette miniapp.
+Le tableau compare prix d’achat, probabilité de multiple, gain moyen net et risque de perte totale. Ouvrir un contrat pour explorer la distribution au pointeur, au toucher ou au clavier, tester un cours final, comparer cinq modèles et enregistrer l’analyse. Le suivi reste local au navigateur et permet d’annuler une suppression. Les imports CSV/JSON restent locaux et ne sont pas remplacés par le rafraîchissement automatique.
 
-Les cotations incluses sont des instantanés vérifiés le 16 octobre 2026. Aucun flux temps réel de warrants n’est connecté. Le collecteur actualise seulement les historiques publics, sauf import explicite d’un CSV de cotations. Une espérance estimée positive n’est pas présentée comme un avantage validé. [Protocole complet](docs/warrants-method.md).
+Les calculs portent sur le remboursement à l’échéance, après frais et avant impôts. Ils ne prédisent pas une revente anticipée. Les nouveaux contrats supposent un warrant européen standard ; le DIC reste à vérifier. Une espérance positive n’est pas un avantage rentable démontré.
+
+## Mises à jour
+
+| Données | Collecte | Ce qui évolue |
+| --- | --- | --- |
+| Warrants | GitHub Actions, 22 h 30 UTC du lundi au vendredi | Bid/ask des contrats suivis, nouveaux candidats, clôtures des cinq sous-jacents et EUR/USD |
+| Recherche de contrats | Deux pages Bourso par sous-jacent | Jusqu’à trois calls et trois puts par actif, au spread relatif le plus faible ; suivi limité à 100 contrats |
+| Crypto | Worker toutes les 15 minutes, bougies complètes au plus une fois par heure | Cours, financement et résultat des positions simulées |
+| Modèles CRP | Une décision par jour à 08 h UTC | Cinq configurations, journal et résultats après sortie |
+| Affichage | Au chargement, puis toutes les cinq minutes au premier plan | Dernier jeu publié ; aucun nouvel appel de modèle |
+
+Le sous-jacent réel de chaque fiche doit correspondre au filtre demandé. Les quotes absentes, les produits inactifs ou quanto et les fourchettes incohérentes sont rejetés. L’heure publiée pour un warrant est celle de lecture de la page publique, pas un horodatage de cotation de l’émetteur. Le relevé ne garantit pas l’exécution. Les anciens prix gardent leur date en cas d’échec. Le périmètre ne couvre pas tout le catalogue Bourso.
+
+La tâche [Daily warrant research](.github/workflows/research-daily.yml) conserve les réponses sources et leurs empreintes dans un artefact de 14 jours. Elle publie les relevés par commit, puis Workers Builds déploie le jeu de données. GitHub peut retarder une exécution programmée ; la date visible fait foi. Aucun secret supplémentaire ni appel LLM n’est utilisé pour cette collecte.
 
 ```sh
-npm run research:collect -- --output output/nouveau-snapshot.json
-npm run research:screen -- --input output/nouveau-snapshot.json --bootstrap
-npm run test:research
-npm run test:fin
+npm run research:quotes       # relever les prix et chercher des contrats
+npm run research:collect      # actualiser clôtures et change
+npm run research:screen       # analyser le catalogue en lot
+npm run research:package      # préparer le moteur et les données téléchargeables
+npm run test:research         # reproduire la référence financière figée
 ```
 
-Les deux entrées HTML sont séparées, afin que les styles et le service worker de CRP restent dans son périmètre. Le stockage local d’un domaine ne se transfère pas à un autre ; les anciennes installations PWA et leurs préférences doivent être réinstallées sur la nouvelle origine si nécessaire.
+La référence du 16 octobre 2026 reste dans `tests/fixtures/reference-snapshot.json`. Les tests ne changent pas leurs résultats attendus à chaque nouveau cours. [Protocole complet](docs/warrants-method.md).
+
+## Interface
+
+Public Sans, fond blanc, navigation commune, tableau paginé, détails à la demande. Une seule entrée HTML, `index.html`. Les anciennes routes CRP et les liens `#models`, `#backtest` et `#method` restent lisibles. L’installation concerne désormais Fin ; les préférences et les analyses locales sont conservées.
 
 ---
 
@@ -37,9 +56,9 @@ Today shows all five model decisions together. Tap a model to read its reasoning
 
 ## Installing the app
 
-An optional **Install app** action appears in the header on the third visit, or after three minutes with the page visible. Visits must be separated by at least 30 minutes; quick reloads do not count. Dismissing the invitation hides it for 14 days. Counts and preferences stay in the browser’s local storage, with no analytics request or user account.
+An optional **Installer** action appears in the header on the third visit, or after three minutes with the page visible. Visits must be separated by at least 30 minutes; quick reloads do not count. Dismissing the invitation hides it for 14 days. Counts and preferences stay in the browser’s local storage, with no analytics request or user account.
 
-Supporting browsers open their installation prompt only after a click. On iPhone and iPad, the action opens instructions for adding CRP to the Home Screen. The invitation is hidden in standalone mode and after a recorded installation. If storage is blocked, the time-based invitation still works, but the dismissal cannot persist across visits.
+Supporting browsers open their installation prompt only after a click. On iPhone and iPad, the action opens instructions for adding Fin to the Home Screen. The invitation is hidden in standalone mode and after a recorded installation. If storage is blocked, the time-based invitation still works, but the dismissal cannot persist across visits.
 
 Implementation references: [browser install prompt](https://web.dev/articles/customize-install) and [Apple Home Screen instructions](https://support.apple.com/en-euro/guide/iphone/iphea86e5236/ios). Browser policy tests simulate the installation event; physical device installation remains unverified.
 
@@ -127,18 +146,17 @@ For another account, replace the account, database and domain in `cloudflare.con
 
 ## Interface and agent access
 
-Install CRP from the browser’s app installation menu. On iOS, use Share → Add to Home Screen.
+Install Fin from the browser’s app installation menu. On iOS, use Share → Add to Home Screen.
 
-The interface opens in dark mode. [Backtest](https://fin.keff.uk/crp/#backtest) links directly to the historical benchmark; model replays are under Models → Historical replay.
+The shared light interface uses [History](https://fin.keff.uk/crp/historique/) for historical evaluations and separates retrospective replay from prospective results.
 
-The PWA uses a single viewport at normal desktop and phone sizes, native selects and dialogs, safe-area insets, reduced-motion support and a mobile bottom navigation. Short screens and zoom may scroll so that controls remain reachable. The service worker caches the shell and static assets, while API responses remain network-only to avoid presenting offline decisions as current.
+The PWA uses a responsive document with native selects and dialogs, reduced-motion support and a mobile navigation drawer. Short screens and zoom may scroll so that controls remain reachable. The service worker caches the shell and static assets, while API responses remain network-only to avoid presenting offline decisions as current.
 
 - JSON: `/api/state`, `/api/backtest`, `/api/decisions`, `/api/source-health`
 - OpenAPI: `/openapi.json`
 - Markdown negotiation: request `/` with `Accept: text/markdown`
 - Discovery: `/.well-known/api-catalog`, `/.well-known/mcp/server-card.json`, `/.well-known/agent-skills/index.json`
 - Read-only MCP: `/mcp`, tools `get_daily_decisions` and `get_backtest`
-- WebMCP: `read_crp_positions` when supported by the browser
 
 All agent tools are read-only and share the same recorded data as the interface. They cannot place orders, spend provider credit or mutate records. Nine applicable discovery checks passed the Cloudflare Agent Readiness Scanner; the selected checks and full response are saved in [agent-readiness.json](docs/agent-readiness.json). This scoped scan excludes authentication and commerce features that the app does not offer.
 

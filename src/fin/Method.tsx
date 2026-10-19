@@ -41,12 +41,11 @@ const chapters = [
 export function Method() {
   return (
     <article className="method-page">
-      <div className="eyebrow">Protocole de recherche · version 1.0</div>
-      <h1>Une méthode reproductible.</h1>
+      <div className="eyebrow">Méthode</div>
+      <h1>Analyser un warrant</h1>
       <p className="intro">
-        Le prix est observable. La distribution future ne l’est pas. Ce
-        protocole garde cette différence visible, du premier filtre à
-        l’évaluation des résultats.
+        Calculer les gains à l’échéance, puis vérifier ce qui change selon les
+        hypothèses.
       </p>
       <div className="method-actions">
         <a className="button" href="/research/protocole.md" download>
@@ -78,7 +77,7 @@ export function Method() {
         </div>
       </section>
       <section id="maths">
-        <h2>Les calculs, sans boîte noire</h2>
+        <h2>Calculer le remboursement</h2>
         <p>Pour un call en dollars, payé en euros :</p>
         <pre tabIndex={0}>
           Remboursement = max(S_final − strike, 0) × ratio / EURUSD{`\n`}Gain
@@ -144,11 +143,11 @@ export function Method() {
         </pre>
         <h3>La cotation est le premier verrou</h3>
         <p>
-          Les six prix inclus sont des instantanés vérifiés le 16 octobre 2026.
-          Cette version n’a pas de flux temps réel de warrants. Actualiser les
-          historiques ne modifie jamais leur horodatage. Pour scanner un marché
-          en continu, connecter un flux émetteur ou courtier autorisé, ou
-          importer son export coté avec bid, ask et heure.
+          La collecte quotidienne relève les fourchettes publiques Bourso à 22 h
+          30 UTC les jours ouvrés. Elle recharge les clôtures et le change, et
+          cherche de nouveaux contrats sur Nasdaq-100, Nvidia, Tesla, AMD et
+          Palantir. Chaque produit garde la date de son relevé. Les erreurs sont
+          visibles dans Données.
         </p>
         <h3>Une architecture pour un catalogue plus large</h3>
         <p>
@@ -166,13 +165,13 @@ export function Method() {
           comparaisons multiples. L’intervalle affiché ici n’est pas corrigé
           pour cette sélection. « À valider » reste un signal de recherche.
         </p>
-        <h3>Le rôle d’un LLM</h3>
+        <h3>Utiliser un LLM pour vérifier les documents</h3>
         <p>
           Extraire les termes d’un DIC, retrouver une date de résultats,
           proposer des risques à tester. Chaque champ doit garder sa source et
           être validé. Le LLM ne fournit ni prix, ni probabilité, ni classement
           financier sans calcul vérifiable. Aucun appel de modèle payant n’est
-          lancé par cette miniapp.
+          lancé par Warrants.
         </p>
       </section>
       <section id="limits">

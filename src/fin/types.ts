@@ -11,6 +11,11 @@ export type Product = {
   expiry: string;
   quoteAt: string;
   issuer?: string;
+  observedAt?: string;
+  sourceQuoteAt?: string | null;
+  quoteTimeKind?: string;
+  contractVerified?: boolean;
+  discoveredAt?: string;
   commission?: number;
   commissionPct?: number;
   commissionMin?: number;
@@ -35,11 +40,33 @@ export type Dataset = {
   version: string;
   analysisDate: string;
   quoteDate: string;
+  importedAt?: string;
+  fxAt?: string;
+  fxSource?: string;
   collectedAt: string;
   fx: number;
   products: Product[];
   assets: Record<string, History>;
   limits?: Record<string, string>;
+  quotesCollection?: {
+    at: string;
+    cadence: string;
+    source: string;
+    universe: string[];
+    observed: number;
+    added: number;
+    failures: { scope: string; error: string }[];
+    timestamps: string;
+    pagesPerAsset: number;
+    maxContracts: number;
+    discovered: number;
+  };
+  collection?: {
+    failedAssets: string[];
+    quoteRefresh: string;
+    historySource: string;
+    fx?: string;
+  };
 };
 export type Observation = {
   id: string;

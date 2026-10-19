@@ -143,7 +143,7 @@ export function InstallPrompt() {
     // The suggestion disappears, so restore focus to the adjacent header action.
     const next =
       document.querySelector<HTMLElement>(
-        '[aria-label="Download evidence"]:not(:disabled)',
+        '[aria-label="Actualiser les données"]:not(:disabled)',
       ) ?? document.querySelector<HTMLElement>("main");
     next?.focus();
   }
@@ -169,22 +169,20 @@ export function InstallPrompt() {
   return (
     <>
       {show ? (
-        <span className="install-offer" role="group" aria-label="Install CRP">
+        <span className="install-offer" role="group" aria-label="Installer Fin">
           <button className="install-action" onClick={install} disabled={busy}>
             <Smartphone size={14} />
-            {busy ? "Opening…" : "Install app"}
+            {busy ? "Ouverture…" : "Installer"}
           </button>
           <button
             className="install-dismiss"
-            aria-label="Dismiss install suggestion"
+            aria-label="Masquer la proposition d’installation"
             onClick={dismiss}
           >
             <X size={13} />
           </button>
         </span>
-      ) : (
-        <span className="paper-tag">Paper trading</span>
-      )}
+      ) : null}
       <dialog
         ref={help}
         className="install-help"
@@ -192,10 +190,10 @@ export function InstallPrompt() {
         onClose={dismiss}
       >
         <div className="dialog-heading">
-          <h2 id="install-title">Install CRP</h2>
+          <h2 id="install-title">Installer Fin</h2>
           <button
             className="icon-button"
-            aria-label="Close installation guide"
+            aria-label="Fermer le guide d’installation"
             onClick={() => help.current?.close()}
           >
             <X size={18} />
@@ -203,33 +201,33 @@ export function InstallPrompt() {
         </div>
         {instructions === "ios" ? (
           <>
-            <p>Add CRP to your Home Screen to open it as an app.</p>
+            <p>Ajouter Fin à l’écran d’accueil.</p>
             <ol>
               <li>
-                Open your browser’s <strong>Share</strong> menu{" "}
+                Ouvrir le menu <strong>Partager</strong> du navigateur{" "}
                 <ArrowUpFromLine size={15} aria-hidden="true" />.
               </li>
               <li>
-                Choose <strong>Add to Home Screen</strong>.
+                Choisir <strong>Sur l’écran d’accueil</strong>.
               </li>
               <li>
-                Keep <strong>Open as Web App</strong> enabled if shown, then tap{" "}
-                <strong>Add</strong>.
+                Activer <strong>Ouvrir comme app web</strong> si proposé, puis
+                choisir <strong>Ajouter</strong>.
               </li>
             </ol>
             <p className="small-note">
-              Share may be inside the browser menu. If the option is missing,
-              open this page in Safari.
+              Si le partage est absent, ouvrir cette page dans Safari.
             </p>
           </>
         ) : (
           <p>
-            Open your browser’s menu and choose <strong>Install app</strong>. If
-            installation is unavailable, reload the page and try again.
+            Ouvrir le menu du navigateur et choisir <strong>Installer</strong>.
+            Si l’installation est indisponible, recharger la page puis
+            réessayer.
           </p>
         )}
         <button className="secondary" onClick={() => help.current?.close()}>
-          Got it
+          Fermer
         </button>
       </dialog>
     </>

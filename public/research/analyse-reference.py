@@ -29,7 +29,8 @@ COST = QTY * P["ask"]
 def read_history(symbol):
     raw = ROOT / (symbol + '.json')
     if not raw.exists():
-        asset = json.loads((ROOT / 'snapshot.json').read_text())['assets'][symbol]
+        reference = ROOT.parent.parent / 'tests' / 'fixtures' / 'reference-snapshot.json'
+        asset = json.loads((reference if reference.exists() else ROOT / 'snapshot.json').read_text())['assets'][symbol]
         return asset['dates'], asset['closes']
     z = json.loads(raw.read_text())["chart"]["result"][0]
     pairs = [(t, c) for t, c in zip(z['timestamp'], z['indicators']['quote'][0]['close']) if c is not None]

@@ -136,9 +136,16 @@ export default {
     const redirect = legacyRedirect(url);
     if (redirect) return Response.redirect(redirect, 308);
     if (
-      ["/crp", "/warrants", "/warrants/methode", "/warrants/suivi"].includes(
-        path,
-      )
+      [
+        "/crp",
+        "/crp/modeles",
+        "/crp/historique",
+        "/crp/methode",
+        "/donnees",
+        "/warrants",
+        "/warrants/methode",
+        "/warrants/suivi",
+      ].includes(path)
     )
       return Response.redirect(new URL(path + "/" + url.search, url).href, 308);
     try {
@@ -246,11 +253,21 @@ export default {
           : request,
       );
       const financePage = [
+        "/crp/",
+        "/crp/modeles/",
+        "/crp/historique/",
+        "/crp/methode/",
+        "/donnees/",
         "/warrants/",
         "/warrants/methode/",
         "/warrants/suivi/",
       ].includes(path);
       const titles = {
+        "/crp/": "Décisions CRP · Fin",
+        "/crp/modeles/": "Modèles CRP · Fin",
+        "/crp/historique/": "Historique CRP · Fin",
+        "/crp/methode/": "Règles CRP · Fin",
+        "/donnees/": "Données · Fin",
         "/warrants/": "Warrants · fin",
         "/warrants/methode/": "Méthode de recherche · fin",
         "/warrants/suivi/": "Suivi de recherche · fin",
@@ -282,7 +299,10 @@ export default {
           : response;
       const next = new Response(rendered.body, rendered);
       Object.entries(headers).forEach(([k, v]) => next.headers.set(k, v));
-      if (["/index.html", "/crp.html"].includes(htmlEntry(path))) {
+      if (
+        path === "/research/snapshot.json" ||
+        ["/index.html", "/crp.html"].includes(htmlEntry(path))
+      ) {
         next.headers.set("Cache-Control", "no-store");
         next.headers.set("Vary", "Accept");
       }

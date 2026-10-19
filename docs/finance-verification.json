@@ -1,218 +1,205 @@
 {
-  "date": "2026-10-19",
+  "date": "2026-10-20",
+  "stage": "Pre-deployment verification",
   "typecheck": "passed",
-  "financialTests": 25,
-  "researchReferenceTests": 7,
-  "financeUI": {
+  "tests": 28,
+  "independentReferenceTests": 7,
+  "archiveReproduction": "passed",
+  "finance": {
     "base": "http://127.0.0.1:5185",
     "views": [
       {
-        "width": 1440,
-        "height": 1000,
         "path": "/",
-        "box": {
-          "width": 1440,
-          "scroll": 1440
-        },
-        "seriousIssues": 0
+        "width": 1440
       },
       {
-        "width": 1440,
-        "height": 1000,
         "path": "/warrants/",
-        "box": {
-          "width": 1440,
-          "scroll": 1440
-        },
-        "seriousIssues": 0
+        "width": 1440
       },
       {
-        "width": 1440,
-        "height": 1000,
         "path": "/warrants/methode/",
-        "box": {
-          "width": 1440,
-          "scroll": 1440
-        },
-        "seriousIssues": 0
+        "width": 1440
       },
       {
-        "width": 1440,
-        "height": 1000,
         "path": "/warrants/suivi/",
-        "box": {
-          "width": 1440,
-          "scroll": 1440
-        },
-        "seriousIssues": 0
+        "width": 1440
       },
       {
-        "width": 1024,
-        "height": 900,
+        "path": "/crp/",
+        "width": 1440
+      },
+      {
+        "path": "/crp/modeles/",
+        "width": 1440
+      },
+      {
+        "path": "/crp/historique/",
+        "width": 1440
+      },
+      {
+        "path": "/crp/methode/",
+        "width": 1440
+      },
+      {
+        "path": "/donnees/",
+        "width": 1440
+      },
+      {
         "path": "/",
-        "box": {
-          "width": 1024,
-          "scroll": 1024
-        },
-        "seriousIssues": 0
+        "width": 768
       },
       {
-        "width": 1024,
-        "height": 900,
         "path": "/warrants/",
-        "box": {
-          "width": 1024,
-          "scroll": 1024
-        },
-        "seriousIssues": 0
+        "width": 768
       },
       {
-        "width": 1024,
-        "height": 900,
         "path": "/warrants/methode/",
-        "box": {
-          "width": 1024,
-          "scroll": 1024
-        },
-        "seriousIssues": 0
+        "width": 768
       },
       {
-        "width": 1024,
-        "height": 900,
         "path": "/warrants/suivi/",
-        "box": {
-          "width": 1024,
-          "scroll": 1024
-        },
-        "seriousIssues": 0
+        "width": 768
       },
       {
-        "width": 768,
-        "height": 900,
+        "path": "/crp/",
+        "width": 768
+      },
+      {
+        "path": "/crp/modeles/",
+        "width": 768
+      },
+      {
+        "path": "/crp/historique/",
+        "width": 768
+      },
+      {
+        "path": "/crp/methode/",
+        "width": 768
+      },
+      {
+        "path": "/donnees/",
+        "width": 768
+      },
+      {
         "path": "/",
-        "box": {
-          "width": 768,
-          "scroll": 768
-        },
-        "seriousIssues": 0
+        "width": 390
       },
       {
-        "width": 768,
-        "height": 900,
         "path": "/warrants/",
-        "box": {
-          "width": 768,
-          "scroll": 768
-        },
-        "seriousIssues": 0
+        "width": 390
       },
       {
-        "width": 768,
-        "height": 900,
         "path": "/warrants/methode/",
-        "box": {
-          "width": 768,
-          "scroll": 768
-        },
-        "seriousIssues": 0
+        "width": 390
       },
       {
-        "width": 768,
-        "height": 900,
         "path": "/warrants/suivi/",
-        "box": {
-          "width": 768,
-          "scroll": 768
-        },
-        "seriousIssues": 0
+        "width": 390
       },
       {
-        "width": 390,
-        "height": 844,
+        "path": "/crp/",
+        "width": 390
+      },
+      {
+        "path": "/crp/modeles/",
+        "width": 390
+      },
+      {
+        "path": "/crp/historique/",
+        "width": 390
+      },
+      {
+        "path": "/crp/methode/",
+        "width": 390
+      },
+      {
+        "path": "/donnees/",
+        "width": 390
+      },
+      {
         "path": "/",
-        "box": {
-          "width": 390,
-          "scroll": 390
-        },
-        "seriousIssues": 0
+        "width": 320
       },
       {
-        "width": 390,
-        "height": 844,
         "path": "/warrants/",
-        "box": {
-          "width": 390,
-          "scroll": 390
-        },
-        "seriousIssues": 0
+        "width": 320
       },
       {
-        "width": 390,
-        "height": 844,
         "path": "/warrants/methode/",
-        "box": {
-          "width": 390,
-          "scroll": 390
-        },
-        "seriousIssues": 0
+        "width": 320
       },
       {
-        "width": 390,
-        "height": 844,
         "path": "/warrants/suivi/",
-        "box": {
-          "width": 390,
-          "scroll": 390
-        },
-        "seriousIssues": 0
+        "width": 320
       },
       {
-        "width": 320,
-        "height": 760,
-        "path": "/",
-        "box": {
-          "width": 320,
-          "scroll": 320
-        },
-        "seriousIssues": 0
+        "path": "/crp/",
+        "width": 320
       },
       {
-        "width": 320,
-        "height": 760,
-        "path": "/warrants/",
-        "box": {
-          "width": 320,
-          "scroll": 320
-        },
-        "seriousIssues": 0
+        "path": "/crp/modeles/",
+        "width": 320
       },
       {
-        "width": 320,
-        "height": 760,
-        "path": "/warrants/methode/",
-        "box": {
-          "width": 320,
-          "scroll": 320
-        },
-        "seriousIssues": 0
+        "path": "/crp/historique/",
+        "width": 320
       },
       {
-        "width": 320,
-        "height": 760,
-        "path": "/warrants/suivi/",
-        "box": {
-          "width": 320,
-          "scroll": 320
-        },
-        "seriousIssues": 0
+        "path": "/crp/methode/",
+        "width": 320
+      },
+      {
+        "path": "/donnees/",
+        "width": 320
       }
     ],
-    "interactions": "passed",
-    "sourceQuotes": "frozen 2026-10-16",
+    "interactions": [
+      "budget, saved observation, persistence and undo",
+      "SPA navigation and browser back",
+      "CSV import and rejection"
+    ],
+    "source": "dated public observations",
     "execution": "none"
   },
-  "crpUICombinations": 30,
-  "crpPWA": {
+  "crp": {
+    "checks": [
+      {
+        "width": 1440,
+        "fixtureDecisions": 5,
+        "keyboard": "passed",
+        "hover": "passed",
+        "modelHistory": "passed"
+      },
+      {
+        "width": 390,
+        "fixtureDecisions": 5,
+        "keyboard": "passed",
+        "hover": "passed",
+        "modelHistory": "passed"
+      },
+      {
+        "width": 320,
+        "fixtureDecisions": 5,
+        "keyboard": "passed",
+        "hover": "passed",
+        "modelHistory": "passed"
+      }
+    ],
+    "scope": "Browser fixtures, no provider invocation"
+  },
+  "installation": {
+    "base": "http://127.0.0.1:5185/crp",
+    "checks": [
+      "Third distinct visit, reload deduplication, explicit native action and 14-day snooze",
+      "Native acceptance persists; prompt failure offers browser-menu recovery",
+      "Three minutes of foreground use, excluding ten hidden minutes",
+      "iOS instructions and header at five sizes; Escape, focus restoration and axe",
+      "Installed, standalone, appinstalled and unsupported-browser suppression",
+      "Storage-denied fallback without crashes"
+    ],
+    "scope": "Browser policy and simulated native event; no OS installation performed"
+  },
+  "pwa": {
     "base": "http://127.0.0.1:5185/crp",
     "install": {
       "installabilityErrors": []
@@ -233,15 +220,62 @@
     ],
     "offlineRetry": "passed"
   },
-  "benchmark": {
-    "at": "2026-10-19T00:04:27.200Z",
-    "node": "v24.13.0",
-    "count": 10000,
-    "elapsedMs": 19243.068356,
-    "peakRssMiB": 86.60546875,
-    "scenarioGroups": 5,
-    "scope": "Repeated evaluations of the six reference contracts, five models per evaluation, shared scenarios; excludes bootstrap, network, browser rendering and a genuinely distinct 10000-contract universe."
+  "contrast": {
+    "family": "\"Public Sans Variable\", \"Public Sans\", Arial, sans-serif",
+    "pairs": [
+      [
+        "body",
+        "rgb(37, 37, 41)",
+        "rgb(255,255,255)",
+        4.5,
+        15.269293909872097
+      ],
+      [
+        "muted",
+        "rgb(100, 100, 111)",
+        "rgb(255,255,255)",
+        4.5,
+        5.8426279091689395
+      ],
+      [
+        "loss",
+        "rgb(173, 52, 66)",
+        "rgb(255,255,255)",
+        4.5,
+        6.274812706610293
+      ],
+      [
+        "histogram",
+        "rgb(119, 112, 201)",
+        "rgb(255,255,255)",
+        3,
+        4.246314465940932
+      ],
+      [
+        "active loss",
+        "rgb(173, 52, 66)",
+        "rgb(255,255,255)",
+        3,
+        6.274812706610293
+      ],
+      [
+        "input boundary",
+        "rgb(137, 137, 147)",
+        "rgb(255,255,255)",
+        3,
+        3.4634867966799887
+      ]
+    ]
   },
-  "reproductionArchive": "Extracted in a fresh temporary directory; seven reference tests and batch screening passed.",
-  "live": "Pending deployment verification; local checks do not prove deployment."
+  "collection": {
+    "products": 24,
+    "observed": 23,
+    "failures": [
+      {
+        "scope": "DE000FG3FFY8",
+        "error": "HTTP 404"
+      }
+    ],
+    "through": "2026-10-19"
+  }
 }
