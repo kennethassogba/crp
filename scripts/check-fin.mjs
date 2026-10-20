@@ -10,6 +10,7 @@ const views = [],
 const routes = [
   ["/", "Vue d’ensemble"],
   ["/warrants/", "Warrants"],
+  ["/warrants/experience/", "Warrants"],
   ["/warrants/methode/", "Analyser un warrant"],
   ["/warrants/suivi/", "Analyses enregistrées"],
   ["/crp/", /^CRP$/],
@@ -59,19 +60,70 @@ try {
         await page
           .getByRole("group", { name: "Comparer les modèles", exact: true })
           .waitFor();
+      if (path === "/warrants/experience/")
+        await page
+          .getByRole("group", { name: "Comparer les warrants", exact: true })
+          .waitFor();
       if (path === "/warrants/")
         await page.locator(".contract-button").first().waitFor();
       await scan(page, `${path} ${width}`);
       views.push({ path, width });
       if (
         (width === 1440 || width === 390) &&
-        ["/", "/warrants/", "/crp/"].includes(path)
+        ["/", "/warrants/", "/warrants/experience/", "/crp/"].includes(path)
       )
         await page.screenshot({
-          path: `output/playwright/unified-${path === "/" ? "overview" : path.includes("warrants") ? "warrants" : "crp"}-${width}.png`,
+          path: `output/playwright/unified-${path === "/" ? "overview" : path.includes("experience") ? "warrants-experience" : path.includes("warrants") ? "warrants" : "crp"}-${width}.png`,
           fullPage: true,
         });
     }
+    await page.goto(base + "/warrants/experience/");
+    const list = page.getByRole("group", {
+      name: "Comparer les warrants",
+      exact: true,
+    });
+    await list.getByRole("button", { name: /Z377S/ }).click();
+    const portfolio = page.getByRole("region", {
+      name: "Portefeuille Z377S",
+      exact: true,
+    });
+    await portfolio
+      .getByRole("heading", { name: "Z377S", exact: true })
+      .waitFor();
+    const curve = portfolio.getByRole("group", {
+      name: /^Capital de référence/,
+    });
+    await curve.focus();
+    const currentReadout = await curve.locator(".chart-readout").innerText();
+    await page.keyboard.press("Home");
+    assert.notEqual(
+      await curve.locator(".chart-readout").innerText(),
+      currentReadout,
+    );
+    await page.keyboard.press("End");
+    assert.equal(
+      await curve.locator(".chart-readout").innerText(),
+      currentReadout,
+    );
+    await portfolio
+      .getByText("Comment sont calculés les 100 € ?", { exact: true })
+      .click();
+    assert.match(await portfolio.innerText(), /minimum de 500/);
+    await scan(page, "warrant EUR100 expanded " + width);
+    await page
+      .getByLabel("Rechercher dans la simulation")
+      .fill("aucun-resultat");
+    await page
+      .getByRole("status")
+      .filter({ hasText: /Aucun contrat trouvé/ })
+      .waitFor();
+    await page.getByLabel("Rechercher dans la simulation").fill("");
+    await page.getByRole("button", { name: "Suivants", exact: true }).click();
+    assert.equal(await list.getByRole("button").count(), 6);
+    interactions.push(
+      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging " +
+        width,
+    );
     await page.goto(base + "/warrants/");
     await page
       .getByRole("button", { name: /^NDX ·.*filtrer les contrats/ })
@@ -190,6 +242,7 @@ try {
     .getByRole("link", { name: /Warrants/ })
     .first()
     .click();
+  await page.getByRole("link", { name: "Catalogue", exact: true }).click();
   assert.equal(
     await page
       .getByRole("spinbutton", { name: "Budget", exact: true })

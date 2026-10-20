@@ -183,3 +183,33 @@ Sur CRP, choisir une ligne affiche le portefeuille et sa courbe. Les périodes f
 Sur Warrants, les raccourcis des sous-jacents affichent le dernier cours de clôture et la variation sur 20 séances, calculée entre les 21 dernières clôtures. Ils filtrent le catalogue. Ils ne représentent pas un historique du prix des warrants.
 
 Référence visuelle : [Apple Bourse](https://support.apple.com/en-ie/guide/iphone/iph1ac0b1bc/ios). Aucun actif graphique Apple n’est embarqué.
+
+
+## Warrants : expérience en base 100 €
+
+Vue : `/warrants/experience/`. JSON identique : `/api/warrants/comparison` ; MCP : `get_warrant_experiment`.
+Chaque contrat a sa propre mise de référence de 100 €, sans portefeuille global ni réinvestissement.
+L'achat source est de 3 000 € : quantité entière maximale au premier ask, frais d'entrée déduits,
+espèces résiduelles conservées. Valeur = (espèces + quantité × dernier bid − frais de sortie) / 30.
+Gain = valeur − 100 €. Le minimum d'ordre du catalogue (500 €) s'applique à l'achat source :
+un achat réel de 100 € n'est pas simulé. La perte maximale est le coût d'entrée / 30.
+
+BoursoMarkets vérifié dans le premier relevé : frais d'entrée nuls ; sinon hypothèse prudente
+au moins 0,1 %, minimum 9,95 € par ordre source. La revente reprend les hypothèses du relevé
+valorisé ; frais plafonnés au produit de cession pour un warrant sans recours supplémentaire.
+Le spread est inclus (ask à l'achat, bid à la valorisation). Impôts exclus.
+Les frais et quantités sont affichés dans le détail ; ce sont des hypothèses, pas une facture de courtier.
+
+Les six contrats initiaux utilisent les références du 16 octobre 2026, reprises du premier snapshot
+Git publié (`6706c78`). Les 18 autres démarrent à leur première observation du 19 octobre UTC
+(20 octobre à Paris). Les deux snapshots suivants (`630bf47`, `f8cc805`) ont également été archivés.
+Il n'y a aucune reconstruction de cours de warrant à partir de son sous-jacent.
+Les valeurs de référence ne sont pas des preuves d'exécution historique.
+
+`warrantExperiment` dans `public/research/snapshot.json` conserve les entrées et relevés.
+La collecte quotidienne ajoute les nouveaux timestamps, conserve les expirés dans cette archive,
+ne duplique pas une cotation conservée après échec et refuse un changement de termes pour un même ISIN.
+Une panne conserve la dernière date et affiche un ancien relevé ; elle ne transforme pas la valeur en zéro.
+Après échéance, faute de remboursement enregistré, le résultat final est indisponible.
+Les nouveaux contrats ont des dates d'entrée différentes. La liste complète est conservée :
+ce suivi n'est ni une sélection rétrospective des gagnants ni un backtest prouvant un avantage.

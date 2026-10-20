@@ -160,6 +160,74 @@
           }
         }
       }
+    },
+    "warrantExperiment": {
+      "type": "object",
+      "required": [
+        "version",
+        "capital",
+        "sourceCapital",
+        "contracts"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "capital": {
+          "const": 100
+        },
+        "sourceCapital": {
+          "const": 3000
+        },
+        "contracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "product",
+              "quotes"
+            ],
+            "properties": {
+              "product": {
+                "$ref": "#/properties/products/items"
+              },
+              "quotes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "at",
+                    "bid",
+                    "ask",
+                    "kind"
+                  ],
+                  "properties": {
+                    "at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "bid": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "ask": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "kind": {
+                      "enum": [
+                        "reference",
+                        "observation"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

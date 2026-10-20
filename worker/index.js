@@ -1,3 +1,4 @@
+import { compareWarrants } from "../lib/warrant-experiment.mjs";
 import { snapshotAt, momentum, position, HOUR } from "../lib/strategy.mjs";
 import { MODELS } from "../lib/models.mjs";
 import { compareCrp } from "../lib/crp-performance.mjs";
@@ -146,11 +147,15 @@ async function mcp(request, env) {
     const data =
       params.name === "get_backtest"
         ? await assetJSON(env, request, "/data/backtest.json")
-        : params.name === "get_warrant_catalog"
-          ? await assetJSON(env, request, "/research/snapshot.json")
-          : params.name === "get_crp_comparison"
-            ? (await current(env, request)).comparison
-            : await current(env, request);
+        : params.name === "get_warrant_experiment"
+          ? compareWarrants(
+              await assetJSON(env, request, "/research/snapshot.json"),
+            )
+          : params.name === "get_warrant_catalog"
+            ? await assetJSON(env, request, "/research/snapshot.json")
+            : params.name === "get_crp_comparison"
+              ? (await current(env, request)).comparison
+              : await current(env, request);
     result = {
       content: [{ type: "text", text: JSON.stringify(data) }],
       structuredContent: data,
@@ -180,6 +185,7 @@ export default {
         "/crp/methode",
         "/donnees",
         "/warrants",
+        "/warrants/experience",
         "/warrants/methode",
         "/warrants/suivi",
       ].includes(path)
@@ -280,6 +286,12 @@ export default {
         await caches.default.put(request, response.clone());
         return response;
       }
+      if (path === "/api/warrants/comparison")
+        return json(
+          compareWarrants(
+            await assetJSON(env, request, "/research/snapshot.json"),
+          ),
+        );
       if (path === "/api/decisions")
         return json({ decisions: await decisions(env) });
       if (path === "/api/backtest")
@@ -298,6 +310,7 @@ export default {
         "/crp/methode/",
         "/donnees/",
         "/warrants/",
+        "/warrants/experience/",
         "/warrants/methode/",
         "/warrants/suivi/",
       ].includes(path);
@@ -308,6 +321,7 @@ export default {
         "/crp/methode/": "Règles CRP · Fin",
         "/donnees/": "Données · Fin",
         "/warrants/": "Warrants · fin",
+        "/warrants/experience/": "Warrants · simulation 100 € · Fin",
         "/warrants/methode/": "Méthode de recherche · fin",
         "/warrants/suivi/": "Suivi de recherche · fin",
       };

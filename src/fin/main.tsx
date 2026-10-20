@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import "@fontsource-variable/public-sans";
 import "./style.css";
+import { WarrantExperiment } from "./WarrantExperiment";
 import { Screener } from "./Screener";
 import { Method } from "./Method";
 import { Journal } from "./Journal";
@@ -28,6 +29,7 @@ import type { CrpState, Report } from "./Crp";
 const routes: Record<string, string> = {
   "/": "Vue d’ensemble",
   "/warrants/": "Warrants",
+  "/warrants/experience/": "Warrants · simulation 100 €",
   "/warrants/methode/": "Méthode · warrants",
   "/warrants/suivi/": "Analyses enregistrées",
   "/crp/": "CRP",
@@ -190,8 +192,12 @@ function App() {
         </a>
         <div className="nav-section">Recherche</div>
         <a
-          href="/warrants/"
-          aria-current={path === "/warrants/" ? "page" : undefined}
+          href="/warrants/experience/"
+          aria-current={
+            ["/warrants/", "/warrants/experience/"].includes(path)
+              ? "page"
+              : undefined
+          }
         >
           <ListFilter size={16} />
           Warrants{dataset && <small>{dataset.products.length}</small>}
@@ -353,7 +359,11 @@ function App() {
                 Réessayer
               </button>
             </div>
-          ) : dataset ? null : (
+          ) : dataset ? (
+            path === "/warrants/experience/" ? (
+              <WarrantExperiment dataset={dataset} />
+            ) : null
+          ) : (
             <div role="status" className="empty-state">
               <h1>Warrants</h1>
               <p>Chargement du catalogue…</p>
@@ -438,7 +448,7 @@ function Overview({
         </div>
       )}
       <div className="overview-list">
-        <a href="/warrants/" className="overview-entry">
+        <a href="/warrants/experience/" className="overview-entry">
           <div>
             <h2>
               Warrants

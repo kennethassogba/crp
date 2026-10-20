@@ -8,6 +8,8 @@ for (const path of [
   "/icon-192.png",
   "/api/state",
   "/api/crp/comparison",
+  "/api/warrants/comparison",
+  "/warrants/experience/",
   "/api/backtest",
   "/api/decisions",
   "/openapi.json",
@@ -36,8 +38,12 @@ const mcp = await (
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
   })
 ).json();
-assert.equal(mcp.result.tools.length, 4);
-for (const name of ["get_crp_comparison", "get_warrant_catalog"]) {
+assert.equal(mcp.result.tools.length, 5);
+for (const name of [
+  "get_crp_comparison",
+  "get_warrant_catalog",
+  "get_warrant_experiment",
+]) {
   const r = await (
     await fetch(base + "/mcp", {
       method: "POST",
@@ -55,6 +61,14 @@ for (const name of ["get_crp_comparison", "get_warrant_catalog"]) {
     assert.equal(r.result.structuredContent.capital, 100);
     assert.equal(r.result.structuredContent.models.length, 3);
     assert.equal(r.result.structuredContent.fxIncluded, false);
+  } else if (name === "get_warrant_experiment") {
+    const expected = await (
+      await fetch(base + "/api/warrants/comparison")
+    ).json();
+    assert.deepEqual(r.result.structuredContent, expected);
+    assert.equal(expected.capital, 100);
+    assert.equal(expected.sourceCapital, 3000);
+    assert.ok(expected.contracts.length > 0);
   } else assert.ok(r.result.structuredContent.products.length > 0);
 }
 const invalidTool = await (

@@ -1,10 +1,10 @@
 {
   "date": "2026-10-20",
-  "stage": "Local verification before deployment, Apple Stocks-inspired interface",
+  "stage": "Local verification before deployment, fixed-entry warrant experiment in EUR 100 reference units",
   "typecheck": "passed",
-  "tests": 37,
+  "tests": 44,
   "independentReferenceTests": 7,
-  "archiveReproduction": "Not rerun in this revision; warrant engine and archive unchanged",
+  "archiveReproduction": "14 financial tests passed from the downloadable archive",
   "finance": {
     "base": "http://127.0.0.1:5185",
     "views": [
@@ -14,6 +14,10 @@
       },
       {
         "path": "/warrants/",
+        "width": 1440
+      },
+      {
+        "path": "/warrants/experience/",
         "width": 1440
       },
       {
@@ -50,6 +54,10 @@
       },
       {
         "path": "/warrants/",
+        "width": 768
+      },
+      {
+        "path": "/warrants/experience/",
         "width": 768
       },
       {
@@ -86,6 +94,10 @@
       },
       {
         "path": "/warrants/",
+        "width": 390
+      },
+      {
+        "path": "/warrants/experience/",
         "width": 390
       },
       {
@@ -122,6 +134,10 @@
       },
       {
         "path": "/warrants/",
+        "width": 320
+      },
+      {
+        "path": "/warrants/experience/",
         "width": 320
       },
       {
@@ -154,6 +170,10 @@
       }
     ],
     "interactions": [
+      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging 1440",
+      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging 768",
+      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging 390",
+      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging 320",
       "budget, saved observation, persistence and undo",
       "SPA navigation and browser back",
       "CSV import and rejection"
@@ -361,5 +381,20 @@
     "providerCostsIncluded": false
   },
   "styleReference": "https://support.apple.com/en-ie/guide/iphone/iph1ac0b1bc/ios",
-  "marketPreviewPeriod": "20 sessions; 21 recorded closes; same window for sparkline and change"
+  "marketPreviewPeriod": "20 sessions; 21 recorded closes; same window for sparkline and change",
+  "warrantExperiment": {
+    "capital": 100,
+    "sourceCapital": 3000,
+    "basis": "normalized-return",
+    "contracts": 24,
+    "entry": "first archived ask, fixed whole-unit source quantity",
+    "valuation": "latest archived bid, hypothetical entry/exit fees, cash retained",
+    "backfillCommits": [
+      "6706c78",
+      "630bf47",
+      "f8cc805"
+    ],
+    "expired": "null pending verified settlement",
+    "liveExecution": false
+  }
 }

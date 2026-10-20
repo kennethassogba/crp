@@ -1,3 +1,4 @@
+import { recordWarrantQuotes } from "../lib/warrant-experiment.mjs";
 import { readFile, writeFile, rename, mkdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import {
@@ -84,6 +85,9 @@ for (const [isin, p] of work) {
 }
 if (!refreshed.length)
   throw Error("No warrant refreshed; published dataset left unchanged");
+data.warrantExperiment = recordWarrantQuotes(
+  recordWarrantQuotes(data.warrantExperiment, data.products), products,
+);
 data.products = products;
 data.quoteDate = at.slice(0, 10);
 data.quotesCollection = {

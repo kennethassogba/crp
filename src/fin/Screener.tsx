@@ -230,6 +230,7 @@ export function Screener({
         ...next,
         quotesCollection: undefined,
         importedAt: new Date().toISOString(),
+        warrantExperiment: undefined,
         quoteDate: next.products
           .map((p) => p.quoteAt.slice(0, 10))
           .sort()
@@ -340,6 +341,12 @@ export function Screener({
           />
         </div>
       </div>
+      <nav className="view-tabs" aria-label="Vues Warrants">
+        <a href="/warrants/experience/">Simulation 100 €</a>
+        <a href="/warrants/" aria-current="page">
+          Catalogue
+        </a>
+      </nav>
       <MarketStrip dataset={dataset} selected={asset} onSelect={setAsset} />
       <div role="status" className={message ? "notice" : ""}>
         {message}

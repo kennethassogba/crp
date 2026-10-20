@@ -45,6 +45,21 @@ export type Dataset = {
   fxSource?: string;
   collectedAt: string;
   fx: number;
+  warrantExperiment?: {
+    contracts: {
+      product: Product;
+      quotes: {
+        at: string;
+        bid: number;
+        ask: number;
+        kind: string;
+        source: string | null;
+        commission: number;
+        commissionPct: number;
+        commissionMin: number;
+      }[];
+    }[];
+  };
   products: Product[];
   assets: Record<string, History>;
   limits?: Record<string, string>;

@@ -49,3 +49,29 @@ Approve dans le périmètre Chromium inspecté. Aucun avertissement masqué. Auc
 ### Suivi du hook — état sélectionné
 
 Les deux signalements `side-tab` de la ligne de modèle sélectionnée (sens normal et RTL) ont été corrigés : suppression des ombres internes latérales de 3 px. Le fond sélectionné est conservé, accompagné d’une coche Lucide décorative. L’état accessible reste fourni par `aria-pressed`. Aucun ignore ajouté.
+
+
+### Warrants — expérience en base 100 €
+
+Périmètre ajouté : `/warrants/experience/`, accès depuis la navigation Warrants,
+comparaison par contrat, recherche, pagination, détail, export JSON et graphique.
+Le catalogue et ses hypothèses restent séparés. Conventions `AGENTS.md` et `DESIGN.md` conservées.
+
+| Domaine | Éléments contrôlés | Résultat |
+| --- | --- | --- |
+| Accessibilité | `WarrantExperiment.tsx`, contrôles nommés, `aria-pressed`, focus visible, clavier du graphique, états sans résultat | Aucun blocage Chromium/axe critique ou sérieux aux quatre largeurs |
+| Mise en page | Liste et détail partagés avec CRP, 1440/768/390/320 px | Aucun débordement ; sur mobile, sélectionner un contrat amène au détail avec le focus |
+| Écriture | Base 100 €, prix de référence, ancien relevé, remboursement inconnu, frais simulés | Le montant de comparaison est distingué d'un ordre réel de 100 €, inférieur au minimum catalogue de 500 € |
+| Typographie | Police et échelle existantes, chiffres tabulaires, dates courtes sur le graphique | Les dates ne se chevauchent plus sur mobile ; heures et dates du graphique en Europe/Paris |
+| Couleur | Tokens partagés, variations signées, statut textuel, sélection avec coche | Mode sombre, gains bleus, pertes rouges ; aucune nouvelle couleur ni signification par couleur seule |
+| UI | Sélection, recherche sans résultat, pagination, export et récupération réseau | Contrôles fonctionnels ; le graphique suit le temps écoulé et montre le repère 100 € |
+
+Vérification : 44 tests unitaires ; 14 tests reproduits depuis l'archive téléchargeable ;
+40 combinaisons de routes/largeurs, interaction du nouveau graphique au clavier,
+lecture des frais, recherche et pagination aux quatre largeurs. Régression CRP réussie,
+11 paires de contraste, 6 groupes d'installation, installabilité et reprise hors ligne réussies.
+Les libellés français ajoutés ont été relus manuellement avec avoid-ai-writing ; aucun score anglais revendiqué.
+
+La première inspection a révélé les dates trop longues et espacées par indice de relevé ;
+correction groupée : dates courtes en heure de Paris, extrémités uniquement et axe temporel réel.
+La confirmation a réussi. Aucun avertissement masqué. Installation physique et lecteurs d'écran natifs non vérifiés.

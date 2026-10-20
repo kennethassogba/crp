@@ -2235,3 +2235,8 @@ pre {
     padding-block-end: env(safe-area-inset-bottom);
   }
 }
+
+.warrant-experiment .search-field { margin-block-end: 12px; inline-size: 100%; }
+.experiment-pagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-block-start: 16px; }
+.experiment-pagination > span { color: var(--muted); font-size: .75rem; white-space: nowrap; }
+.warrant-experiment .stock-stats small { display: block; color: var(--muted); font-size: .75rem; margin-block-start: 4px; }

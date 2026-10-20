@@ -28,11 +28,15 @@ export function LineChart({
   dates,
   name,
   unit = "$",
+  elapsedTime = false,
+  baseline,
 }: {
   values: number[];
   dates: string[];
   name: string;
   unit?: string;
+  elapsedTime?: boolean;
+  baseline?: number;
 }) {
   const [active, setActive] = useState<number | null>(null),
     id = useId(),
@@ -44,13 +48,21 @@ export function LineChart({
         Pas encore assez de points pour tracer une courbe.
       </p>
     );
-  const low = Math.min(...values),
-    high = Math.max(...values),
+  const low = Math.min(...values, baseline ?? Infinity),
+    high = Math.max(...values, baseline ?? -Infinity),
     range = Math.max(high - low, high * 0.001, 1),
     min = low - range * 0.12,
     max = high + range * 0.12;
+  const times = dates.map((d) => Date.parse(d)),
+    firstTime = times[0],
+    duration = times.at(-1)! - firstTime;
   const span = width - 76,
-    x = (i: number) => 12 + (i / (values.length - 1)) * span,
+    x = (i: number) =>
+      12 +
+      (elapsedTime && duration > 0
+        ? (times[i] - firstTime) / duration
+        : i / (values.length - 1)) *
+        span,
     y = (v: number) => 188 - ((v - min) / (max - min)) * 156;
   const path = values
       .map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`)
@@ -58,6 +70,23 @@ export function LineChart({
     index = active ?? values.length - 1;
   const value = (v: number) =>
     unit === "€" ? euro(v, 2) : `${number(v, 2)} ${unit}`;
+  const pick = (e: React.PointerEvent<SVGSVGElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    const target = ((e.clientX - box.left) / box.width) * width;
+    setActive(
+      values.reduce(
+        (best, _, i) =>
+          Math.abs(x(i) - target) < Math.abs(x(best) - target) ? i : best,
+        0,
+      ),
+    );
+  };
+  const axisDate = (i: number) =>
+    new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "short",
+      timeZone: dates[i].includes("T") ? "Europe/Paris" : "UTC",
+    }).format(new Date(dates[i]));
   return (
     <div
       ref={ref}
@@ -97,38 +126,10 @@ export function LineChart({
         viewBox={`0 0 ${width} 225`}
         role="img"
         aria-label={`${name}, de ${value(values[0])} à ${value(values.at(-1)!)}`}
-        onPointerMove={(e) => {
-          const box = e.currentTarget.getBoundingClientRect();
-          setActive(
-            Math.max(
-              0,
-              Math.min(
-                values.length - 1,
-                Math.round(
-                  ((((e.clientX - box.left) / box.width) * width - 12) / span) *
-                    (values.length - 1),
-                ),
-              ),
-            ),
-          );
-        }}
+        onPointerMove={pick}
+        onPointerDown={pick}
         onPointerLeave={(e) => {
           if (e.pointerType === "mouse") setActive(null);
-        }}
-        onPointerDown={(e) => {
-          const box = e.currentTarget.getBoundingClientRect();
-          setActive(
-            Math.max(
-              0,
-              Math.min(
-                values.length - 1,
-                Math.round(
-                  ((((e.clientX - box.left) / box.width) * width - 12) / span) *
-                    (values.length - 1),
-                ),
-              ),
-            ),
-          );
         }}
       >
         {[0, 0.5, 1].map((q) => (
@@ -145,6 +146,17 @@ export function LineChart({
             </text>
           </g>
         ))}
+        {baseline !== undefined && (
+          <line
+            x1="12"
+            x2={width - 64}
+            y1={y(baseline)}
+            y2={y(baseline)}
+            className="zero-line"
+          >
+            <title>Départ {value(baseline)}</title>
+          </line>
+        )}
         <path d={path} className="price-path" />
         {active !== null && (
           <line
@@ -161,14 +173,14 @@ export function LineChart({
           r="4"
           className="price-dot"
         />
-        {[0, 0.5, 1].map((q) => (
+        {(width < 480 || elapsedTime ? [0, 1] : [0, 0.5, 1]).map((q) => (
           <text
             key={q}
             x={12 + q * span}
             y="217"
             textAnchor={q === 0 ? "start" : q === 1 ? "end" : "middle"}
           >
-            {date(dates[Math.round(q * (values.length - 1))])}
+            {axisDate(Math.round(q * (values.length - 1)))}
           </text>
         ))}
       </svg>
