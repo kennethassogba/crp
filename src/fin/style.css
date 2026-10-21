@@ -246,8 +246,6 @@ nav a small {
   gap: 12px;
   padding-inline: 32px;
   border-block-end: 1px solid var(--line);
-  position: sticky;
-  inset-block-start: 0;
   background: var(--panel);
   z-index: 10;
 }
@@ -2240,3 +2238,19 @@ pre {
 .experiment-pagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-block-start: 16px; }
 .experiment-pagination > span { color: var(--muted); font-size: .75rem; white-space: nowrap; }
 .warrant-experiment .stock-stats small { display: block; color: var(--muted); font-size: .75rem; margin-block-start: 4px; }
+
+/* Shared portfolio workspace. No secondary branding or explanatory footers. */
+.mobile-brand { display: none; }
+.fin-topbar { justify-content: flex-end; }
+.portfolio-page .stock-layout { grid-template-columns: minmax(270px, 0.9fr) minmax(0, 2fr); }
+.portfolio-page .stock-detail { scroll-margin-block-start: 72px; }
+.portfolio-page .stock-detail-heading { min-block-size: 34px; }
+.portfolio-page .stock-quote { margin-block-start: 20px; }
+.portfolio-page .stock-quote p { margin-block-end: 24px; }
+.portfolio-page .stock-explanation { margin-block-start: 12px; }
+.portfolio-page .stock-explanation p { max-inline-size: 65ch; }
+.portfolio-page .comparison-readout { min-block-size: 44px; }
+@container stocks (max-width: 55em) { .portfolio-page .stock-layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 800px) { .mobile-brand { display: block; font-weight: 650; margin-inline-end: auto; } .fin-topbar { justify-content: flex-start; } }
+
+.portfolio-tabs a { display: inline-flex; align-items: center; justify-content: center; min-inline-size: 44px; min-block-size: 44px; }

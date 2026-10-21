@@ -165,9 +165,9 @@ All agent tools are read-only and share the same recorded data as the interface.
 Code: [MIT](LICENSE). Third-party data and dependencies retain their own terms.
 
 
-### Comparaison CRP à 100 €
+### Comparaison CRP à 1 000 €
 
-Luna, Luna Decision et Sol restent actifs. Astra et Terra ne reçoivent plus de requêtes ; leurs archives D1 sont conservées. Chaque portefeuille est comparé sur une base initiale de 100 €. Le journal USD à 10 000 est conservé : les montants sont multipliés par 0,01, ce qui préserve les rendements et les frais proportionnels. Ce choix ne simule pas le change EUR/USD ni les minimums de négociation d’un compte réel.
+Luna, Luna Decision et Sol restent actifs. Astra et Terra ne reçoivent plus de requêtes ; leurs archives D1 sont conservées. Chaque portefeuille est comparé sur une base initiale de 1 000 €. Le journal USD à 10 000 est conservé : les montants sont multipliés par 0,1, ce qui préserve les rendements et les frais proportionnels. Ce choix ne simule pas le change EUR/USD ni les minimums de négociation d’un compte réel.
 
 Le capital estimé additionne le capital clôturé et les positions ouvertes valorisées à la dernière heure complète Kraken, avec frais de sortie, glissement et financement observé. L’estimation respecte les mêmes stops, limites de collatéral et règles de financement que le moteur de clôture. Une source manquante donne une valeur indisponible, jamais un gain inventé. Les réponses tardives et échouées sont exclues. Le taux de réussite exclut les décisions en espèces. Les coûts des modèles restent séparés en USD.
 
@@ -185,31 +185,27 @@ Sur Warrants, les raccourcis des sous-jacents affichent le dernier cours de clô
 Référence visuelle : [Apple Bourse](https://support.apple.com/en-ie/guide/iphone/iph1ac0b1bc/ios). Aucun actif graphique Apple n’est embarqué.
 
 
-## Warrants : expérience en base 100 €
+## Portefeuille Warrants à J1 — 1 000 €
 
-Vue : `/warrants/experience/`. JSON identique : `/api/warrants/comparison` ; MCP : `get_warrant_experiment`.
-Chaque contrat a sa propre mise de référence de 100 €, sans portefeuille global ni réinvestissement.
-L'achat source est de 3 000 € : quantité entière maximale au premier ask, frais d'entrée déduits,
-espèces résiduelles conservées. Valeur = (espèces + quantité × dernier bid − frais de sortie) / 30.
-Gain = valeur − 100 €. Le minimum d'ordre du catalogue (500 €) s'applique à l'achat source :
-un achat réel de 100 € n'est pas simulé. La perte maximale est le coût d'entrée / 30.
+L’accueil `/` compare les quatre simulations dans la même interface : le portefeuille Warrants
+et les trois modèles CRP. `/warrants/experience/` et `/crp/` filtrent cette vue commune.
+Capital, gain/perte et courbe restent visibles ; positions et règles sont dans Détails.
+Le catalogue, les analyses enregistrées et le journal d’origine restent accessibles.
 
-BoursoMarkets vérifié dans le premier relevé : frais d'entrée nuls ; sinon hypothèse prudente
-au moins 0,1 %, minimum 9,95 € par ordre source. La revente reprend les hypothèses du relevé
-valorisé ; frais plafonnés au produit de cession pour un warrant sans recours supplémentaire.
-Le spread est inclus (ask à l'achat, bid à la valorisation). Impôts exclus.
-Les frais et quantités sont affichés dans le détail ; ce sont des hypothèses, pas une facture de courtier.
+Le portefeuille Warrants commence avec 1 000 € à J1, le 16 octobre 2026 :
+689 Q433S (DE000FG32YX6) au prix vendeur de référence de 1,45 €, soit 999,05 € ;
+0,95 € restent en espèces. La quantité est fixe, sans réinvestissement ni ajout des nouveaux contrats.
+Q433S était le premier contrat et la sélection par défaut du suivi original. Ce choix est figé
+par cette version après la publication des relevés ; ce n’est pas une sélection prospective prouvant un avantage.
+Valeur = espèces + 689 × dernier bid − frais de sortie simulés. Gain = valeur − 1 000 €.
+Aucune normalisation à partir de 3 000 € pour ce portefeuille. Frais simulés inclus, impôts exclus.
+L’achat source respecte le minimum de 500 €. Les prix de référence ne prouvent pas une exécution réelle.
 
-Les six contrats initiaux utilisent les références du 16 octobre 2026, reprises du premier snapshot
-Git publié (`6706c78`). Les 18 autres démarrent à leur première observation du 19 octobre UTC
-(20 octobre à Paris). Les deux snapshots suivants (`630bf47`, `f8cc805`) ont également été archivés.
-Il n'y a aucune reconstruction de cours de warrant à partir de son sous-jacent.
-Les valeurs de référence ne sont pas des preuves d'exécution historique.
+La collecte quotidienne ajoute des points à l’archive, sans modifier le prix d’entrée.
+Une panne conserve la date du dernier relevé. Après l’échéance, sans remboursement enregistré,
+le capital final reste indisponible. Aucun zéro ni remboursement inventé.
 
-`warrantExperiment` dans `public/research/snapshot.json` conserve les entrées et relevés.
-La collecte quotidienne ajoute les nouveaux timestamps, conserve les expirés dans cette archive,
-ne duplique pas une cotation conservée après échec et refuse un changement de termes pour un même ISIN.
-Une panne conserve la dernière date et affiche un ancien relevé ; elle ne transforme pas la valeur en zéro.
-Après échéance, faute de remboursement enregistré, le résultat final est indisponible.
-Les nouveaux contrats ont des dates d'entrée différentes. La liste complète est conservée :
-ce suivi n'est ni une sélection rétrospective des gagnants ni un backtest prouvant un avantage.
+API de la vue Warrants : `/api/warrants/portfolio` ; MCP : `get_warrant_experiment`.
+API CRP : `/api/crp/comparison`, base de 1 000 € normalisée depuis le journal USD 10 000,
+sans simulation du change. L’ancienne API `/api/warrants/comparison` reste disponible pour compatibilité :
+elle contient les comparaisons individuelles en base 100 € et ne représente plus le portefeuille de l’application.

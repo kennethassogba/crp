@@ -78,9 +78,9 @@ function plan(r: Run) {
   if (!a || ![1, 2].includes(leverage)) return null;
   const entry = a.price,
     stopPct = a.stopPct,
-    collateral = Math.min(100, 2 / (leverage * (stopPct + 0.0014)));
+    collateral = Math.min(1000, 20 / (leverage * (stopPct + 0.0014)));
   return {
-    referenceEquity: 100,
+    referenceEquity: 1000,
     currency: "EUR",
     basis: "normalized-return",
     fxIncluded: false,
@@ -105,16 +105,9 @@ export function Crp({
   retry: () => void;
 }) {
   const [selected, setSelected] = useState<Run | null>(null),
-    dialog = useRef<HTMLDialogElement>(null),
     [model, setModel] = useState("momentum"),
     [cohort, setCohort] = useState("live"),
-    [page, setPage] = useState(0),
-    [copied, setCopied] = useState(false);
-  useEffect(() => {
-    if (selected) dialog.current?.showModal();
-    else dialog.current?.close();
-    setCopied(false);
-  }, [selected]);
+    [page, setPage] = useState(0);
   useEffect(() => setPage(0), [cohort, model, path]);
   const view = path.includes("/modeles")
     ? "models"
@@ -150,17 +143,15 @@ export function Crp({
     model === "momentum"
       ? (benchmark?.curve ?? []).map((p: any) => ({
           ...p,
-          equity: p.equity / (report.rules.capital / 100),
+          equity: p.equity / (report.rules.capital / 1000),
         }))
       : [
-          { t: modelRuns[0]?.snapshot_at, equity: 100 },
+          { t: modelRuns[0]?.snapshot_at, equity: 1000 },
           ...modelRuns.map((r) => ({
             t: r.result.exitAt,
-            equity: r.result.equity / 100,
+            equity: r.result.equity / 10,
           })),
         ].filter((p) => p.t);
-  const selectedPlan = selected?.status === "completed" ? plan(selected) : null;
-  const moneyReturn = (v: number) => signedEuro(v, 2);
   const comparison = (state.comparison ??
     compareCrp(state.models, state.decisions)) as Comparison;
   return (
@@ -298,7 +289,7 @@ export function Crp({
                             (r.equity ??
                               r.curve?.at(-1)?.equity ??
                               report.rules.capital) /
-                              (report.rules.capital / 100),
+                              (report.rules.capital / 1000),
                             2,
                           )}
                         </td>
@@ -378,7 +369,7 @@ export function Crp({
           <h2>Règles d’exécution</h2>
           <dl className="contract-grid">
             {[
-              ["Capital initial par modèle", euro(100, 0)],
+              ["Capital initial par modèle", euro(1000, 0)],
               ["Risque prévu par position", percent(report.rules.risk)],
               ["Levier maximal", `${report.rules.maxLeverage}×`],
               ["Sortie au plus tard", `${report.rules.horizonHours} heures`],
@@ -393,8 +384,8 @@ export function Crp({
           </dl>
           <h2>Comment est calculé le capital ?</h2>
           <p>
-            Chaque modèle commence avec 100 € de référence. Les rendements du
-            journal d’origine en dollars sont appliqués à ces 100 €, sans
+            Chaque modèle commence avec 1 000 € de référence. Les rendements du
+            journal d’origine en dollars sont appliqués à ces 1 000 €, sans
             modifier les décisions enregistrées. Le change euro/dollar n’est pas
             simulé.
           </p>
@@ -428,128 +419,155 @@ export function Crp({
           </div>
         </div>
       )}
-      <dialog
-        ref={dialog}
-        className="detail-dialog decision-dialog"
-        aria-label="Décision enregistrée"
-        onCancel={() => setSelected(null)}
+      <DecisionDialog
+        selected={selected}
         onClose={() => setSelected(null)}
-      >
-        <div className="dialog-topbar">
-          <span>Décision enregistrée</span>
-          <button
-            className="icon-button"
-            aria-label="Fermer la décision"
-            onClick={() => setSelected(null)}
-          >
-            <X size={18} />
-          </button>
-        </div>
-        {selected && (
-          <div className="decision-detail">
-            <div className="page-heading">
-              <h2>
-                {state.models.find((m) => m.id === selected.model)?.name ??
-                  selected.model}
-              </h2>
-              <span className="status-chip">{status(selected)}</span>
-            </div>
-            <p className="small muted">{datetime(selected.snapshot_at)}</p>
-            <h3>
-              {selected.status === "completed" && selected.decision
-                ? action(selected.decision.action)
-                : "Pas de position"}
-            </h3>
-            <p className="decision-reason">
-              {selected.status === "failed"
-                ? (selected.error ?? "La réponse du modèle a échoué.")
-                : (selected.decision?.reason ?? "Aucune raison enregistrée.")}
-            </p>
-            {selectedPlan && (
-              <dl className="contract-grid">
-                {[
-                  ["Entrée indicative", usd(selectedPlan.entry)],
-                  ["Stop", usd(selectedPlan.stop)],
-                  ["Levier", `${selectedPlan.leverage}×`],
-                  [
-                    "Exposition sur la base de 100 €",
-                    euro(selectedPlan.notional, 2),
-                  ],
-                  ["Entrée prévue", datetime(selected.entry_after)],
-                  ["Sortie", "24 h après l’entrée"],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <dt>{k}</dt>
-                    <dd>{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-            {selected.result && (
-              <dl className="contract-grid">
-                <div>
-                  <dt>Gain net simulé</dt>
-                  <dd>{moneyReturn((selected.result.pnl ?? 0) / 100)}</dd>
-                </div>
-                <div>
-                  <dt>Capital après sortie</dt>
-                  <dd>{euro(selected.result.equity / 100, 2)}</dd>
-                </div>
-              </dl>
-            )}
-            <details className="explainer">
-              <summary>Journal d’origine (USD)</summary>
-              <pre tabIndex={0}>
-                {JSON.stringify(
-                  {
-                    decision: selected.decision,
-                    result: selected.result,
-                    snapshot: selected.snapshot,
-                  },
-                  null,
-                  2,
-                )}
-              </pre>
-            </details>
-            <div className="dialog-actions">
-              <button
-                className="button secondary"
-                onClick={() =>
-                  download(
-                    `crp-${selected.id}.json`,
-                    JSON.stringify(selected, null, 2),
-                  )
-                }
-              >
-                <Download size={14} />
-                Exporter
-              </button>
-              <button
-                className="button secondary"
-                disabled={!selectedPlan}
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(
-                      JSON.stringify(
-                        { decision: selected.decision, plan: selectedPlan },
-                        null,
-                        2,
-                      ),
-                    );
-                    setCopied(true);
-                  } catch {
-                    setCopied(false);
-                  }
-                }}
-              >
-                <Copy size={14} />
-                {copied ? "Copié" : "Copier le plan"}
-              </button>
-            </div>
-            <p className="small muted">Position simulée. Aucun ordre réel.</p>
-          </div>
-        )}
-      </dialog>
+        models={state.models}
+      />
     </section>
+  );
+}
+
+export function DecisionDialog({
+  selected,
+  onClose,
+  models,
+}: {
+  selected: Run | null;
+  onClose: () => void;
+  models: CrpState["models"];
+}) {
+  const dialog = useRef<HTMLDialogElement>(null),
+    [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (selected) dialog.current?.showModal();
+    else dialog.current?.close();
+    setCopied(false);
+  }, [selected]);
+  const selectedPlan = selected?.status === "completed" ? plan(selected) : null;
+  const moneyReturn = (v: number) => signedEuro(v, 2);
+  return (
+    <dialog
+      ref={dialog}
+      className="detail-dialog decision-dialog"
+      aria-label="Décision enregistrée"
+      onCancel={() => onClose()}
+      onClose={() => onClose()}
+    >
+      <div className="dialog-topbar">
+        <span>Décision enregistrée</span>
+        <button
+          className="icon-button"
+          aria-label="Fermer la décision"
+          onClick={() => onClose()}
+        >
+          <X size={18} />
+        </button>
+      </div>
+      {selected && (
+        <div className="decision-detail">
+          <div className="page-heading">
+            <h2>
+              {models.find((m) => m.id === selected.model)?.name ??
+                selected.model}
+            </h2>
+            <span className="status-chip">{status(selected)}</span>
+          </div>
+          <p className="small muted">{datetime(selected.snapshot_at)}</p>
+          <h3>
+            {selected.status === "completed" && selected.decision
+              ? action(selected.decision.action)
+              : "Pas de position"}
+          </h3>
+          <p className="decision-reason">
+            {selected.status === "failed"
+              ? (selected.error ?? "La réponse du modèle a échoué.")
+              : (selected.decision?.reason ?? "Aucune raison enregistrée.")}
+          </p>
+          {selectedPlan && (
+            <dl className="contract-grid">
+              {[
+                ["Entrée indicative", usd(selectedPlan.entry)],
+                ["Stop", usd(selectedPlan.stop)],
+                ["Levier", `${selectedPlan.leverage}×`],
+                [
+                  "Exposition sur la base de 1 000 €",
+                  euro(selectedPlan.notional, 2),
+                ],
+                ["Entrée prévue", datetime(selected.entry_after)],
+                ["Sortie", "24 h après l’entrée"],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          {selected.result && (
+            <dl className="contract-grid">
+              <div>
+                <dt>Gain net simulé</dt>
+                <dd>{moneyReturn((selected.result.pnl ?? 0) / 10)}</dd>
+              </div>
+              <div>
+                <dt>Capital après sortie</dt>
+                <dd>{euro(selected.result.equity / 10, 2)}</dd>
+              </div>
+            </dl>
+          )}
+          <details className="explainer">
+            <summary>Journal d’origine (USD)</summary>
+            <pre tabIndex={0}>
+              {JSON.stringify(
+                {
+                  decision: selected.decision,
+                  result: selected.result,
+                  snapshot: selected.snapshot,
+                },
+                null,
+                2,
+              )}
+            </pre>
+          </details>
+          <div className="dialog-actions">
+            <button
+              className="button secondary"
+              onClick={() =>
+                download(
+                  `crp-${selected.id}.json`,
+                  JSON.stringify(selected, null, 2),
+                )
+              }
+            >
+              <Download size={14} />
+              Exporter
+            </button>
+            <button
+              className="button secondary"
+              disabled={!selectedPlan}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(
+                    JSON.stringify(
+                      { decision: selected.decision, plan: selectedPlan },
+                      null,
+                      2,
+                    ),
+                  );
+                  setCopied(true);
+                } catch {
+                  setCopied(false);
+                }
+              }}
+            >
+              <Copy size={14} />
+              {copied ? "Copié" : "Copier le plan"}
+            </button>
+          </div>
+          <p className="small muted">Position simulée. Aucun ordre réel.</p>
+        </div>
+      )}
+    </dialog>
   );
 }

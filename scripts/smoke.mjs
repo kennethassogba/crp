@@ -9,6 +9,7 @@ for (const path of [
   "/api/state",
   "/api/crp/comparison",
   "/api/warrants/comparison",
+  "/api/warrants/portfolio",
   "/warrants/experience/",
   "/api/backtest",
   "/api/decisions",
@@ -58,17 +59,17 @@ for (const name of [
   ).json();
   assert.ok(r.result?.structuredContent, name);
   if (name === "get_crp_comparison") {
-    assert.equal(r.result.structuredContent.capital, 100);
+    assert.equal(r.result.structuredContent.capital, 1000);
     assert.equal(r.result.structuredContent.models.length, 3);
     assert.equal(r.result.structuredContent.fxIncluded, false);
   } else if (name === "get_warrant_experiment") {
     const expected = await (
-      await fetch(base + "/api/warrants/comparison")
+      await fetch(base + "/api/warrants/portfolio")
     ).json();
     assert.deepEqual(r.result.structuredContent, expected);
-    assert.equal(expected.capital, 100);
-    assert.equal(expected.sourceCapital, 3000);
-    assert.ok(expected.contracts.length > 0);
+    assert.equal(expected.capital, 1000);
+    assert.equal(expected.positions.length, 1);
+    assert.equal(expected.positions[0].quantity, 689);
   } else assert.ok(r.result.structuredContent.products.length > 0);
 }
 const invalidTool = await (

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import "@fontsource-variable/public-sans";
 import "./style.css";
-import { WarrantExperiment } from "./WarrantExperiment";
+import { Portfolios } from "./Portfolios";
 import { Screener } from "./Screener";
 import { Method } from "./Method";
 import { Journal } from "./Journal";
@@ -27,9 +27,9 @@ import type { Dataset, Observation } from "./types";
 import type { CrpState, Report } from "./Crp";
 
 const routes: Record<string, string> = {
-  "/": "Vue d’ensemble",
-  "/warrants/": "Warrants",
-  "/warrants/experience/": "Warrants · simulation 100 €",
+  "/": "Portefeuilles",
+  "/warrants/": "Catalogue",
+  "/warrants/experience/": "Warrants",
   "/warrants/methode/": "Méthode · warrants",
   "/warrants/suivi/": "Analyses enregistrées",
   "/crp/": "CRP",
@@ -55,6 +55,7 @@ function App() {
   const [path, setPath] = useState(currentPath),
     [menu, setMenu] = useState(false),
     [dataset, setDataset] = useState<Dataset | null>(null),
+    [publicDataset, setPublicDataset] = useState<Dataset | null>(null),
     [state, setState] = useState<CrpState | null>(null),
     [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState(""),
@@ -75,9 +76,10 @@ function App() {
           if (!r.ok) throw Error();
           return r.json();
         })
-        .then((next) =>
-          setDataset((previous) => (previous?.importedAt ? previous : next)),
-        )
+        .then((next) => {
+          setPublicDataset(next);
+          setDataset((previous) => (previous?.importedAt ? previous : next));
+        })
         .catch(() =>
           setError("Le catalogue n’a pas pu être chargé. Réessayer."),
         ),
@@ -170,11 +172,16 @@ function App() {
     }
   }
   const isCrp = path.startsWith("/crp/");
+  const portfolioPath = [
+    "/",
+    "/warrants/experience/",
+    "/crp/",
+    "/crp/modeles/",
+  ].includes(path);
   const navigation = (mobile = false) => (
     <>
       <div className="workspace-name">
         <a href="/">Fin</a>
-        <span>k_eff</span>
         {mobile && (
           <button
             className="icon-button"
@@ -186,55 +193,31 @@ function App() {
         )}
       </div>
       <nav aria-label={mobile ? "Navigation mobile" : "Navigation principale"}>
-        <a href="/" aria-current={path === "/" ? "page" : undefined}>
+        <a href="/" aria-current={portfolioPath ? "page" : undefined}>
           <LayoutGrid size={16} />
-          Vue d’ensemble
+          Portefeuilles
         </a>
-        <div className="nav-section">Recherche</div>
         <a
-          href="/warrants/experience/"
-          aria-current={
-            ["/warrants/", "/warrants/experience/"].includes(path)
-              ? "page"
-              : undefined
-          }
+          href="/warrants/"
+          aria-current={path === "/warrants/" ? "page" : undefined}
         >
           <ListFilter size={16} />
-          Warrants{dataset && <small>{dataset.products.length}</small>}
+          Catalogue
         </a>
-        <a
-          href="/crp/"
-          aria-current={
-            ["/crp/", "/crp/modeles/"].includes(path) ? "page" : undefined
-          }
-        >
-          <Activity size={16} />
-          CRP
-        </a>
-        {isCrp && (
-          <div className="subnav">
-            <a
-              href="/crp/historique/"
-              aria-current={path === "/crp/historique/" ? "page" : undefined}
-            >
-              Historique
-            </a>
-            <a
-              href="/crp/methode/"
-              aria-current={path === "/crp/methode/" ? "page" : undefined}
-            >
-              Règles
-            </a>
-          </div>
-        )}
         <a
           href="/warrants/suivi/"
           aria-current={path === "/warrants/suivi/" ? "page" : undefined}
         >
           <Bookmark size={16} />
-          Analyses{journal.length > 0 && <small>{journal.length}</small>}
+          Analyses
         </a>
-        <div className="nav-section">Références</div>
+        <a
+          href="/crp/historique/"
+          aria-current={path === "/crp/historique/" ? "page" : undefined}
+        >
+          <Activity size={16} />
+          Historique IA
+        </a>
         <a
           href="/donnees/"
           aria-current={path === "/donnees/" ? "page" : undefined}
@@ -242,29 +225,7 @@ function App() {
           <Database size={16} />
           Données
         </a>
-        <a
-          href="/warrants/methode/"
-          aria-current={path === "/warrants/methode/" ? "page" : undefined}
-        >
-          <BookOpen size={16} />
-          Méthode
-        </a>
       </nav>
-      <div className="sidebar-bottom">
-        <a
-          href="https://github.com/kennethassogba/crp"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <Github size={15} />
-          Code source
-          <ArrowUpRight size={12} />
-        </a>
-        <a href="https://keff.uk" target="_blank" rel="noreferrer">
-          keff.uk
-          <ArrowUpRight size={12} />
-        </a>
-      </div>
     </>
   );
   return (
@@ -292,11 +253,9 @@ function App() {
           >
             <Menu size={18} />
           </button>
-          <div className="breadcrumbs">
-            <a href="/">Fin</a>
-            <span>/</span>
-            <span>{routes[path]}</span>
-          </div>
+          <a className="mobile-brand" href="/">
+            Fin
+          </a>
           <div className="header-actions">
             <InstallPrompt />
             <button
@@ -318,11 +277,24 @@ function App() {
           <div role="status" className={storageError ? "notice" : ""}>
             {storageError}
           </div>
-          {path === "/" ? (
-            <Overview
-              dataset={dataset}
+          {portfolioPath ? (
+            <Portfolios
+              scope={
+                path === "/warrants/experience/"
+                  ? "warrants"
+                  : isCrp
+                    ? "crp"
+                    : "all"
+              }
+              dataset={publicDataset ?? dataset}
               state={state}
-              error={error || crpError}
+              error={
+                path === "/warrants/experience/"
+                  ? error
+                  : isCrp
+                    ? crpError
+                    : error || crpError
+              }
               retry={load}
             />
           ) : path === "/donnees/" ? (
@@ -359,11 +331,7 @@ function App() {
                 Réessayer
               </button>
             </div>
-          ) : dataset ? (
-            path === "/warrants/experience/" ? (
-              <WarrantExperiment dataset={dataset} />
-            ) : null
-          ) : (
+          ) : dataset ? null : (
             <div role="status" className="empty-state">
               <h1>Warrants</h1>
               <p>Chargement du catalogue…</p>
@@ -412,99 +380,6 @@ function timestamp(value?: string | number) {
         timeZone: "Europe/Paris",
       }).format(new Date(value))
     : "Pas encore collecté";
-}
-function Overview({
-  dataset,
-  state,
-  error,
-  retry,
-}: {
-  dataset: Dataset | null;
-  state: CrpState | null;
-  error: string;
-  retry: () => void;
-}) {
-  const lastAt =
-    state?.decisions
-      .filter((r) => r.cohort === "live")
-      .reduce((at, r) => Math.max(at, r.snapshot_at), 0) || state?.asOf;
-  const lastDay = lastAt ? new Date(lastAt).toISOString().slice(0, 10) : "";
-  const runs =
-    state?.decisions.filter(
-      (r) =>
-        r.cohort === "live" &&
-        new Date(r.snapshot_at).toISOString().slice(0, 10) === lastDay,
-    ) ?? [];
-  return (
-    <section>
-      <div className="page-heading">
-        <h1>Vue d’ensemble</h1>
-        <span className="muted">Recherche et simulations</span>
-      </div>
-      {error && (
-        <div role="alert" className="notice">
-          {error}
-          <button onClick={retry}>Réessayer</button>
-        </div>
-      )}
-      <div className="overview-list">
-        <a href="/warrants/experience/" className="overview-entry">
-          <div>
-            <h2>
-              Warrants
-              <ArrowRight size={17} />
-            </h2>
-            <p>
-              {dataset
-                ? `${dataset.products.length} contrats · ${Object.keys(dataset.assets).length} sous-jacents`
-                : "Chargement…"}
-            </p>
-          </div>
-          <div>
-            <strong>
-              {dataset?.quotesCollection?.added ?? 0}
-              <small> nouveaux au dernier relevé</small>
-            </strong>
-            <span>
-              Relevé{" "}
-              {timestamp(dataset?.quotesCollection?.at ?? dataset?.quoteDate)}
-            </span>
-          </div>
-        </a>
-        <a href="/crp/" className="overview-entry">
-          <div>
-            <h2>
-              CRP
-              <ArrowRight size={17} />
-            </h2>
-            <p>Trois modèles · 100 € chacun · simulation</p>
-          </div>
-          <div>
-            <strong>
-              {
-                runs.filter(
-                  (r) =>
-                    r.status === "completed" &&
-                    state?.models.some((m) => m.id === r.model),
-                ).length
-              }
-              /{state?.models.length ?? 3}
-              <small> décisions du {lastDay ? date(lastDay) : "jour"}</small>
-            </strong>
-            <span>Marché {timestamp(state?.asOf)}</span>
-          </div>
-        </a>
-      </div>
-      <section className="overview-note">
-        <h2>Derniers relevés</h2>
-        <DataRows dataset={dataset} state={state} />
-        <a className="text-link" href="/donnees/">
-          Voir les sources et les erreurs
-          <ArrowRight size={14} />
-        </a>
-      </section>
-    </section>
-  );
 }
 function DataRows({
   dataset,

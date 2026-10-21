@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   compareWarrants,
   recordWarrantQuotes,
+  warrantPortfolio,
 } from "../lib/warrant-experiment.mjs";
 const p = {
   id: "TEST",
@@ -126,4 +127,51 @@ test("empty history has no fictitious positions or fabricated post-expiry observ
       .contracts.length,
     0,
   );
+});
+
+test("EUR 1000 J1 portfolio buys 689 Q433S, keeps EUR 0.95 and pays the spread immediately", () => {
+  const first = { ...p, ask: 1.45, bid: 1.44 };
+  const d = data([first]);
+  const result = warrantPortfolio(d);
+  assert.equal(result.capital, 1000);
+  assert.equal(result.basis, "whole-unit-buy-and-hold");
+  assert.equal(result.positions[0].quantity, 689);
+  near(result.cash, 0.95);
+  near(result.maxLoss, 999.05);
+  near(result.capitalNow, 993.11);
+  near(result.pnl, -6.89);
+  assert.equal(result.curve[0].equity, 1000);
+  near(result.curve[1].equity, 993.11);
+});
+test("J1 portfolio never rebuys, reallocates to winners or resets after the next quote", () => {
+  const d = data([{ ...p, ask: 1.45, bid: 1.44 }]);
+  d.warrantExperiment = recordWarrantQuotes(d.warrantExperiment, [
+    { ...p, ask: 1.75, bid: 1.74, quoteAt: "2026-10-19T20:00:00Z" },
+    { ...p, isin: "DE000FG35JX0", bid: 9, ask: 10 },
+  ]);
+  const result = warrantPortfolio(d);
+  assert.equal(result.positions.length, 1);
+  assert.equal(result.positions[0].quantity, 689);
+  assert.equal(result.startedAt, p.quoteAt);
+  near(result.cash, 0.95);
+  near(result.capitalNow, 1199.81);
+  near(result.pnl, 199.81);
+});
+test("portfolio includes source fees, preserves full budget when blocked and never invents settlement", () => {
+  const d = data([{ ...p, venueVerified: false }]);
+  const r = warrantPortfolio(d);
+  assert.equal(r.positions[0].quantity, 330);
+  near(r.entryFee, 9.95);
+  near(r.exitFee, 9.95);
+  near(r.capitalNow, 947.1);
+  near(r.cash, 0.05);
+  d.analysisDate = "2026-11-21";
+  assert.equal(warrantPortfolio(d).capitalNow, null);
+  assert.equal(warrantPortfolio(d).status, "settlement-missing");
+  const blocked = warrantPortfolio(data([{ ...p, minOrder: 2000 }]));
+  assert.equal(blocked.status, "blocked");
+  assert.equal(blocked.cash, 1000);
+  assert.equal(blocked.maxLoss, 0);
+  assert.deepEqual(blocked.positions, []);
+  assert.equal(warrantPortfolio({}).status, "missing");
 });

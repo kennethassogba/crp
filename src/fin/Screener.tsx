@@ -33,7 +33,7 @@ export function Screener({
   setDataset: (d: Dataset) => void;
   onSave: (r: Observation) => void;
 }) {
-  const [budget, setBudget] = useState(3000),
+  const [budget, setBudget] = useState(1000),
     [fx, setFx] = useState(dataset.fx),
     [multiple, setMultiple] = useState(5),
     [asOf, setAsOf] = useState(dataset.analysisDate),
@@ -279,7 +279,7 @@ export function Screener({
     <section className="screener-page" hidden={!active}>
       <div className="page-heading">
         <div>
-          <h1>Warrants</h1>
+          <h1>Catalogue</h1>
           <p>
             {dataset.importedAt
               ? `Import local · ${dataset.products.length} contrats`
@@ -341,13 +341,10 @@ export function Screener({
           />
         </div>
       </div>
-      <nav className="view-tabs" aria-label="Vues Warrants">
-        <a href="/warrants/experience/">Simulation 100 €</a>
-        <a href="/warrants/" aria-current="page">
-          Catalogue
-        </a>
-      </nav>
-      <MarketStrip dataset={dataset} selected={asset} onSelect={setAsset} />
+      <details className="market-disclosure">
+        <summary>Marchés</summary>
+        <MarketStrip dataset={dataset} selected={asset} onSelect={setAsset} />
+      </details>
       <div role="status" className={message ? "notice" : ""}>
         {message}
       </div>

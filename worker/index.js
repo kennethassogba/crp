@@ -1,4 +1,7 @@
-import { compareWarrants } from "../lib/warrant-experiment.mjs";
+import {
+  compareWarrants,
+  warrantPortfolio,
+} from "../lib/warrant-experiment.mjs";
 import { snapshotAt, momentum, position, HOUR } from "../lib/strategy.mjs";
 import { MODELS } from "../lib/models.mjs";
 import { compareCrp } from "../lib/crp-performance.mjs";
@@ -148,7 +151,7 @@ async function mcp(request, env) {
       params.name === "get_backtest"
         ? await assetJSON(env, request, "/data/backtest.json")
         : params.name === "get_warrant_experiment"
-          ? compareWarrants(
+          ? warrantPortfolio(
               await assetJSON(env, request, "/research/snapshot.json"),
             )
           : params.name === "get_warrant_catalog"
@@ -286,6 +289,12 @@ export default {
         await caches.default.put(request, response.clone());
         return response;
       }
+      if (path === "/api/warrants/portfolio")
+        return json(
+          warrantPortfolio(
+            await assetJSON(env, request, "/research/snapshot.json"),
+          ),
+        );
       if (path === "/api/warrants/comparison")
         return json(
           compareWarrants(
@@ -321,7 +330,7 @@ export default {
         "/crp/methode/": "Règles CRP · Fin",
         "/donnees/": "Données · Fin",
         "/warrants/": "Warrants · fin",
-        "/warrants/experience/": "Warrants · simulation 100 € · Fin",
+        "/warrants/experience/": "Warrants · portefeuille 1 000 € · Fin",
         "/warrants/methode/": "Méthode de recherche · fin",
         "/warrants/suivi/": "Suivi de recherche · fin",
       };

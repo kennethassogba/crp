@@ -53,7 +53,7 @@ test("only Luna, Luna Decision and Sol receive future provider requests", () => 
     ["luna", "decision", "sol"],
   );
 });
-test("each active portfolio starts at EUR 100, without erasing archived runs", () => {
+test("each active portfolio starts at EUR 1000, without erasing archived runs", () => {
   const records = [
     run("old", "astra", "BTC_1X", { equity: 20000, pnl: 10000 }),
   ];
@@ -65,9 +65,9 @@ test("each active portfolio starts at EUR 100, without erasing archived runs", (
   assert.deepEqual(
     result.models.map((m) => [m.settledCapital, m.totalPnl]),
     [
-      [100, 0],
-      [100, 0],
-      [100, 0],
+      [1000, 0],
+      [1000, 0],
+      [1000, 0],
     ],
   );
   assert.equal(JSON.stringify(records), before);
@@ -82,12 +82,12 @@ test("zero cash result differs from open gains and unavailable prices", () => {
   assert.equal(unavailable.models[0].totalPnl, 0);
   assert.equal(unavailable.models[1].totalPnl, null);
   const result = compareCrp(MODELS, records, fixture(4));
-  assert.equal(result.models[0].estimatedCapital, 100);
+  assert.equal(result.models[0].estimatedCapital, 1000);
   assert.ok(result.models[1].pendingPnl > 0);
   assert.equal(result.models[1].settledPnl, 0);
-  assert.ok(result.models[1].estimatedCapital > 100);
+  assert.ok(result.models[1].estimatedCapital > 1000);
 });
-test("EUR 100 rebase preserves compounded net returns and counts only actual trades in win rate", () => {
+test("EUR 1000 rebase preserves compounded net returns and counts only actual trades in win rate", () => {
   const rows = [
     run("1", "luna", "BTC_1X", {
       action: "BTC_1X",
@@ -141,15 +141,15 @@ test("EUR 100 rebase preserves compounded net returns and counts only actual tra
     ),
   ];
   const m = compareCrp(MODELS, rows).models[0];
-  assert.equal(m.settledCapital, 104.5);
-  assert.equal(m.settledPnl, 4.5);
-  assert.equal(m.fees, 0.21);
-  assert.equal(m.funding, 0.07);
+  assert.equal(m.settledCapital, 1045);
+  assert.equal(m.settledPnl, 45);
+  assert.equal(m.fees, 2.1);
+  assert.equal(m.funding, 0.7000000000000001);
   assert.equal(m.trades, 2);
   assert.equal(m.winRate, 0.5);
   assert.deepEqual(
     m.curve.map((p) => p.equity),
-    [100, 110, 110, 104.5],
+    [1000, 1100, 1100, 1045],
   );
 });
 test("open valuation matches exact settlement at the horizon, including fees and funding", () => {
@@ -220,10 +220,10 @@ test("a new decision awaiting entry does not hide the previous open position", (
     const market = fixture(hours);
     const model = compareCrp(MODELS, [prior, next], market).models[0];
     const expected =
-      markPosition(prior.decision, prior.snapshot, market).pnl * 0.01;
+      markPosition(prior.decision, prior.snapshot, market).pnl * 0.1;
     assert.equal(model.valuationStatus, "waiting-entry");
     assert.equal(model.pendingPnl, expected);
-    assert.ok(model.estimatedCapital > 100);
+    assert.ok(model.estimatedCapital > 1000);
     assert.equal(model.latestRunId, "next");
   }
 });

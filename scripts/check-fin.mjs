@@ -8,8 +8,8 @@ await mkdir("output/playwright", { recursive: true });
 const views = [],
   interactions = [];
 const routes = [
-  ["/", "Vue d’ensemble"],
-  ["/warrants/", "Warrants"],
+  ["/", "Portefeuilles"],
+  ["/warrants/", "Catalogue"],
   ["/warrants/experience/", "Warrants"],
   ["/warrants/methode/", "Analyser un warrant"],
   ["/warrants/suivi/", "Analyses enregistrées"],
@@ -38,7 +38,7 @@ async function scan(page, description) {
   );
 }
 try {
-  for (const width of [1440, 768, 390, 320]) {
+  for (const width of (process.env.FIN_WIDTHS ?? "1440,768,390,320").split(",").map(Number)) {
     const context = await browser.newContext({
       viewport: { width, height: 900 },
       serviceWorkers: "block",
@@ -82,49 +82,34 @@ try {
       name: "Comparer les warrants",
       exact: true,
     });
-    await list.getByRole("button", { name: /Z377S/ }).click();
+    await list.getByRole("button", { name: /Q433S/ }).waitFor();
+    assert.equal(await list.getByRole("button").count(), 1);
     const portfolio = page.getByRole("region", {
-      name: "Portefeuille Z377S",
+      name: "Portefeuille Q433S",
       exact: true,
     });
-    await portfolio
-      .getByRole("heading", { name: "Z377S", exact: true })
-      .waitFor();
     const curve = portfolio.getByRole("group", {
-      name: /^Capital de référence/,
+      name: /Évolution du capital/,
     });
     await curve.focus();
-    const currentReadout = await curve.locator(".chart-readout").innerText();
+    const latest = await curve.locator("[role=status]").innerText();
     await page.keyboard.press("Home");
-    assert.notEqual(
-      await curve.locator(".chart-readout").innerText(),
-      currentReadout,
-    );
-    await page.keyboard.press("End");
-    assert.equal(
-      await curve.locator(".chart-readout").innerText(),
-      currentReadout,
-    );
-    await portfolio
-      .getByText("Comment sont calculés les 100 € ?", { exact: true })
-      .click();
-    assert.match(await portfolio.innerText(), /minimum de 500/);
-    await scan(page, "warrant EUR100 expanded " + width);
+    assert.notEqual(await curve.locator("[role=status]").innerText(), latest);
+    await portfolio.getByText("Détails", { exact: true }).click();
+    assert.match(await portfolio.innerText(), /689 Q433S/);
+    await scan(page, "EUR1000 J1 portfolio " + width);
+    await page.goto(base + "/");
     await page
-      .getByLabel("Rechercher dans la simulation")
-      .fill("aucun-resultat");
-    await page
-      .getByRole("status")
-      .filter({ hasText: /Aucun contrat trouvé/ })
+      .getByRole("group", { name: "Comparer les portefeuilles", exact: true })
       .waitFor();
-    await page.getByLabel("Rechercher dans la simulation").fill("");
-    await page.getByRole("button", { name: "Suivants", exact: true }).click();
-    assert.equal(await list.getByRole("button").count(), 6);
+    await page.locator(".stock-row").nth(3).waitFor();
+    assert.equal(await page.locator(".stock-row").count(), 4);
+    assert.ok(!(await page.locator("body").innerText()).includes("k_eff"));
     interactions.push(
-      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging " +
-        width,
+      "shared four-portfolio workspace and fixed J1 position " + width,
     );
     await page.goto(base + "/warrants/");
+    await page.getByText("Marchés", { exact: true }).click();
     await page
       .getByRole("button", { name: /^NDX ·.*filtrer les contrats/ })
       .click();
@@ -159,7 +144,7 @@ try {
         .split("€")[0]
         .replace(/[^0-9-]/g, ""),
     );
-    assert.ok(targetGain > 11980 && targetGain <= 12000);
+    assert.ok(targetGain > 3980 && targetGain <= 4000);
     await dialog
       .getByRole("button", { name: "Seuil de rentabilité", exact: true })
       .click();
@@ -206,7 +191,10 @@ try {
     if (width === 320) {
       await page.getByRole("button", { name: "Ouvrir la navigation" }).click();
       const nav = page.getByRole("dialog", { name: "Navigation", exact: true });
-      await nav.getByRole("link", { name: "CRP", exact: true }).click();
+      await nav
+        .getByRole("link", { name: "Portefeuilles", exact: true })
+        .click();
+      await page.getByRole("link", { name: "Modèles IA", exact: true }).click();
       await page.getByRole("heading", { name: /^CRP$/, level: 1 }).waitFor();
       assert.equal(await nav.isVisible(), false);
     }
@@ -236,13 +224,16 @@ try {
     .click();
   await d.getByRole("button", { name: "Enregistré", exact: true }).waitFor();
   await page.keyboard.press("Escape");
-  await page.getByRole("link", { name: "CRP", exact: true }).first().click();
-  await page.getByRole("heading", { name: /^CRP$/, level: 1 }).waitFor();
   await page
-    .getByRole("link", { name: /Warrants/ })
+    .getByRole("link", { name: "Portefeuilles", exact: true })
     .first()
     .click();
-  await page.getByRole("link", { name: "Catalogue", exact: true }).click();
+  await page.getByRole("link", { name: "Modèles IA", exact: true }).click();
+  await page.getByRole("heading", { name: /^CRP$/, level: 1 }).waitFor();
+  await page
+    .getByRole("link", { name: "Catalogue", exact: true })
+    .first()
+    .click();
   assert.equal(
     await page
       .getByRole("spinbutton", { name: "Budget", exact: true })
@@ -261,7 +252,7 @@ try {
   await page.getByRole("heading", { name: /Z377S/ }).waitFor();
   interactions.push("budget, saved observation, persistence and undo");
   await page
-    .getByRole("link", { name: /Warrants/ })
+    .getByRole("link", { name: "Catalogue", exact: true })
     .first()
     .click();
   assert.equal(
@@ -300,6 +291,11 @@ try {
     .filter({ hasText: /Colonnes requises/ })
     .waitFor();
   interactions.push("CSV import and rejection");
+  await page.getByRole("link",{name:"Portefeuilles",exact:true}).first().click();
+  await page.locator(".stock-row").nth(3).waitFor();
+  await page.getByRole("region",{name:"Portefeuille Q433S",exact:true}).getByText("Détails",{exact:true}).click();
+  assert.match(await page.getByRole("region",{name:"Portefeuille Q433S",exact:true}).innerText(),/689 Q433S/);
+  interactions.push("catalog import leaves the public J1 portfolio unchanged");
   await page.goto(base + "/warrants/");
   await page.evaluate(() => (document.documentElement.style.fontSize = "200%"));
   await scan(page, "200% text");

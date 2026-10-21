@@ -13,4 +13,11 @@ Application de recherche financière en français. Une navigation commune pour W
 
 Ces choix suivent la demande du 20 octobre 2026 : interface sobre, textes courts, Warrants et CRP réunis, retrait de l’ancienne police et des logos décoratifs.
 
-La référence visuelle actuelle est [Apple Bourse](https://support.apple.com/en-ie/guide/iphone/iph1ac0b1bc/ios). La demande de s’en inspirer remplace la direction Linear initiale. Les courbes proviennent des données enregistrées : pas de mini-courbe inventée pour les warrants dont l’historique de prix manque. Le catalogue montre les historiques des sous-jacents avec une période explicite. La simulation Warrants en base 100 € utilise uniquement les bid/ask archivés, une entrée fixe par contrat et les dates réelles ; elle distingue les références initiales des observations collectées.
+La référence visuelle actuelle est [Apple Bourse](https://support.apple.com/en-ie/guide/iphone/iph1ac0b1bc/ios). La demande de s’en inspirer remplace la direction Linear initiale. Les courbes proviennent des données enregistrées : pas de mini-courbe inventée pour les warrants dont l’historique de prix manque. Le catalogue montre les historiques des sous-jacents avec une période explicite. Le portefeuille Warrants de 1 000 € utilise uniquement les bid/ask archivés, une entrée fixe par contrat et les dates réelles ; elle distingue les références initiales des observations collectées.
+
+
+Le 21 octobre : même composant `PortfolioView` pour Warrants et CRP, réunis dans l’accueil.
+Une position Q433S à J1, trois modèles IA, 1 000 € au départ par simulation.
+Le journal CRP reste inchangé, seule sa base d’affichage devient 1 000 €.
+Aucun sous-logo k_eff, double fil d’Ariane ou paragraphe d’aide permanent.
+Afficher le capital, le gain/perte et la courbe ; mettre les positions, frais et limites dans Détails.

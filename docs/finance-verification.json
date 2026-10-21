@@ -1,133 +1,13 @@
 {
-  "date": "2026-10-20",
-  "stage": "Local verification before deployment, fixed-entry warrant experiment in EUR 100 reference units",
+  "date": "2026-10-21",
+  "stage": "Pre-deployment: unified EUR 1000 portfolios, full browser matrix required by CI",
   "typecheck": "passed",
-  "tests": 44,
+  "tests": 47,
   "independentReferenceTests": 7,
-  "archiveReproduction": "14 financial tests passed from the downloadable archive",
+  "archiveReproduction": "17 tests passed from downloadable archive",
   "finance": {
     "base": "http://127.0.0.1:5185",
     "views": [
-      {
-        "path": "/",
-        "width": 1440
-      },
-      {
-        "path": "/warrants/",
-        "width": 1440
-      },
-      {
-        "path": "/warrants/experience/",
-        "width": 1440
-      },
-      {
-        "path": "/warrants/methode/",
-        "width": 1440
-      },
-      {
-        "path": "/warrants/suivi/",
-        "width": 1440
-      },
-      {
-        "path": "/crp/",
-        "width": 1440
-      },
-      {
-        "path": "/crp/modeles/",
-        "width": 1440
-      },
-      {
-        "path": "/crp/historique/",
-        "width": 1440
-      },
-      {
-        "path": "/crp/methode/",
-        "width": 1440
-      },
-      {
-        "path": "/donnees/",
-        "width": 1440
-      },
-      {
-        "path": "/",
-        "width": 768
-      },
-      {
-        "path": "/warrants/",
-        "width": 768
-      },
-      {
-        "path": "/warrants/experience/",
-        "width": 768
-      },
-      {
-        "path": "/warrants/methode/",
-        "width": 768
-      },
-      {
-        "path": "/warrants/suivi/",
-        "width": 768
-      },
-      {
-        "path": "/crp/",
-        "width": 768
-      },
-      {
-        "path": "/crp/modeles/",
-        "width": 768
-      },
-      {
-        "path": "/crp/historique/",
-        "width": 768
-      },
-      {
-        "path": "/crp/methode/",
-        "width": 768
-      },
-      {
-        "path": "/donnees/",
-        "width": 768
-      },
-      {
-        "path": "/",
-        "width": 390
-      },
-      {
-        "path": "/warrants/",
-        "width": 390
-      },
-      {
-        "path": "/warrants/experience/",
-        "width": 390
-      },
-      {
-        "path": "/warrants/methode/",
-        "width": 390
-      },
-      {
-        "path": "/warrants/suivi/",
-        "width": 390
-      },
-      {
-        "path": "/crp/",
-        "width": 390
-      },
-      {
-        "path": "/crp/modeles/",
-        "width": 390
-      },
-      {
-        "path": "/crp/historique/",
-        "width": 390
-      },
-      {
-        "path": "/crp/methode/",
-        "width": 390
-      },
-      {
-        "path": "/donnees/",
-        "width": 390
-      },
       {
         "path": "/",
         "width": 320
@@ -170,10 +50,7 @@
       }
     ],
     "interactions": [
-      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging 1440",
-      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging 768",
-      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging 390",
-      "EUR100 fixed-entry comparison, chart keyboard, costs, search and paging 320",
+      "shared four-portfolio workspace and fixed J1 position 320",
       "budget, saved observation, persistence and undo",
       "SPA navigation and browser back",
       "CSV import and rejection"
@@ -383,18 +260,23 @@
   "styleReference": "https://support.apple.com/en-ie/guide/iphone/iph1ac0b1bc/ios",
   "marketPreviewPeriod": "20 sessions; 21 recorded closes; same window for sparkline and change",
   "warrantExperiment": {
-    "capital": 100,
-    "sourceCapital": 3000,
-    "basis": "normalized-return",
-    "contracts": 24,
-    "entry": "first archived ask, fixed whole-unit source quantity",
-    "valuation": "latest archived bid, hypothetical entry/exit fees, cash retained",
-    "backfillCommits": [
-      "6706c78",
-      "630bf47",
-      "f8cc805"
-    ],
+    "capital": 1000,
+    "basis": "whole-unit-buy-and-hold",
+    "isin": "DE000FG32YX6",
+    "quantity": 689,
+    "cash": 0.95,
+    "entryAsk": 1.45,
+    "entryDate": "2026-10-16",
+    "reinvest": false,
+    "taxesIncluded": false,
     "expired": "null pending verified settlement",
     "liveExecution": false
+  },
+  "crpComparison": {
+    "capital": 1000,
+    "sourceCapital": 10000,
+    "basis": "normalized-return",
+    "fxIncluded": false,
+    "journalMigration": false
   }
 }

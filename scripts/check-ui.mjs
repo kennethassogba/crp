@@ -72,12 +72,15 @@ try {
     assert.equal(await p.locator(".comparison-row").count(), 3);
     assert.match(
       await p.locator(".comparison-row").nth(1).innerText(),
-      /106,25/,
+      /1[ \u202f\u00a0]062,50/,
     );
-    assert.match(await p.locator(".comparison-row").nth(1).innerText(), /6,25/);
+    assert.match(
+      await p.locator(".comparison-row").nth(1).innerText(),
+      /62,50/,
+    );
     assert.match(
       await p.locator(".comparison-row").nth(2).innerText(),
-      /97,00/,
+      /970,00/,
     );
     assert.equal(
       await p.evaluate(
@@ -105,7 +108,7 @@ try {
         .waitFor();
       if (i === 1) {
         await dialog
-          .getByText("Exposition sur la base de 100 €", { exact: true })
+          .getByText("Exposition sur la base de 1 000 €", { exact: true })
           .waitFor();
         assert.ok(!(await dialog.innerText()).includes("10 000"));
         await dialog
@@ -218,6 +221,7 @@ try {
       await scan(p);
       await p.keyboard.press("Escape");
     }
+    await p.getByText("Détails", {exact:true}).click();
     await p
       .getByRole("link", { name: "Historique", exact: true })
       .last()
@@ -235,7 +239,7 @@ try {
     checks.push({
       width,
       models: 3,
-      baseEUR: 100,
+      baseEUR: 1000,
       decisionOutcomes: ["cash", "BTC_2X", "ETH_1X", "failed", "late"],
       keyboard: "passed",
       hover: "passed",
@@ -253,7 +257,7 @@ try {
     ),
   );
   console.log(
-    "CRP: Stocks-style selection, EUR-100 values, periods, comparison, five outcomes and keyboard/touch passed at three widths.",
+    "CRP: Stocks-style selection, EUR-1000 values, periods, comparison, five outcomes and keyboard/touch passed at three widths.",
   );
 } finally {
   await browser.close();

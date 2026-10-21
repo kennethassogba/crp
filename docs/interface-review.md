@@ -75,3 +75,40 @@ Les libellés français ajoutés ont été relus manuellement avec avoid-ai-writ
 La première inspection a révélé les dates trop longues et espacées par indice de relevé ;
 correction groupée : dates courtes en heure de Paris, extrémités uniquement et axe temporel réel.
 La confirmation a réussi. Aucun avertissement masqué. Installation physique et lecteurs d'écran natifs non vérifiés.
+
+
+### 21 octobre — portefeuille J1 et interface commune
+
+Périmètre : accueil réunissant Q433S et les trois modèles IA, filtres Warrants/IA,
+composants `PortfolioView` et `PortfolioChart` partagés. Conservation du catalogue,
+du journal, des analyses locales, des liens API/MCP et de la PWA.
+
+| Domaine | Évidence inspectée | Résultat |
+| --- | --- | --- |
+| Accessibilité | Contrôles natifs, noms, sélection `aria-pressed`, focus du détail et du dialogue, graphique au clavier/toucher | Même interaction pour les quatre portefeuilles ; les instructions restent accessibles sans texte permanent |
+| Mise en page | Captures `minimal-first-1440.png` et `minimal-first-390.png`, liste et détail dans la même grille | Une navigation, suppression du fil d’Ariane dupliqué et du sous-logo ; empilement mobile |
+| Écriture | Titre, simulation à 1 000 €, type de position ; chiffres et hypothèses sous Détails | Suppression des légendes permanentes, paragraphes et liens répétés ; aucune nouvelle promesse de rendement |
+| Typographie | Police, échelle et chiffres tabulaires existants, dates courtes | Pas de nouvelle police ni de niveau décoratif |
+| Couleur | Tokens existants, variation signée, coche de sélection | Gains bleus, pertes rouges, aucun vert ni état uniquement coloré |
+| UI | Sélection, périodes, comparaison, Détails et décision via le même composant | Les variantes représentent les mêmes données, pas deux applications imbriquées |
+
+Le choix humain retient une seule position de 1 000 €. Q433S, déjà affiché par défaut,
+est figé à J1 : 689 unités et 0,95 € en espèces. Le portefeuille n’est plus une normalisation
+par contrat depuis 3 000 €. Les modèles CRP restent normalisés depuis le journal USD 10 000,
+désormais sur une base de 1 000 € ; aucune écriture du journal ni modification du budget fournisseur.
+L’import d’un catalogue de recherche ne modifie pas le portefeuille public à J1.
+
+47 tests financiers/de collecte/de routage réussis ; 17 tests reproduits depuis l’archive téléchargeable.
+Relecture française manuelle suivant avoid-ai-writing, sans score de détection anglais.
+Détecteur Impeccable : aucun signalement ; aucune suppression ajoutée.
+Les états chargement, erreur, sans décision, hors ligne, les quatre largeurs, le texte à 200 %,
+le RTL et les contrôles de contraste font partie des scripts de vérification du projet.
+Les preuves de publication sont conservées séparément des captures locales dans `output/playwright/`.
+Appareils physiques et lecteurs d’écran natifs : non vérifiés.
+
+
+Correction tactile confirmée à 320 px : la barre fixe pouvait recouvrir une partie du filtre Tous
+après l’exploration du graphique. Elle revient dans le flux normal ; les filtres ont une cible
+minimale de 44 × 44 px. Aucun avertissement ignoré. Le contrôle ciblé à 320 px a réussi
+pour les dix routes, les graphiques, le simulateur, les dialogues, les imports et la navigation.
+La matrice complète des quatre largeurs reste requise par la CI avant livraison.
