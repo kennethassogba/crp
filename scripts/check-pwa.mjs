@@ -50,9 +50,8 @@ await page.waitForLoadState("networkidle");
 await context.setOffline(true);
 await page.reload();
 await page.getByRole("button", { name: "Réessayer", exact: true }).waitFor();
-await page
-  .getByRole("link", { name: "Télécharger les données", exact: true })
-  .waitFor();
+await page.getByRole("alert").filter({hasText:/indisponible/}).waitFor();
+assert.equal(await page.getByRole("group", {name:"Comparer les modèles",exact:true}).count(),0);
 await page.screenshot({ path: "output/playwright/offline.png" });
 await context.setOffline(false);
 await page.getByRole("button", { name: "Réessayer", exact: true }).click();
