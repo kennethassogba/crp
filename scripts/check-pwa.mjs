@@ -21,10 +21,10 @@ try {
   await page.locator(".position-row").first().waitFor();
   await context.setOffline(true);
   await page.reload();
-  await page.getByText("Chargement impossible.", { exact: false }).waitFor();
+  await page.getByText(/Hors ligne|Connexion interrompue/).first().waitFor();
   assert.equal(await page.locator(".position-row").count(), 0);
   await context.setOffline(false);
-  await page.getByRole("button", { name: "Actualiser", exact: true }).click();
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
   await page.locator(".position-row").first().waitFor();
   const cached = await page.evaluate(async () => {
     const all = [];

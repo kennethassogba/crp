@@ -1,13 +1,15 @@
 # Fin · Warrants
 
-Direction demandée par l’utilisateur : Linear pour la structure, Apple Bourse pour la lecture des prix. Construction directe dans l’application React existante.
+Direction demandée : Linear pour la structure, Apple Bourse pour la lecture des prix. Une application plein écran, sombre uniquement, dans React.
 
-Trois destinations : Sélection, Positions, Résultats. Méthode accessible depuis les résultats et la navigation secondaire. L’accueil montre les trois sélections datées ; cliquer un warrant ouvre son analyse à côté de la liste, sans modal. Une URL permet de retrouver chaque position. Sur mobile, liste puis analyse ; retour explicite.
+Trois destinations : Sélection, Positions, Résultats. Barre latérale sur ordinateur, navigation basse sur mobile. Méthode et installation accessibles depuis le menu. Aucun fil d’Ariane redondant, aucun bouton d’actualisation.
 
-Noir #000000, panneau #111113, texte #eeeff1, secondaire #a2a4ac. Bleu #8ac1ff pour les gains, rouge #ff9ca6 pour les pertes, signes et libellés en plus de la couleur. Police système Apple, Public Sans ailleurs. Pas de logo ni de décoration.
+Le conteneur occupe 100dvh, sans défilement du document. La liste est paginée selon l’espace disponible. Sur ordinateur, liste et analyse côte à côte ; sur mobile, liste puis analyse avec retour explicite. Une URL retrouve chaque position. Les écrans très courts et le texte agrandi peuvent défiler à l’intérieur du panneau pour conserver tous les accès.
 
-Les lignes portent l’information, pas des cartes imbriquées. Les dates, prix, montants et unités sont alignés. État sélectionné par fond neutre, jamais par une bordure colorée latérale. Aucun petit paragraphe permanent. Expliquer les limites dans Méthode, conserver les dates et les états utiles dans le parcours.
+Noir #000000, panneau #111113, texte #eeeff1, secondaire #a2a4ac. Bleu #8ac1ff pour les gains, rouge #ff9ca6 pour les pertes, signes et libellés en plus de la couleur. Police système Apple, Public Sans ailleurs. Pas de logo décoratif, de vert, de Geist ni de bordure latérale colorée.
 
-Graphiques : valeur et date au pointeur, au toucher et au clavier. Pas de courbe inventée. Aucun en-tête collant qui masque les contrôles. Les navigation et boutons restent accessibles à 320 px.
+Les lignes portent l’information. Texte de 16 px minimum, nombres tabulaires, commandes de 44 px. Pas de petites notes ni de paragraphes permanents. Les informations de calcul sont accessibles depuis le bouton près de « Gain moyen prévu » ; Position, Prévision et Sources ouvrent des feuilles avec des rubriques courtes. Le graphique principal reste visible hors de ces feuilles.
 
-Premier écran : Sélection, date du lot, liste classée, prévision nette à 20 séances et accès au suivi. Signature d’interaction : la ligne sélectionnée donne immédiatement son calcul de 1 000 € et son graphique, sans superposition.
+Graphiques TradingView : valeur et date au pointeur, au toucher et au clavier ; périodes, zoom et cadrage. La courbe occupe la hauteur restante. Historique réel atténué avant la sélection et bleu ensuite. Le sous-jacent, le bid du warrant et le capital sont des séries distinctes, explicitement nommées. Aucune courbe inventée, aucun historique du warrant reconstruit depuis le sous-jacent.
+
+La synchronisation consulte les données toutes les minutes, reprend au retour en ligne ou au premier plan et conserve le graphique si rien n’a changé. Les prix sources restent des relevés quotidiens ; cette distinction apparaît dans les informations de source. Les erreurs annoncent la reconnexion automatique.

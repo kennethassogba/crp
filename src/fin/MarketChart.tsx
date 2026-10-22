@@ -61,12 +61,12 @@ export function MarketChart({
       muted = color("--muted");
     const chart = createChart(el, {
       autoSize: true,
-      height: 300,
+      height: Math.max(100, el.clientHeight),
       layout: {
         background: { type: ColorType.Solid, color: color("--bg") },
         textColor: muted,
         fontFamily: "Public Sans Variable, sans-serif",
-        fontSize: 11,
+        fontSize: 16,
         attributionLogo: true,
       },
       grid: {
@@ -75,7 +75,7 @@ export function MarketChart({
       },
       rightPriceScale: {
         borderVisible: false,
-        minimumWidth: 64,
+        minimumWidth: 96,
         scaleMargins: { top: 0.14, bottom: 0.12 },
       },
       timeScale: {
@@ -138,8 +138,8 @@ export function MarketChart({
           position: "aboveBar",
           color: accent,
           shape: "circle",
-          text: "Sélection",
-          size: 0.5,
+          text: "",
+          size: 0.4,
         },
       ]);
     if (initial !== undefined)
@@ -229,7 +229,7 @@ export function MarketChart({
           <strong>{point ? fmt(point.value) : "—"}</strong>
           <span className={delta < 0 ? "negative" : "positive"}>
             {point && reference
-              ? `${delta > 0 ? "+" : ""}${number(delta, 2)} (${percent(delta / reference, 2)})${initial !== undefined ? " vs sélection" : ""}`
+              ? `${delta > 0 ? "+" : ""}${number(delta, 2)} (${percent(delta / reference, 2)})`
               : ""}
           </span>
         </div>
@@ -262,16 +262,16 @@ export function MarketChart({
         </div>
         <div className="chart-zoom">
           <button aria-label="Dézoomer le graphique" onClick={() => zoom(1.4)}>
-            <Minus size={14} aria-hidden="true" />
+            <Minus size={20} aria-hidden="true" />
           </button>
           <button aria-label="Zoomer le graphique" onClick={() => zoom(0.7)}>
-            <Plus size={14} aria-hidden="true" />
+            <Plus size={20} aria-hidden="true" />
           </button>
           <button
             aria-label="Afficher tout l’historique"
             onClick={() => api.current?.timeScale().fitContent()}
           >
-            <Maximize2 size={14} aria-hidden="true" />
+            <Maximize2 size={20} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -283,16 +283,10 @@ export function MarketChart({
         aria-label={`${name}. Flèches pour lire les prix, début et fin pour les extrêmes.`}
         onKeyDown={key}
       />
-      <div className="chart-legend">
-        <span>
-          <i className="before-dot" />
-          Avant sélection
-        </span>
-        <span>
-          <i className="after-dot" />
-          Depuis le {date(selectedDay, true)}
-        </span>
-      </div>
+      <span className="visually-hidden">
+        Courbe grise avant sélection, bleue à partir du{" "}
+        {date(selectedDay, true)}.
+      </span>
     </div>
   );
 }

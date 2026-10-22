@@ -5,7 +5,7 @@ try {
   const context = await browser.newContext(),
     page = await context.newPage();
   await page.goto(process.env.FIN_URL ?? "http://127.0.0.1:5185");
-  await page.locator(".stamp").waitFor();
+  await page.locator(".position-row").first().waitFor();
   const c = await page.evaluate(() => {
     const s = getComputedStyle(document.documentElement);
     return Object.fromEntries(

@@ -6,7 +6,7 @@ try {
   const context = await browser.newContext(),
     page = await context.newPage();
   await page.goto(base);
-  await page.locator(".stamp").waitFor();
+  await page.locator(".position-row").first().waitFor();
   assert.equal(
     await page.getByRole("button", { name: "Installer", exact: true }).count(),
     0,
@@ -23,13 +23,14 @@ try {
     ),
   );
   await page.reload();
-  await page.locator(".stamp").waitFor();
+  await page.locator(".position-row").first().waitFor();
   await page.evaluate(() => {
     const event = new Event("beforeinstallprompt");
     event.prompt = async () => {};
     event.userChoice = Promise.resolve({ outcome: "dismissed" });
     window.dispatchEvent(event);
   });
+  await page.getByRole("button", { name: "Menu de l’application" }).click();
   await page.getByRole("button", { name: "Installer", exact: true }).waitFor();
   await page
     .getByRole("button", { name: "Masquer la proposition d’installation" })

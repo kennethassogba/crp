@@ -15,7 +15,7 @@ Sélectionner jusqu’à trois nouveaux warrants par jour ouvré, puis suivre ch
 CRP est retiré de l’application et ses appels de modèles sont désactivés. Les données historiques D1 ne sont pas effacées. Aucun ordre réel, aucun appel de modèle payant. Une simulation indépendante par sélection, unités entières, achat à l’ask et valorisation au bid, frais et reliquat inclus, avant impôts. La règle confirmée le 22 octobre 2026 est : 20 séances américaines, ou +100 % / −50 % observés. Ces seuils sont constatés au relevé quotidien et ne garantissent pas un prix d’exécution. Aucun historique de sélections ne doit être reconstitué après coup.
 
 ## Brand Commitments
-Français concis. Sombre uniquement, inspiration Linear et Apple Bourse. Pas de vert, de Geist, de logo décoratif ni de libellé générique « Détails ». L’utilisateur veut une application, pas une présentation.
+Français concis. Sombre uniquement, inspiration Linear et Apple Bourse. Pas de vert, de Geist, de logo décoratif ni de libellé générique « Détails ». L’utilisateur veut une application plein écran sans défilement de page : navigation mobile basse, graphique prioritaire, texte de 16 px minimum. Aucun en-tête redondant, bouton d’actualisation ou note de bas de page. Les explications passent par des boutons explicites.
 
 ## Evidence on Hand
 Collecte publique Bourso et historiques Yahoo, archivés dans public/research/snapshot.json. Horodatages de lecture distincts des heures de cotation, inconnues. Le modèle n’a pas encore de résultat prospectif validé. Les prévisions de prix avant échéance dépendent d’hypothèses de volatilité et de change.
@@ -27,4 +27,4 @@ Collecte publique Bourso et historiques Yahoo, archivés dans public/research/sn
 - Publier la méthode et les données pour reproduire les calculs.
 
 ## Accessibility & Inclusion
-Clavier, graphiques tactiles et lisibles au survol, largeur de 320 px, texte agrandi et mouvement réduit.
+Clavier, graphiques tactiles et lisibles au survol, largeur de 320 px, texte agrandi et mouvement réduit. Pagination des listes selon la hauteur disponible ; défilement interne de secours sur les très petites hauteurs et avec texte agrandi.

@@ -1,27 +1,31 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   ArrowLeft,
   ArrowUpRight,
+  BookOpen,
+  ChartNoAxesCombined,
+  ChevronLeft,
   ChevronRight,
-  RefreshCw,
+  Download,
+  Info,
+  Layers,
+  MoreHorizontal,
   Search,
   TrendingUp,
-  Layers,
-  ChartNoAxesCombined,
-  BookOpen,
-  Download,
 } from "lucide-react";
 import "@fontsource-variable/public-sans";
 import { InstallPrompt } from "../InstallPrompt";
 import { MarketChart, type MarketPoint } from "./MarketChart";
+import { Sheet } from "./Sheet";
+import { useTracker } from "./useTracker";
 import {
   euro,
+  number,
   percent,
   signedEuro,
   date,
   observedTime,
-  number,
 } from "./format";
 import type { Tracked, Tracker } from "./tracker-types";
 import "./style.css";
@@ -30,97 +34,55 @@ const routes = [
   ["/positions/", "Positions", Layers],
   ["/resultats/", "Résultats", ChartNoAxesCombined],
 ] as const;
-const pnlClass = (n: number | null) =>
+const gain = (n: number | null) =>
   n === null || n === 0 ? "" : n < 0 ? "negative" : "positive";
-const money = (n: number | null) => (n === null ? "—" : euro(n, 2));
-const prob = (n: number | null) => (n === null ? "—" : percent(n, 0));
-const exitName = {
+const money = (n: number | null) => (n === null ? "Indisponible" : euro(n, 2));
+const probability = (n: number | null) => (n === null ? "—" : percent(n, 0));
+const reason = {
   target: "Objectif atteint",
   stop: "Seuil de perte atteint",
   time: "20 séances écoulées",
 };
-function status(p: Tracked) {
-  return p.exit
+const stateName = (p: Tracked) =>
+  p.exit
     ? "Clôturée"
     : p.status === "unavailable"
       ? "Prix indisponible"
       : p.status === "overdue"
         ? "Sortie en attente"
         : "En cours";
+function usePageSize(key: string, rowHeight = 88) {
+  const [node, setNode] = useState<HTMLDivElement | null>(null),
+    [size, setSize] = useState(3);
+  useEffect(() => {
+    if (!node) return;
+    const observer = new ResizeObserver(([e]) =>
+      setSize(
+        Math.max(
+          1,
+          Math.floor(
+            e.contentRect.height /
+              ((rowHeight * parseFloat(getComputedStyle(node).fontSize)) / 16),
+          ),
+        ),
+      ),
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [node, key, rowHeight]);
+  return { ref: setNode, size };
 }
 function App() {
-  const [location, setLocation] = useState(
-      () => window.location.pathname + window.location.search,
-    ),
-    [data, setData] = useState<Tracker | null>(null),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  const path = location.split("?")[0],
-    selectedId = new URLSearchParams(location.split("?")[1] ?? "").get("w");
-  const [query, setQuery] = useState(""),
+  const { data, error } = useTracker();
+  const [url, setUrl] = useState(() => location.pathname + location.search),
+    [query, setQuery] = useState(""),
+    [day, setDay] = useState(""),
     [filter, setFilter] = useState("open"),
-    [cohort, setCohort] = useState(""),
-    [sort, setSort] = useState("date");
-  const main = useRef<HTMLElement>(null),
-    requestVersion = useRef(0);
-  const load = useCallback(async () => {
-    const version = ++requestVersion.current;
-    setBusy(true);
-    try {
-      const r = await fetch("/api/warrants/tracker", { cache: "no-store" });
-      if (!r.ok) throw Error();
-      const d = await r.json();
-      if (!Array.isArray(d.positions) || !d.stats) throw Error();
-      if (version === requestVersion.current) {
-        setData(d);
-        setError("");
-      }
-    } catch {
-      if (version === requestVersion.current)
-        setError("Chargement impossible. Réessaie avec Actualiser.");
-    } finally {
-      if (version === requestVersion.current) setBusy(false);
-    }
-  }, []);
-  useEffect(() => {
-    load();
-    const t = setInterval(() => {
-      if (document.visibilityState === "visible") load();
-    }, 300000);
-    const visible = () => {
-      if (document.visibilityState === "visible") load();
-    };
-    document.addEventListener("visibilitychange", visible);
-    return () => {
-      clearInterval(t);
-      document.removeEventListener("visibilitychange", visible);
-      requestVersion.current++;
-    };
-  }, [load]);
-  useEffect(() => {
-    const pop = () =>
-      setLocation(window.location.pathname + window.location.search);
-    window.addEventListener("popstate", pop);
-    return () => window.removeEventListener("popstate", pop);
-  }, []);
-  const go = (url: string) => {
-    if (url === location) return;
-    history.pushState({}, "", url);
-    setLocation(url);
-  };
-  const nav = (url: string, e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
-      return;
-    e.preventDefault();
-    go(url);
-  };
-  useEffect(() => {
-    if (!matchMedia("(max-width:850px)").matches) return;
-    const frame = requestAnimationFrame(() => {
-      if (selectedId) document.querySelector<HTMLElement>(".analysis")?.focus();
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [selectedId]);
+    [page, setPage] = useState(0),
+    [menu, setMenu] = useState(false),
+    [search, setSearch] = useState(false);
+  const path = url.split("?")[0],
+    selectedId = new URLSearchParams(url.split("?")[1] ?? "").get("w");
   const title =
     path === "/positions/"
       ? "Positions"
@@ -129,621 +91,692 @@ function App() {
         : path === "/methode/"
           ? "Méthode"
           : "Sélection";
+  const main = useRef<HTMLElement>(null),
+    { ref: listRef, size } = usePageSize(path);
+  const go = (to: string) => {
+    history.pushState({}, "", to);
+    setUrl(to);
+  };
+  const link = (to: string, e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    if (to.split("?")[0] !== path) {
+      setQuery("");
+      setPage(0);
+    }
+    go(to);
+  };
+  useEffect(() => {
+    const pop = () => setUrl(location.pathname + location.search);
+    window.addEventListener("popstate", pop);
+    return () => window.removeEventListener("popstate", pop);
+  }, []);
   useEffect(() => {
     document.title = title + " · Fin";
     main.current?.focus({ preventScroll: true });
   }, [path, title]);
-  const batches = [...(data?.batches ?? [])].reverse(),
-    day = cohort || batches[0]?.day;
   const all = data?.positions ?? [],
-    daily = all.filter((p) => p.day === day);
+    batches = [...(data?.batches ?? [])].reverse(),
+    activeDay = day || batches[0]?.day;
   useEffect(() => {
     const p = data?.positions.find((p) => p.id === selectedId);
     if (!p) return;
+    if (path === "/") setDay(p.day);
     if (path === "/positions/") setFilter(p.exit ? "closed" : "open");
-    if (path === "/") setCohort(p.day);
-  }, [data, selectedId, path]);
-  let rows =
+  }, [selectedId, data, path]);
+  let rows = (
     path === "/positions/"
       ? all.filter(
           (p) => filter === "all" || (filter === "closed" ? !!p.exit : !p.exit),
         )
-      : daily;
-  rows = rows
+      : all.filter((p) => p.day === activeDay)
+  )
     .filter((p) =>
-      (p.product.id + " " + p.product.underlying + " " + p.product.isin)
+      (p.product.underlying + " " + p.product.id + " " + p.product.isin)
         .toLowerCase()
         .includes(query.toLowerCase()),
     )
     .sort((a, b) =>
-      sort === "pnl"
-        ? (b.pnl ?? -Infinity) - (a.pnl ?? -Infinity)
-        : path === "/"
-          ? a.rank - b.rank
-          : b.selectedAt.localeCompare(a.selectedAt),
+      path === "/" ? a.rank - b.rank : b.selectedAt.localeCompare(a.selectedAt),
     );
-  const chosen = all.find((p) => p.id === selectedId) ?? rows[0],
-    showDetail = Boolean(selectedId && chosen),
-    detailId = chosen?.id;
+  const pages = Math.max(1, Math.ceil(rows.length / size)),
+    currentPage = Math.min(page, pages - 1),
+    visible = rows.slice(currentPage * size, (currentPage + 1) * size);
+  const selected = all.find((p) => p.id === selectedId) ?? visible[0];
+  useEffect(() => {
+    if (!selectedId || !matchMedia("(max-width:840px)").matches) return;
+    const t = requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>(".analysis")
+        ?.focus({ preventScroll: true }),
+    );
+    return () => cancelAnimationFrame(t);
+  }, [selectedId]);
+  const previousSelected = useRef<string | null>(null);
+  useEffect(() => {
+    if (previousSelected.current && !selectedId) {
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>(".position-row")
+          ?.focus({ preventScroll: true }),
+      );
+    }
+    previousSelected.current = selectedId;
+  }, [selectedId]);
   return (
     <div className="app">
       <a className="skip-link" href="#content">
         Aller au contenu
       </a>
       <aside className="sidebar">
-        <a className="brand" href="/" onClick={(e) => nav("/", e)}>
-          Fin<span>Warrants</span>
+        <a className="brand" href="/" onClick={(e) => link("/", e)}>
+          Fin
         </a>
         <nav aria-label="Navigation principale">
-          {routes.map(([url, label, Icon]) => (
+          {routes.map(([to, label, Icon]) => (
             <a
-              key={url}
-              href={url}
-              onClick={(e) => {
-                setQuery("");
-                nav(url, e);
-              }}
-              aria-current={path === url ? "page" : undefined}
+              key={to}
+              href={to}
+              onClick={(e) => link(to, e)}
+              aria-current={path === to ? "page" : undefined}
             >
-              <Icon size={18} aria-hidden="true" />
-              {label}
-              {data && url === "/positions/" ? (
-                <span className="count">{data.stats.open}</span>
-              ) : null}
+              <Icon size={22} aria-hidden="true" />
+              <span>{label}</span>
             </a>
           ))}
         </nav>
         <div className="sidebar-bottom">
           <a
             href="/methode/"
-            onClick={(e) => nav("/methode/", e)}
+            onClick={(e) => link("/methode/", e)}
             aria-current={path === "/methode/" ? "page" : undefined}
           >
-            <BookOpen size={17} aria-hidden="true" />
+            <BookOpen size={20} aria-hidden="true" />
             Méthode
-          </a>
-          <a href="/research/tracker.json" download>
-            <Download size={17} aria-hidden="true" />
-            Exporter le journal
           </a>
         </div>
       </aside>
-      <div className="workspace">
-        <header className="topbar">
-          <span>
-            Warrants <ChevronRight size={14} aria-hidden="true" /> {title}
-          </span>
-          <div className="header-actions">
-            <InstallPrompt />
-            <a
-              className="icon-button method-shortcut"
-              href="/methode/"
-              onClick={(e) => nav("/methode/", e)}
-              aria-label="Méthode de sélection"
-            >
-              <BookOpen size={16} aria-hidden="true" />
-            </a>
-            <button
-              className="icon-button"
-              onClick={load}
-              disabled={busy}
-              aria-label="Actualiser les données"
-            >
-              <RefreshCw size={16} aria-hidden="true" />
-            </button>
-          </div>
-        </header>
-        <main id="content" ref={main} tabIndex={-1}>
-          <div className="page-heading">
-            <h1>{title}</h1>
-            {data && (
-              <span className="stamp">
-                Relevé {observedTime(data.updatedAt)}
-              </span>
-            )}
-          </div>
-          <div role="status" className="network-status">
-            {error ? (
-              <span className="error">{error}</span>
-            ) : busy && !data ? (
-              "Chargement des sélections…"
-            ) : data?.health.stale ? (
-              "Collecte en retard. Les derniers relevés restent datés."
-            ) : (
-              ""
-            )}
-          </div>
-          {!data && !error ? (
-            <div className="loading" aria-hidden="true">
-              <div />
-              <div />
-              <div />
-            </div>
-          ) : null}
-          {data && (
+      <main
+        ref={main}
+        id="content"
+        tabIndex={-1}
+        className={`workspace ${selectedId ? "is-instrument" : ""}`}
+      >
+        <h1 className="visually-hidden">{title}</h1>
+        <header className="view-toolbar">
+          {path === "/" || path === "/positions/" ? (
             <>
-              {(path === "/" || path === "/positions/") && (
-                <>
-                  <div className="toolbar">
-                    {path === "/" ? (
-                      <label className="select-wrap">
-                        <span className="visually-hidden">
-                          Jour de sélection
-                        </span>
-                        <select
-                          value={day ?? ""}
-                          onChange={(e) => {
-                            setCohort(e.target.value);
-                            go("/");
-                          }}
-                        >
-                          {batches.length ? (
-                            batches.map((b) => (
-                              <option key={b.day} value={b.day}>
-                                {date(b.day, true)}
-                              </option>
-                            ))
-                          ) : (
-                            <option value="">Aucune sélection</option>
-                          )}
-                        </select>
-                      </label>
-                    ) : (
-                      <div
-                        className="segments"
-                        role="group"
-                        aria-label="État des positions"
-                      >
-                        {[
-                          ["open", "En cours"],
-                          ["closed", "Clôturées"],
-                          ["all", "Toutes"],
-                        ].map(([k, label]) => (
-                          <button
-                            key={k}
-                            onClick={() => {
-                              setFilter(k);
-                              go("/positions/");
-                            }}
-                            aria-pressed={filter === k}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <div className="toolbar-end">
-                      <label className="search">
-                        <Search size={15} aria-hidden="true" />
-                        <span className="visually-hidden">
-                          Rechercher un warrant
-                        </span>
-                        <input
-                          type="search"
-                          placeholder="Rechercher"
-                          value={query}
-                          onChange={(e) => setQuery(e.target.value)}
-                        />
-                      </label>
-                      {path === "/positions/" && (
-                        <label className="select-wrap">
-                          <span className="visually-hidden">
-                            Trier les positions
-                          </span>
-                          <select
-                            value={sort}
-                            onChange={(e) => setSort(e.target.value)}
-                          >
-                            <option value="date">Récentes</option>
-                            <option value="pnl">Gain net</option>
-                          </select>
-                        </label>
-                      )}
-                    </div>
-                  </div>
-                  <div className="list-summary">
-                    <span>
-                      {path === "/"
-                        ? `${daily.length} sélections · 1 000 € chacune`
-                        : `${rows.length} positions · 1 000 € à chaque entrée`}
-                    </span>
-                    {path === "/" && (
-                      <a href="/methode/" onClick={(e) => nav("/methode/", e)}>
-                        Pourquoi ces warrants{" "}
-                        <ArrowUpRight size={13} aria-hidden="true" />
-                      </a>
-                    )}
-                  </div>
-                  <div className={`split ${showDetail ? "detail-open" : ""}`}>
-                    <section
-                      className="position-list"
-                      aria-label={
-                        path === "/"
-                          ? "Sélections du jour"
-                          : "Positions simulées"
-                      }
-                    >
-                      <div className="list-head">
-                        <span>Warrant</span>
-                        <span>{path === "/" ? "Gain prévu¹" : "Gain net"}</span>
-                      </div>
-                      {rows.length ? (
-                        rows.map((p) => (
-                          <a
-                            key={p.id}
-                            className={`position-row ${detailId === p.id ? "selected" : ""}`}
-                            href={path + "?w=" + encodeURIComponent(p.id)}
-                            onClick={(e) =>
-                              nav(path + "?w=" + encodeURIComponent(p.id), e)
-                            }
-                            aria-current={
-                              detailId === p.id ? "true" : undefined
-                            }
-                          >
-                            <div className="row-info">
-                              <strong>
-                                {p.product.underlying}
-                                <span className="direction">
-                                  {p.product.direction === "call"
-                                    ? "Call"
-                                    : "Put"}
-                                </span>
-                              </strong>
-                              <span>
-                                {p.product.id} ·{" "}
-                                {path === "/"
-                                  ? `Échéance ${date(p.product.expiry)}`
-                                  : date(p.day)}
-                              </span>
-                            </div>
-                            <div className="row-values">
-                              <strong
-                                className={pnlClass(
-                                  path === "/" ? p.prediction.expected : p.pnl,
-                                )}
-                              >
-                                {path === "/"
-                                  ? signedEuro(p.prediction.expected)
-                                  : p.pnl === null
-                                    ? "—"
-                                    : signedEuro(p.pnl)}
-                              </strong>
-                              <span>
-                                {path === "/"
-                                  ? `Prob. de gain : ${prob(p.prediction.profit)}`
-                                  : status(p)}
-                              </span>
-                            </div>
-                            <ChevronRight size={15} aria-hidden="true" />
-                          </a>
-                        ))
-                      ) : (
-                        <div className="empty">
-                          <h2>
-                            {query
-                              ? "Aucun résultat"
-                              : path === "/positions/" && filter === "closed"
-                                ? "Aucune clôture pour le moment"
-                                : "Aucune sélection disponible"}
-                          </h2>
-                          <p>
-                            {query
-                              ? "Essaie un code ou un sous-jacent."
-                              : path === "/positions/"
-                                ? "Les positions restent suivies jusqu’à leur sortie."
-                                : `Le prochain relevé retiendra jusqu’à trois nouveaux warrants éligibles.`}
-                          </p>
-                        </div>
-                      )}
-                    </section>
-                    {chosen &&
-                    (!query || rows.some((p) => p.id === chosen.id)) ? (
-                      <section
-                        className="analysis"
-                        tabIndex={-1}
-                        aria-label="Analyse du warrant"
-                      >
-                        <button
-                          className="back-button"
-                          onClick={() => go(path)}
-                        >
-                          <ArrowLeft size={16} aria-hidden="true" />
-                          Retour à la liste
-                        </button>
-                        <PositionPanel
-                          key={chosen.id}
-                          series={data.series}
-                          entry={chosen}
-                          daily={path === "/"}
-                          onFollow={() =>
-                            go("/positions/?w=" + encodeURIComponent(chosen.id))
-                          }
-                        />
-                      </section>
-                    ) : null}
-                  </div>
-                  {path === "/" && (
-                    <p className="source-note">
-                      ¹ Prévision à 20 séances, sorties à +100 % / −50 % au
-                      relevé. Modèle non validé.{" "}
-                      <a href="/methode/" onClick={(e) => nav("/methode/", e)}>
-                        Hypothèses et frais
-                      </a>
-                    </p>
+              {path === "/" ? (
+                <select
+                  aria-label="Jour de sélection"
+                  value={activeDay ?? ""}
+                  onChange={(e) => {
+                    setDay(e.target.value);
+                    setPage(0);
+                    go("/");
+                  }}
+                >
+                  {batches.length ? (
+                    batches.map((b) => (
+                      <option key={b.day} value={b.day}>
+                        {date(b.day, true)}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Sélection</option>
                   )}
-                </>
+                </select>
+              ) : (
+                <select
+                  aria-label="État des positions"
+                  value={filter}
+                  onChange={(e) => {
+                    setFilter(e.target.value);
+                    setPage(0);
+                    go("/positions/");
+                  }}
+                >
+                  <option value="open">En cours</option>
+                  <option value="closed">Clôturées</option>
+                  <option value="all">Toutes</option>
+                </select>
               )}
-              {path === "/resultats/" && (
-                <Results
-                  data={data}
-                  onPosition={(id) =>
-                    go("/positions/?w=" + encodeURIComponent(id))
-                  }
-                />
-              )}
-              {path === "/methode/" && <Method data={data} />}
+              <div className="toolbar-actions">
+                <button
+                  className={`icon-button ${query ? "active" : ""}`}
+                  aria-label="Rechercher un warrant"
+                  onClick={() => setSearch(true)}
+                >
+                  <Search size={22} aria-hidden="true" />
+                </button>
+                <button
+                  className="icon-button"
+                  aria-label="Menu de l’application"
+                  onClick={() => setMenu(true)}
+                >
+                  <MoreHorizontal size={24} aria-hidden="true" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="view-name">{title}</span>
+              <button
+                className="icon-button"
+                aria-label="Menu de l’application"
+                onClick={() => setMenu(true)}
+              >
+                <MoreHorizontal size={24} aria-hidden="true" />
+              </button>
             </>
           )}
-          {!data && error && (
-            <button className="primary" onClick={load}>
-              Actualiser
-            </button>
-          )}
-        </main>
-      </div>
+        </header>
+        <div className="network-status" role="status">
+          {error ||
+            (data?.health.stale
+              ? "Collecte en retard. Derniers relevés conservés."
+              : "")}
+        </div>
+        {!data ? (
+          <div className="empty-state" role="status">
+            {error ? "Reconnexion en cours…" : "Chargement…"}
+          </div>
+        ) : (
+          <>
+            {(path === "/" || path === "/positions/") && (
+              <div
+                className={`instrument-layout ${selectedId ? "detail-open" : ""}`}
+              >
+                <section
+                  className="selection-list"
+                  aria-label={
+                    path === "/" ? "Sélections du jour" : "Positions simulées"
+                  }
+                >
+                  <div ref={listRef} className="list-viewport">
+                    {visible.length ? (
+                      visible.map((p) => (
+                        <a
+                          key={p.id}
+                          href={path + "?w=" + encodeURIComponent(p.id)}
+                          onClick={(e) =>
+                            link(path + "?w=" + encodeURIComponent(p.id), e)
+                          }
+                          className={`position-row ${selected?.id === p.id ? "selected" : ""}`}
+                          aria-current={
+                            selected?.id === p.id ? "true" : undefined
+                          }
+                        >
+                          <strong>
+                            {p.product.underlying}{" "}
+                            <span>
+                              {p.product.direction === "call" ? "Call" : "Put"}
+                            </span>
+                          </strong>
+                          <b
+                            className={gain(
+                              path === "/" ? p.prediction.expected : p.pnl,
+                            )}
+                          >
+                            {path === "/"
+                              ? signedEuro(p.prediction.expected)
+                              : p.pnl === null
+                                ? "—"
+                                : signedEuro(p.pnl)}
+                          </b>
+                          <span className="instrument-code">
+                            {p.product.id}
+                          </span>
+                          {path === "/positions/" && (
+                            <span>{stateName(p)}</span>
+                          )}
+                        </a>
+                      ))
+                    ) : (
+                      <div className="empty-state">
+                        <h2>
+                          {query
+                            ? "Aucun résultat"
+                            : path === "/positions/" && filter === "closed"
+                              ? "Aucune clôture"
+                              : "Aucune sélection"}
+                        </h2>
+                        {query && (
+                          <button
+                            className="button"
+                            onClick={() => setQuery("")}
+                          >
+                            Effacer la recherche
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Pager
+                    page={currentPage}
+                    pages={pages}
+                    onPage={(n) => {
+                      setPage(n);
+                      if (selectedId) go(path);
+                    }}
+                  />
+                </section>
+                {selected &&
+                (!query || rows.some((p) => p.id === selected.id)) ? (
+                  <section
+                    className="analysis"
+                    tabIndex={-1}
+                    aria-label="Analyse du warrant"
+                  >
+                    <Instrument
+                      key={selected.id}
+                      entry={selected}
+                      series={data.series}
+                      daily={path === "/"}
+                      onBack={() => go(path)}
+                    />
+                  </section>
+                ) : null}
+              </div>
+            )}
+            {path === "/resultats/" && (
+              <Results
+                data={data}
+                onPosition={(id) =>
+                  go("/positions/?w=" + encodeURIComponent(id))
+                }
+              />
+            )}
+            {path === "/methode/" && <Method data={data} />}
+          </>
+        )}
+      </main>
+      <Sheet open={menu} title="Fin" onClose={() => setMenu(false)}>
+        <div className="app-menu">
+          <button
+            onClick={() => {
+              setMenu(false);
+              go("/methode/");
+            }}
+          >
+            <BookOpen size={22} aria-hidden="true" />
+            Méthode
+          </button>
+          <a href="/research/tracker.json" download>
+            <Download size={22} aria-hidden="true" />
+            Exporter le journal
+          </a>
+          <InstallPrompt />
+        </div>
+      </Sheet>
+      <Sheet
+        open={search}
+        title="Rechercher un warrant"
+        onClose={() => setSearch(false)}
+      >
+        <form
+          className="search-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setPage(0);
+            setSearch(false);
+          }}
+        >
+          <label htmlFor="warrant-search">Code, ISIN ou sous-jacent</label>
+          <input
+            id="warrant-search"
+            type="search"
+            autoComplete="off"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <button className="primary" type="submit">
+            Afficher
+          </button>
+        </form>
+      </Sheet>
     </div>
   );
 }
-function PositionPanel({
+function Pager({
+  page,
+  pages,
+  onPage,
+}: {
+  page: number;
+  pages: number;
+  onPage: (n: number) => void;
+}) {
+  return pages > 1 ? (
+    <div className="pagination">
+      <button
+        className="icon-button"
+        disabled={!page}
+        aria-label="Page précédente"
+        onClick={() => onPage(page - 1)}
+      >
+        <ChevronLeft size={22} aria-hidden="true" />
+      </button>
+      <span>
+        {page + 1} / {pages}
+      </span>
+      <button
+        className="icon-button"
+        disabled={page >= pages - 1}
+        aria-label="Page suivante"
+        onClick={() => onPage(page + 1)}
+      >
+        <ChevronRight size={22} aria-hidden="true" />
+      </button>
+    </div>
+  ) : null;
+}
+function Facts({ rows }: { rows: [string, React.ReactNode][] }) {
+  return (
+    <dl className="facts">
+      {rows.map(([label, value]) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+function Instrument({
   entry: p,
-  daily,
-  onFollow,
   series,
+  daily,
+  onBack,
 }: {
   entry: Tracked;
-  daily: boolean;
-  onFollow: () => void;
   series: Tracker["series"];
+  daily: boolean;
+  onBack: () => void;
 }) {
-  const [view, setView] = useState<"capital" | "forecast">("capital");
-  const [chartType, setChartType] = useState("underlying");
-  const pred = p.prediction;
-  const warrant = series?.warrant[p.product.isin] ?? [];
-  const h = series?.underlying[p.product.underlying];
-  const market: MarketPoint[] = h
+  const [sheet, setSheet] = useState(""),
+    [positionPage, setPositionPage] = useState(0),
+    [forecastPage, setForecastPage] = useState(0),
+    [kind, setKind] = useState("underlying");
+  const history = series?.underlying[p.product.underlying],
+    warrant = series?.warrant[p.product.isin] ?? [];
+  const market: MarketPoint[] = history
     ? [
-        ...h.dates.slice(-252).map((at, i) => ({
-          at: at,
-          value: h.closes[h.closes.length - Math.min(h.dates.length, 252) + i],
+        ...history.dates.slice(-252).map((at, i) => ({
+          at,
+          value:
+            history.closes[
+              history.closes.length - Math.min(252, history.closes.length) + i
+            ],
         })),
-        ...(h.spotAt && h.spot > 0 ? [{ at: h.spotAt, value: h.spot }] : []),
+        ...(history.spotAt && history.spot > 0
+          ? [{ at: history.spotAt, value: history.spot }]
+          : []),
       ]
     : [];
-  const chart =
-    chartType === "underlying"
-      ? market
-      : chartType === "warrant"
-        ? warrant
-        : p.marks.map((m) => ({ at: m.at, value: m.value }));
+  const raw =
+      kind === "underlying"
+        ? market
+        : kind === "warrant"
+          ? warrant
+          : p.marks.map((m) => ({ at: m.at, value: m.value })),
+    points = p.exit
+      ? raw.filter((m) => Date.parse(m.at) <= Date.parse(p.exit!.at))
+      : raw;
+  const pred = p.prediction;
+  const positionFacts: [string, React.ReactNode][][] = [
+    [
+      ["Mise initiale", "1 000,00 €"],
+      ["Achat", `${p.quantity} × ${euro(p.product.ask, 3)}`],
+      ["Frais d’achat", money(p.entryFee)],
+      ["Espèces", money(p.cash)],
+    ],
+    [
+      ["ISIN", p.product.isin],
+      ["Strike", `${number(p.product.strike, 2)} ${p.product.currency}`],
+      ["Échéance", date(p.product.expiry, true)],
+      ["Parité", `1 / ${number(1 / p.product.ratio, 0)}`],
+    ],
+    [
+      ["Valeur nette", money(p.value)],
+      ["Perte maximale", money(p.cost)],
+      ["Sortie", p.exit ? date(p.exit.at, true) : date(p.dueDay, true)],
+      ["Règle", p.exit ? reason[p.exit.reason] : "+100 % ou −50 %"],
+    ],
+  ];
+  const forecastFacts: [string, React.ReactNode][][] = [
+    [
+      ["Scénario bas · P10", signedEuro(pred.p10)],
+      ["Scénario médian", signedEuro(pred.median)],
+      ["Scénario haut · P90", signedEuro(pred.p90)],
+      ["Gain moyen", signedEuro(pred.expected)],
+    ],
+    [
+      ["Probabilité de gain", probability(pred.profit)],
+      ["Atteindre +100 %", probability(pred.double)],
+      ["Volatilité −20 %", signedEuro(pred.stressExpected)],
+      ["Scénarios", number(pred.samples, 0)],
+    ],
+    [
+      ["Historique arrêté au", date(pred.historyThrough, true)],
+      ["Volatilité implicite", percent(pred.impliedVol, 1)],
+      ["EUR/USD", number(pred.fx, 4)],
+      ["Prévision figée le", date(p.day, true)],
+    ],
+  ];
   return (
     <>
-      <div className="instrument-heading">
-        <div>
-          <h2>
-            {p.product.underlying}
-            <span>{p.product.direction === "call" ? "Call" : "Put"}</span>
-          </h2>
-          <p>
-            {p.product.id} · {p.product.isin}
-          </p>
-        </div>
+      <header className="instrument-toolbar">
+        <button
+          className="icon-button back-button"
+          onClick={onBack}
+          aria-label="Retour à la liste"
+        >
+          <ArrowLeft size={24} aria-hidden="true" />
+        </button>
+        <h2>
+          {p.product.underlying}{" "}
+          <span>{p.product.direction === "call" ? "Call" : "Put"}</span>
+        </h2>
         <a
-          className="external-link"
+          className="icon-button broker-link"
           href={p.product.brokerUrl ?? p.product.sourceUrl}
           target="_blank"
           rel="noreferrer"
+          aria-label="Ouvrir ce warrant chez BoursoBank"
         >
-          Bourso <ArrowUpRight size={15} aria-hidden="true" />
+          <ArrowUpRight size={24} aria-hidden="true" />
         </a>
-      </div>
-      <div className={`capital ${daily ? "selection-estimate" : ""}`}>
-        <span>{daily ? "Gain moyen prévu¹" : "Valeur de la position"}</span>
-        <strong className={daily ? pnlClass(pred.expected) : ""}>
-          {daily ? signedEuro(pred.expected) : money(p.value)}
-        </strong>
-        <div className={daily ? "" : pnlClass(p.pnl)}>
-          {daily
-            ? `${prob(pred.profit)} de probabilité de gain`
-            : p.pnl === null
-              ? "Valorisation indisponible"
-              : `${signedEuro(p.pnl)} (${percent(p.pnl / 1000, 1)})`}
-          <span className="status-pill">{status(p)}</span>
+      </header>
+      <div className="instrument-summary">
+        <div>
+          <div className="metric-label">
+            <span>{daily ? "Gain moyen prévu" : "Valeur de la position"}</span>
+            <button
+              className="icon-button"
+              aria-label={
+                daily
+                  ? "Comprendre le gain moyen prévu"
+                  : "Comprendre la valorisation"
+              }
+              onClick={() => setSheet("estimate")}
+            >
+              <Info size={20} aria-hidden="true" />
+            </button>
+          </div>
+          <strong className={daily ? gain(pred.expected) : ""}>
+            {daily ? signedEuro(pred.expected) : money(p.value)}
+          </strong>
+        </div>
+        <div className="probability">
+          <span>{daily ? "Probabilité de gain" : stateName(p)}</span>
+          <strong className={daily ? "" : gain(p.pnl)}>
+            {daily
+              ? probability(pred.profit)
+              : p.pnl === null
+                ? "—"
+                : signedEuro(p.pnl)}
+          </strong>
         </div>
       </div>
-      <div className="panel-tabs" role="group" aria-label="Analyse affichée">
-        <button
-          aria-pressed={view === "capital"}
-          onClick={() => setView("capital")}
+      <div className="chart-source">
+        <select
+          aria-label="Série affichée"
+          value={kind}
+          onChange={(e) => setKind(e.target.value)}
         >
-          Suivi
-        </button>
+          <option value="underlying">
+            {p.product.underlying} · Sous-jacent ($)
+          </option>
+          <option value="warrant">{p.product.id} · Warrant (€)</option>
+          <option value="capital">Capital simulé (€)</option>
+        </select>
         <button
-          aria-pressed={view === "forecast"}
-          onClick={() => setView("forecast")}
+          className="icon-button"
+          aria-label="Source et date des cours"
+          onClick={() => setSheet("source")}
         >
-          Prévision initiale
+          <Info size={20} aria-hidden="true" />
         </button>
       </div>
-      {view === "capital" ? (
-        <>
-          <div className="chart-source">
-            <label>
-              <span className="visually-hidden">Série affichée</span>
-              <select
-                value={chartType}
-                onChange={(e) => setChartType(e.target.value)}
-                aria-label="Série affichée"
-              >
-                <option value="underlying">
-                  {p.product.underlying} · sous-jacent · USD
-                </option>
-                <option value="warrant">
-                  {p.product.id} · warrant · bid EUR
-                </option>
-                <option value="capital">Position · capital EUR</option>
-              </select>
-            </label>
+      <div className="chart-stage">
+        {points.length > 1 ? (
+          <MarketChart
+            key={kind}
+            points={points}
+            selectedDay={p.day}
+            name={
+              kind === "underlying"
+                ? p.product.underlying + " · sous-jacent"
+                : kind === "warrant"
+                  ? p.product.id + " · prix bid du warrant"
+                  : "Capital simulé"
+            }
+            unit={kind === "underlying" ? "$" : "€"}
+            initial={
+              kind === "capital"
+                ? 1000
+                : kind === "warrant"
+                  ? p.product.ask
+                  : pred.spot
+            }
+          />
+        ) : (
+          <div className="empty-state">
+            <strong>
+              {kind === "warrant" ? euro(p.latest.bid, 3) : money(p.value)}
+            </strong>
+            <p>Un seul relevé disponible.</p>
           </div>
-          {chart.length > 1 ? (
-            <MarketChart
-              key={chartType}
-              points={chart}
-              selectedDay={p.day}
-              name={
-                chartType === "underlying"
-                  ? p.product.underlying + " · sous-jacent"
-                  : chartType === "warrant"
-                    ? p.product.id + " · prix bid du warrant"
-                    : "Capital simulé"
-              }
-              unit={chartType === "underlying" ? "$" : "€"}
-              initial={
-                chartType === "capital"
-                  ? 1000
-                  : chartType === "warrant"
-                    ? p.product.ask
-                    : p.prediction.spot
-              }
-            />
-          ) : (
-            <div className="first-mark">
-              <div className="entry-line">
-                <span>
-                  {chartType === "warrant" ? "Dernier bid" : "Capital initial"}
-                </span>
-                <strong>
-                  {chartType === "warrant" ? money(p.latest.bid) : "1 000,00 €"}
-                </strong>
-              </div>
-              <p>Un seul relevé disponible. Aucun historique reconstitué.</p>
-            </div>
-          )}
-          <dl className="facts">
-            <div>
-              <dt>Entrée simulée</dt>
-              <dd>{observedTime(p.selectedAt)}</dd>
-            </div>
-            <div>
-              <dt>Achat à l’ask</dt>
-              <dd>
-                {p.quantity} × {euro(p.product.ask, 3)}
-              </dd>
-            </div>
-            <div>
-              <dt>Dernier bid</dt>
-              <dd>{euro(p.latest.bid, 3)}</dd>
-            </div>
-            <div>
-              <dt>Frais d’entrée / sortie</dt>
-              <dd>
-                {money(p.entryFee)} / {money(p.latest.fee)}
-              </dd>
-            </div>
-            <div>
-              <dt>Espèces restantes</dt>
-              <dd>{money(p.cash)}</dd>
-            </div>
-            <div>
-              <dt>Perte maximale</dt>
-              <dd>{money(p.cost)}</dd>
-            </div>
-            <div>
-              <dt>{p.exit ? "Sortie" : "Sortie prévue"}</dt>
-              <dd>{p.exit ? observedTime(p.exit.at) : date(p.dueDay, true)}</dd>
-            </div>
-            <div>
-              <dt>{p.exit ? "Motif" : "Seuils de sortie"}</dt>
-              <dd>{p.exit ? exitName[p.exit.reason] : "+100 % ou −50 %"}</dd>
-            </div>
-          </dl>
-          <p className="source-note">
-            Dernier prix relevé {observedTime(p.latest.at)}. Simulation au bid,
-            avant impôts.
-          </p>
-        </>
-      ) : (
-        <>
-          <div className="forecast-range">
-            <h3>Gain net simulé</h3>
-            <div>
-              <span>Scénario bas · P10</span>
-              <strong className={pnlClass(pred.p10)}>
-                {signedEuro(pred.p10)}
-              </strong>
-            </div>
-            <div>
-              <span>Scénario médian</span>
-              <strong className={pnlClass(pred.median)}>
-                {signedEuro(pred.median)}
-              </strong>
-            </div>
-            <div>
-              <span>Scénario haut · P90</span>
-              <strong className={pnlClass(pred.p90)}>
-                {signedEuro(pred.p90)}
-              </strong>
-            </div>
-          </div>
-          <dl className="facts">
-            <div>
-              <dt>Gain moyen prévu</dt>
-              <dd className={pnlClass(pred.expected)}>
-                {signedEuro(pred.expected)}
-              </dd>
-            </div>
-            <div>
-              <dt>Probabilité de gain</dt>
-              <dd>{prob(pred.profit)}</dd>
-            </div>
-            <div>
-              <dt>Atteindre +100 %</dt>
-              <dd>{prob(pred.double)}</dd>
-            </div>
-            <div>
-              <dt>Volatilité −20 %</dt>
-              <dd className={pnlClass(pred.stressExpected)}>
-                {signedEuro(pred.stressExpected)}
-              </dd>
-            </div>
-            <div>
-              <dt>Scénarios historiques</dt>
-              <dd>{number(pred.samples, 0)}</dd>
-            </div>
-            <div>
-              <dt>Historique arrêté au</dt>
-              <dd>{date(pred.historyThrough, true)}</dd>
-            </div>
-            <div>
-              <dt>Volatilité implicite</dt>
-              <dd>{percent(pred.impliedVol, 1)}</dd>
-            </div>
-          </dl>
-          <p className="source-note">
-            Prévision figée le {date(p.day, true)}. Scénarios corrélés, change
-            fixe. Aucun avantage prédictif démontré.
-          </p>
-        </>
-      )}
-      <div className="panel-actions">
-        {daily && (
-          <button className="primary" onClick={onFollow}>
-            Suivre la position <ArrowUpRight size={15} aria-hidden="true" />
-          </button>
         )}
-        <a href={p.product.kidUrl} target="_blank" rel="noreferrer">
-          Document émetteur <ArrowUpRight size={14} aria-hidden="true" />
-        </a>
       </div>
+      <footer className="instrument-actions">
+        <button
+          className="button"
+          onClick={() => {
+            setPositionPage(0);
+            setSheet("position");
+          }}
+        >
+          Position
+        </button>
+        <button
+          className="button"
+          onClick={() => {
+            setForecastPage(0);
+            setSheet("forecast");
+          }}
+        >
+          Prévision
+        </button>
+      </footer>
+      <Sheet
+        open={sheet === "estimate"}
+        title={daily ? "Gain moyen prévu" : "Valorisation"}
+        onClose={() => setSheet("")}
+      >
+        <p>
+          {daily
+            ? "Gain moyen simulé pour une mise de 1 000 €, après spread et courtage, avant impôts."
+            : "Valeur de revente simulée au dernier bid disponible, frais et espèces restantes inclus, avant impôts."}
+        </p>
+        <p>
+          Sortie après 20 séances ou au premier relevé à +100 % / −50 %. Un gap
+          peut dépasser ces seuils.
+        </p>
+        <p>Modèle non validé. La perte peut atteindre le montant engagé.</p>
+      </Sheet>
+      <Sheet
+        open={sheet === "source"}
+        title="Cours et sélection"
+        onClose={() => setSheet("")}
+      >
+        <Facts
+          rows={[
+            ["Warrant relevé le", observedTime(p.latest.at)],
+            ["Sélection", observedTime(p.selectedAt)],
+            ["Mise à jour", "Automatique · relevés quotidiens"],
+          ]}
+        />
+        <p>
+          Gris : avant sélection. Bleu : depuis la sélection. Le sous-jacent, le
+          bid du warrant et le capital sont des séries distinctes.
+        </p>
+        <p>
+          Les prix publics sont indicatifs ; l’heure de cotation émetteur est
+          inconnue.
+        </p>
+      </Sheet>
+      <Sheet
+        open={sheet === "position"}
+        title="Position"
+        onClose={() => setSheet("")}
+      >
+        <div
+          className="segments"
+          role="group"
+          aria-label="Informations sur la position"
+        >
+          {["Entrée", "Contrat", "Sortie"].map((v, i) => (
+            <button
+              key={v}
+              aria-pressed={positionPage === i}
+              onClick={() => setPositionPage(i)}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        <Facts rows={positionFacts[positionPage]} />
+        {positionPage === 1 && (
+          <a
+            className="button"
+            href={p.product.kidUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Document émetteur <ArrowUpRight size={20} aria-hidden="true" />
+          </a>
+        )}
+      </Sheet>
+      <Sheet
+        open={sheet === "forecast"}
+        title="Prévision initiale"
+        onClose={() => setSheet("")}
+      >
+        <div className="segments" role="group" aria-label="Prévision initiale">
+          {["Scénarios", "Chances", "Modèle"].map((v, i) => (
+            <button
+              key={v}
+              aria-pressed={forecastPage === i}
+              onClick={() => setForecastPage(i)}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        <Facts rows={forecastFacts[forecastPage]} />
+      </Sheet>
     </>
   );
 }
@@ -754,239 +787,198 @@ function Results({
   data: Tracker;
   onPosition: (id: string) => void;
 }) {
+  const [tab, setTab] = useState("summary"),
+    [page, setPage] = useState(0),
+    [quality, setQuality] = useState(false),
+    { ref, size } = usePageSize("closed", 88);
   const s = d.stats,
     closed = d.positions
       .filter((p) => p.exit)
-      .sort((a, b) => b.exit!.at.localeCompare(a.exit!.at));
+      .sort((a, b) => b.exit!.at.localeCompare(a.exit!.at)),
+    pages = Math.max(1, Math.ceil(closed.length / size)),
+    active = Math.min(page, pages - 1);
   return (
-    <div className="results">
-      <div className="result-summary">
-        <div>
-          <span>Gain réalisé</span>
-          <strong className={pnlClass(s.realizedPnl)}>
-            {s.closed ? signedEuro(s.realizedPnl) : "—"}
-          </strong>
-        </div>
-        <div>
-          <span>Positions clôturées</span>
-          <strong>
-            {s.closed}
-            <small> / {s.selected}</small>
-          </strong>
-        </div>
-        <div>
-          <span>Gagnantes</span>
-          <strong>{prob(s.winRate)}</strong>
-        </div>
-        <div>
-          <span>Gain moyen</span>
-          <strong>{s.closed ? signedEuro(s.meanPnl!) : "—"}</strong>
-        </div>
+    <section className="results">
+      <div
+        className="segments result-tabs"
+        role="group"
+        aria-label="Résultats affichés"
+      >
+        <button
+          aria-pressed={tab === "summary"}
+          onClick={() => setTab("summary")}
+        >
+          Bilan
+        </button>
+        <button
+          aria-pressed={tab === "closed"}
+          onClick={() => setTab("closed")}
+        >
+          Clôtures
+        </button>
       </div>
-      {s.unavailable > 0 && (
-        <p className="source-note">
-          {s.unavailable} positions sans prix récent : exclues des gains
-          réalisés, conservées dans le suivi.
-        </p>
-      )}
-      <section className="result-section">
-        <div className="section-heading">
-          <h2>Prévisions face aux résultats</h2>
-          <span>
-            {s.closed < 30
-              ? `${s.closed} / 30 clôtures minimum`
-              : "Échantillon exploratoire"}
-          </span>
-        </div>
-        {s.closed ? (
-          <>
-            <div className="calibration">
-              <div className="list-head">
-                <span>Gain prévu</span>
-                <span>Gain constaté</span>
-                <span>Clôtures</span>
+      {tab === "summary" ? (
+        <div className="result-overview">
+          <div className="result-metrics">
+            {[
+              ["Gain réalisé", s.closed ? signedEuro(s.realizedPnl) : "—"],
+              ["Clôtures", String(s.closed)],
+              ["Gagnantes", probability(s.winRate)],
+              ["Gain moyen", s.closed ? signedEuro(s.meanPnl!) : "—"],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
               </div>
-              {s.calibration
-                .filter((c) => c.count)
-                .map((c) => (
-                  <div className="calibration-row" key={c.low}>
-                    <span>{prob(c.predicted)}</span>
-                    <span>{prob(c.observed)}</span>
-                    <span>{c.count}</span>
-                  </div>
-                ))}
-            </div>
-            <dl className="facts">
-              <div>
-                <dt>Score de Brier · plus bas = mieux</dt>
-                <dd>{number(s.brier!, 3)} / 0,250 pour une prévision à 50 %</dd>
-              </div>
-            </dl>
-            <p>
-              Les gains réalisés et les probabilités restent exploratoires :
-              même sous-jacent, dates proches et petit échantillon.
-            </p>
-          </>
-        ) : (
-          <div className="empty">
-            <h3>Pas encore de résultat à comparer</h3>
-            <p>
-              Les probabilités seront comparées aux résultats de chaque clôture.
-              Aucun ancien gagnant n’a été ajouté après coup.
-            </p>
-          </div>
-        )}
-      </section>
-      <section className="result-section">
-        <h2>Clôtures</h2>
-        {closed.length ? (
-          <div className="closed-list">
-            {closed.map((p) => (
-              <button key={p.id} onClick={() => onPosition(p.id)}>
-                <span>
-                  <strong>
-                    {p.product.underlying} · {p.product.id}
-                  </strong>
-                  <small>
-                    {date(p.day)} → {date(p.exit!.at)} ·{" "}
-                    {exitName[p.exit!.reason]}
-                  </small>
-                </span>
-                <strong className={pnlClass(p.exit!.pnl)}>
-                  {signedEuro(p.exit!.pnl)}
-                </strong>
-                <ChevronRight size={15} aria-hidden="true" />
-              </button>
             ))}
           </div>
+          <button
+            className="button quality-action"
+            onClick={() => setQuality(true)}
+          >
+            Évaluer le modèle <ArrowUpRight size={20} aria-hidden="true" />
+          </button>
+        </div>
+      ) : (
+        <>
+          <div ref={ref} className="closed-list list-viewport">
+            {closed.length ? (
+              closed.slice(active * size, (active + 1) * size).map((p) => (
+                <button
+                  key={p.id}
+                  className="closed-row"
+                  onClick={() => onPosition(p.id)}
+                >
+                  <span>
+                    <strong>{p.product.underlying}</strong>
+                    <span className="instrument-code">{p.product.id}</span>
+                  </span>
+                  <strong className={gain(p.exit!.pnl)}>
+                    {signedEuro(p.exit!.pnl)}
+                  </strong>
+                  <ChevronRight size={22} aria-hidden="true" />
+                </button>
+              ))
+            ) : (
+              <div className="empty-state">
+                <h2>Aucune clôture</h2>
+              </div>
+            )}
+          </div>
+          <Pager page={active} pages={pages} onPage={setPage} />
+        </>
+      )}
+      <Sheet
+        open={quality}
+        title="Qualité du modèle"
+        onClose={() => setQuality(false)}
+      >
+        {s.closed ? (
+          <>
+            <Facts
+              rows={[
+                ["Probabilité moyenne prévue", probability(s.meanPredicted)],
+                ["Clôtures gagnantes", probability(s.winRate)],
+                ["Brier · plus bas = mieux", number(s.brier!, 3)],
+                ["Référence à 50 %", "0,250"],
+              ]}
+            />
+            <p>
+              {s.closed < 30
+                ? `${s.closed} clôtures sur 30 minimum. Échantillon insuffisant.`
+                : "Échantillon exploratoire ; les positions peuvent être corrélées."}
+            </p>
+            {s.unavailable > 0 && (
+              <p>
+                {s.unavailable} positions sans prix récent restent dans le
+                suivi.
+              </p>
+            )}
+          </>
         ) : (
-          <p>Aucune position clôturée.</p>
+          <p>Aucune clôture pour comparer les prévisions aux résultats.</p>
         )}
-      </section>
-    </div>
+      </Sheet>
+    </section>
   );
 }
+const methodSteps = [
+  {
+    title: "Filtrer",
+    text: "Prix récents, offre BoursoMarkets confirmée, spread de 8 % maximum et échéance au moins sept jours après la sortie prévue. Un contrat déjà sélectionné n’est jamais repris.",
+  },
+  {
+    title: "Classer",
+    text: "Les trajectoires historiques sont rejouées sur 20 séances, sans leur tendance passée. Le score combine le gain P90 et la plus faible espérance entre cinq ans, un an et volatilité réduite de 20 %.",
+  },
+  {
+    title: "Simuler 1 000 €",
+    text: "Jusqu’à trois nouveaux warrants, sur des sous-jacents différents. Une mise indépendante de 1 000 € chacun, achetée à l’ask en unités entières. Les espèces restantes sont conservées.",
+  },
+  {
+    title: "Clôturer",
+    text: "Au premier relevé à +100 % ou −50 %, sinon après 20 séances américaines. La sortie utilise le bid observé, même après un gap. Un prix manquant ne devient jamais un résultat nul.",
+  },
+  {
+    title: "Évaluer",
+    text: "Prix d’entrée, prévisions et règle restent figés. Toutes les clôtures sont comptées. Le score de Brier compare les probabilités initiales aux résultats. Aucun avantage prédictif n’est encore démontré.",
+  },
+  {
+    title: "Connaître les limites",
+    text: "Relevés publics indicatifs ; heure émetteur inconnue. Le modèle suppose taux et dividendes nuls, change et spread constants. Le DIC reste à vérifier avant un achat réel. Aucun ordre n’est envoyé.",
+  },
+];
 function Method({ data: d }: { data: Tracker }) {
+  const [step, setStep] = useState(0),
+    [sources, setSources] = useState(false);
   return (
     <article className="method">
-      <h2>Sélection et suivi</h2>
-      <ol>
-        <li>
-          <h3>Filtrer</h3>
-          <p>
-            Warrants standard Société Générale, offre BoursoMarkets confirmée,
-            ordre de 1 000 €, spread ≤ 8 %, prix relevé depuis moins de deux
-            heures et échéance au moins sept jours après la sortie prévue.
-          </p>
-        </li>
-        <li>
-          <h3>Classer</h3>
-          <p>
-            Chaque trajectoire historique du sous-jacent est rejouée sur 20
-            séances, sans sa tendance passée. Le warrant est réévalué chaque
-            jour avec une volatilité implicite calibrée sur son prix initial. Le
-            score combine à parts égales le gain P90 et la plus faible espérance
-            des scénarios cinq ans, un an et volatilité −20 %.
-          </p>
-          <p>
-            Les trois meilleurs scores, avec des sous-jacents différents, sont
-            retenus. Un contrat déjà sélectionné n’est jamais repris. Un score
-            élevé n’établit pas une espérance positive.
-          </p>
-        </li>
-        <li>
-          <h3>Suivre 1 000 €</h3>
-          <p>
-            Une simulation indépendante par warrant, achat en unités entières à
-            l’ask le jour de sélection. Les espèces restantes sont conservées.
-            Chaque nouveau bid sert à calculer le prix de sortie net. Aucun
-            ordre réel.
-          </p>
-        </li>
-        <li>
-          <h3>Clôturer</h3>
-          <p>
-            Au premier relevé où la valeur atteint 2 000 € ou tombe à 500 €,
-            sinon après 20 séances américaines. La sortie utilise le bid
-            constaté, même si le seuil a été dépassé. Le suivi quotidien ne
-            détecte pas les franchissements entre deux relevés.
-          </p>
-        </li>
-        <li>
-          <h3>Mesurer</h3>
-          <p>
-            Chaque prévision reste figée. Les résultats comptent toutes les
-            clôtures, les pertes et les frais. Le score de Brier compare la
-            probabilité initiale de gain au résultat observé. Avant 30 clôtures,
-            le volume est insuffisant ; au-delà, il ne prouve toujours pas un
-            avantage stable.
-          </p>
-        </li>
-      </ol>
-      <h2>Données et limites</h2>
-      <dl className="facts">
-        <div>
-          <dt>Dernier calcul</dt>
-          <dd>{observedTime(d.updatedAt)}</dd>
-        </div>
-        <div>
-          <dt>Univers observé</dt>
-          <dd>{d.scan?.universe ?? 0} warrants · 5 sous-jacents</dd>
-        </div>
-        <div>
-          <dt>Éligibles au dernier calcul</dt>
-          <dd>{d.scan?.eligible ?? 0}</dd>
-        </div>
-        <div>
-          <dt>Collecte planifiée</dt>
-          <dd>Lundi–vendredi · 21 h 30 UTC</dd>
-        </div>
-        <div>
-          <dt>Version</dt>
-          <dd>{d.rule.version}</dd>
-        </div>
-      </dl>
-      <p>
-        Les pages publiques Bourso fournissent des bid/ask indicatifs.
-        L’horodatage est celui de la lecture, l’heure de cotation émetteur est
-        inconnue. Yahoo fournit les historiques du sous-jacent et le change. La
-        collecte GitHub peut être retardée ; un échec ne crée ni nouveau prix ni
-        résultat fictif.
-      </p>
-      <p>
-        Le modèle suppose des warrants européens standard, taux et dividendes
-        nuls, change et spread constants. Les caractéristiques proviennent des
-        fiches Bourso ; le DIC est lié, sans validation juridique automatisée.
-        Un mouvement de change, de volatilité, un dividende ou un écart de
-        cotation peut rendre la prévision fausse.
-      </p>
-      <p>
-        Frais de courtage simulés à 0 € uniquement pour l’offre BoursoMarkets
-        confirmée sur la fiche. Le spread est inclus. Pas de fiscalité, de
-        slippage supplémentaire ni de garantie d’exécution. La perte peut
-        atteindre tout le montant engagé ; aucun appel de marge pour l’achat de
-        warrants au comptant.
-      </p>
-      <p>
-        TradingView Lightweight Charts™ · Copyright (с) 2025 TradingView, Inc.{" "}
-        <a href="https://www.tradingview.com/">TradingView</a> · Apache-2.0.
-      </p>
-      <div className="method-links">
-        <a href="/research/protocole.md">
-          Protocole complet <ArrowUpRight size={15} aria-hidden="true" />
-        </a>
-        <a href="/research/recherche.zip" download>
-          Code et données <Download size={15} aria-hidden="true" />
-        </a>
+      <div className="method-step">
+        <h2>{methodSteps[step].title}</h2>
+        <p>{methodSteps[step].text}</p>
+      </div>
+      <div className="method-actions">
+        <button className="button" onClick={() => setSources(true)}>
+          Sources et données
+        </button>
         <a
-          href="https://github.com/kennethassogba/crp"
+          className="button"
+          href="/research/protocole.md"
           target="_blank"
           rel="noreferrer"
         >
-          GitHub <ArrowUpRight size={15} aria-hidden="true" />
+          Protocole <ArrowUpRight size={20} aria-hidden="true" />
         </a>
-        <a href="/openapi.json">API</a>
       </div>
+      <Pager page={step} pages={methodSteps.length} onPage={setStep} />
+      <Sheet
+        open={sources}
+        title="Sources et données"
+        onClose={() => setSources(false)}
+      >
+        <Facts
+          rows={[
+            ["Dernier calcul", observedTime(d.updatedAt)],
+            ["Univers observé", `${d.scan?.universe ?? 0} warrants`],
+            ["Collecte", "Lun.–ven. · 21 h 30 UTC"],
+            ["Version", d.rule.version],
+          ]}
+        />
+        <a className="button" href="/research/recherche.zip" download>
+          Code et données <Download size={20} aria-hidden="true" />
+        </a>
+        <p>
+          TradingView Lightweight Charts™ · Copyright (с) 2025 TradingView, Inc.{" "}
+          <a
+            href="https://www.tradingview.com/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            TradingView
+          </a>{" "}
+          · Apache-2.0.
+        </p>
+      </Sheet>
     </article>
   );
 }

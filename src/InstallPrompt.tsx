@@ -142,9 +142,10 @@ export function InstallPrompt() {
     setInstructions(null);
     // The suggestion disappears, so restore focus to the adjacent header action.
     const next =
-      document.querySelector<HTMLElement>(
-        '[aria-label="Actualiser les données"]:not(:disabled)',
-      ) ?? document.querySelector<HTMLElement>("main");
+      help.current
+        ?.closest<HTMLDialogElement>("dialog.sheet")
+        ?.querySelector<HTMLElement>(".sheet-heading button") ??
+      document.querySelector<HTMLElement>("main");
     next?.focus();
   }
   async function install() {
