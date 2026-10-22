@@ -26,16 +26,13 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Check desktop and mobile in Chromium
         run: |
-          node scripts/seed.mjs
           npm run dev > /tmp/crp-dev.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
           curl --retry 30 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:5185/ > /dev/null
-          curl --silent http://127.0.0.1:5185/api/state > /dev/null
-          node scripts/seed-local.mjs
           npm run test:fin
           npm run test:ui
           npm run test:theme
           npm run test:install
           npm run test:pwa
-          CRP_URL=http://127.0.0.1:5185 npm run smoke
+          FIN_URL=http://127.0.0.1:5185 npm run smoke

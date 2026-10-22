@@ -1,7 +1,7 @@
 name: Daily warrant research
 on:
   schedule:
-    - cron: "30 22 * * 1-5"
+    - cron: "30 21 * * 1-5"
   workflow_dispatch:
 permissions:
   contents: write
@@ -23,13 +23,15 @@ jobs:
         run: node scripts/research-quotes.mjs
       - name: Collect complete daily histories and exchange rate
         run: npm run research:collect
+      - name: Mark open positions, close triggered exits and freeze daily selection
+        run: npm run research:track
       - run: npm test
       - run: npm run research:package
       - name: Publish observed data
         run: |
           git config user.name 'fin-research[bot]'
           git config user.email 'fin-research[bot]@users.noreply.github.com'
-          git add public/research/snapshot.json public/research/recherche.zip public/research/protocole.md
+          git add public/research/tracker.json public/research/snapshot.json public/research/recherche.zip public/research/protocole.md
           if ! git diff --cached --quiet; then
             git commit -m 'Update daily warrant observations'
             git pull --rebase origin main

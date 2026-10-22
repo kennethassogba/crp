@@ -1,176 +1,65 @@
-const HOME = "https://fin.keff.uk";
-export const LINKS = `<${HOME}/index.md>; rel="alternate"; type="text/markdown", <${HOME}/openapi.json>; rel="service-desc", <${HOME}/.well-known/api-catalog>; rel="api-catalog", <${HOME}/.well-known/mcp/server-card.json>; rel="mcp-server-card", <${HOME}/.well-known/agent-skills/index.json>; rel="agent-skills"`;
-export const GUIDE = `# Fin\n\nWarrants research and BTC/ETH model comparison. Read-only, no order execution.\n\n## Read\nGET /api/crp/comparison returns exactly the comparison shown in the app: three portfolios starting at EUR 1000 each, settled net gains, provisional marked gains, capital, source times and missing valuations. This is normalized return comparison: the original USD 10,000 simulation is rebased by 0.1; EUR/USD changes are not modeled. Execution fees, slippage and observed funding are included. Provider costs are separate in USD, not deducted from the portfolios. Failed or late responses have no position. GET /api/warrants/portfolio returns the app's one EUR 1000 J1 portfolio. It buys Q433S (DE000FG32YX6), fixed as the first contract from the original published watchlist, at the first archived 16 October reference ask. 689 whole units cost EUR 999.05, leaving EUR 0.95 cash. The quantity never changes, new contracts are not added and there is no reinvestment. Value = residual cash + quantity times latest bid - assumed exit fees. This is a simulated position, not proof of execution or a prospectively validated stock-picking strategy. Entry uses verified BoursoMarkets zero brokerage; otherwise the calculation assumes at least 0.1%, EUR 9.95 per order. Missing prices keep their date; missing expiry settlement has null value, never an invented zero. Taxes excluded. GET /api/warrants/comparison is the legacy per-contract EUR 100 comparison, normalized from EUR 3000; it is no longer the app portfolio. GET /research/snapshot.json returns the observed warrant bid/ask catalog, contract terms, source timestamps, failures, asset histories and calculation assumptions. Observed quotes are not guaranteed executable prices.\n\nGET /api/state returns the latest market snapshot, model decisions, settlement records, budget, freshness and scheduler status. GET /api/backtest returns the 90-day deterministic historical benchmark. GET /api/decisions returns the decision journal. These endpoints never invoke a paid model.\n\n## Strategy\nLong BTC, long ETH or cash. Isolated leverage 1x or 2x. Stop distance is max(1%, 2 times hourly ATR14). Position size limits estimated stop loss plus execution fees to 2% of equity. Funding and price gaps may add losses. Daily snapshot at 08:00 UTC, entry at 09:00 UTC after the response is recorded, exit 24 hours later or earlier at stop. The initial live observation may use the current full hour and enter one hour later. A late response is excluded from performance.\n\n## Evidence\nHistorical rule benchmarks are separate from historical LLM replays and from prospective model results. Missing and failed model responses are never substituted with rule-based decisions. No expected return or confidence is guaranteed. Daily observations use Kraken Futures public trade, mark, index and hourly funding data. Archived backtests use Binance. Neither source requires account authentication. Non-cash positions cannot settle against another venue. Kraken funding uses published USD payments per base unit; Binance funding uses its published mark price and rate. Costs are assumptions: 0.05% taker fee and 0.02% slippage each side, plus subsequent observed funding. Hourly bars approximate execution; the liquidation model uses fixed 0.5% maintenance margin.\n\n## Automation and cost\nScheduled server jobs collect market data and record one position per model per day. No public endpoint creates a trade, calls a provider, changes a budget or places an exchange order. The lifetime provider budget is USD 15, reserved atomically before every request. Unknown request costs keep their reservation.\n\n## Models\nGPT-6 Luna, GPT-6 Luna via Decisions and GPT-6 Sol. Astra and Terra are retired; their journal records remain available but they receive no new requests. Responses and API usage are recorded. A configured secret is required for model calls. Provider errors and missing credentials remain visible.\n\n## Links\nApplication: https://fin.keff.uk/crp/\nRepository: https://github.com/kennethassogba/crp\nOpenAPI: ${HOME}/openapi.json\nMCP: ${HOME}/mcp\nMethod: ${HOME}/method.md\n`;
 export const TOOLS = [
-  {
-    name: "get_warrant_experiment",
-    description:
-      "Read the app EUR 1000 J1 Q433S buy-and-hold portfolio: fixed 689 whole units, residual cash, marked value, gains, assumed fees, source dates and missing settlement flags. No orders or paid calls.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-      additionalProperties: false,
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
-    },
+  [
+    "get_warrant_selections",
+    "Daily frozen selections, entry prices and predictions.",
+  ],
+  [
+    "get_warrant_positions",
+    "All prospective simulations, observed bids, exits and source timestamps.",
+  ],
+  [
+    "get_warrant_results",
+    "Closed-position performance and probability calibration.",
+  ],
+  ["get_warrant_catalog", "Observed Bourso warrants and underlying histories."],
+].map(([name, description]) => ({
+  name,
+  description,
+  inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
   },
-  {
-    name: "get_crp_comparison",
-    description:
-      "Read the app's three EUR-1000 normalized portfolios, settled and provisional gains, missing valuations and currency/cost limits. No orders or paid calls.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-      additionalProperties: false,
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
-    },
-  },
-  {
-    name: "get_warrant_catalog",
-    description:
-      "Read published warrant observations, bid/ask, timestamps, terms, histories and collection errors. Prices are observed, not guaranteed executable. No orders or paid calls.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-      additionalProperties: false,
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
-    },
-  },
-  {
-    name: "get_daily_decisions",
-    description:
-      "Read recorded BTC/ETH paper decisions, source freshness and provider budget. Never places an order.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-      additionalProperties: false,
-    },
-  },
-  {
-    name: "get_backtest",
-    description:
-      "Read deterministic historical benchmark results and assumptions.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-      additionalProperties: false,
-    },
-  },
-];
-export async function discovery(path) {
-  const skill = `---\nname: read-positions\ndescription: Read CRP paper positions and evaluation evidence.\n---\n\n${GUIDE}`;
-  if (["/index.md", "/llms.txt", "/method.md"].includes(path))
+}));
+export const LINKS =
+  '<https://fin.keff.uk/openapi.json>; rel="service-desc", <https://fin.keff.uk/index.md>; rel="describedby"';
+export const GUIDE = `# Fin — Warrants\n\nSélections quotidiennes et suivi prospectif de positions simulées à 1 000 EUR.\n\n- Sélection : https://fin.keff.uk/\n- Positions : https://fin.keff.uk/positions/\n- Résultats : https://fin.keff.uk/resultats/\n- Méthode : https://fin.keff.uk/methode/\n- Journal JSON : https://fin.keff.uk/api/warrants/tracker\n- Sources : https://fin.keff.uk/research/snapshot.json\n- Protocole : https://fin.keff.uk/research/protocole.md\n- Code : https://github.com/kennethassogba/crp\n- MCP : POST https://fin.keff.uk/mcp\n\nLecture seule. Aucun ordre, aucun modèle payant. Prévisions exploratoires, pas de rentabilité prouvée. Les prix sont des relevés publics, pas des exécutions garanties.\n`;
+export function discovery(path) {
+  if (["/index.md", "/llms.txt", "/agent-skills/fin/SKILL.md"].includes(path))
     return { body: GUIDE, type: "text/markdown; charset=utf-8" };
-  if (path === "/skills/read-positions/SKILL.md")
+  if (path === "/robots.txt")
     return {
-      body: skill,
-      type: "text/markdown; charset=utf-8",
+      body: "User-agent: *\nAllow: /\nSitemap: https://fin.keff.uk/sitemap.xml\n",
+      type: "text/plain",
     };
-  if (path === "/.well-known/agent-skills/index.json") {
-    const hash = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(skill),
-    );
-    const digest =
-      "sha256:" +
-      Array.from(new Uint8Array(hash), (b) =>
-        b.toString(16).padStart(2, "0"),
-      ).join("");
+  if (path === "/sitemap.xml")
     return {
-      body: {
-        $schema: "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
-        skills: [
-          {
-            name: "read-positions",
-            type: "skill-md",
-            description: "Read CRP paper positions and evaluation evidence.",
-            url: `${HOME}/skills/read-positions/SKILL.md`,
-            digest,
-          },
-        ],
-      },
-    };
-  }
-  if (path === "/.well-known/api-catalog")
-    return {
-      body: {
-        linkset: [
-          {
-            anchor: HOME,
-            "service-desc": [
-              {
-                href: `${HOME}/openapi.json`,
-                type: "application/vnd.oai.openapi+json",
-              },
-            ],
-          },
-        ],
-      },
-      type: "application/linkset+json",
-    };
-  if (path === "/.well-known/mcp/server-card.json")
-    return {
-      body: {
-        $schema:
-          "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
-        version: "1.0",
-        protocolVersion: "2025-11-25",
-        serverInfo: { name: "fin", version: "1.1.0" },
-        description: "Read BTC/ETH paper positions and evaluation evidence.",
-        transport: { type: "streamable-http", endpoint: `${HOME}/mcp` },
-        authentication: { required: false },
-        tools: TOOLS,
-      },
+      body:
+        '<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+        ["/", "/positions/", "/resultats/", "/methode/"]
+          .map((p) => `<url><loc>https://fin.keff.uk${p}</loc></url>`)
+          .join("") +
+        "</urlset>",
+      type: "application/xml",
     };
   if (path === "/openapi.json")
     return {
       body: {
         openapi: "3.1.0",
-        info: {
-          title: "Fin",
-          version: "1.1.0",
-          description:
-            "Read-only EUR-1000 model comparison and warrant research. No order execution.",
-        },
-        servers: [{ url: HOME }],
+        info: { title: "Fin Warrants", version: "2.0.0" },
+        servers: [{ url: "https://fin.keff.uk" }],
         paths: Object.fromEntries(
-          [
-            "/api/crp/comparison",
-            "/api/warrants/comparison",
-            "/api/warrants/portfolio",
-            "/api/state",
-            "/api/backtest",
-            "/api/decisions",
-            "/api/source-health",
-            "/research/snapshot.json",
-          ].map((p) => [
-            p,
+          ["tracker", "selections", "positions", "results"].map((k) => [
+            "/api/warrants/" + k,
             {
               get: {
-                operationId:
-                  p === "/api/warrants/comparison"
-                    ? "warrant_comparison"
-                    : p.split("/").at(-1),
+                operationId: "get_" + k,
+                summary: "Read-only prospective warrant " + k,
                 responses: {
                   200: {
-                    description: "Recorded research data.",
-                    content: {
-                      "application/json": { schema: { type: "object" } },
-                    },
+                    description: "Timestamped JSON; unknown values are null",
                   },
                 },
               },
@@ -178,17 +67,16 @@ export async function discovery(path) {
           ]),
         ),
       },
-      type: "application/vnd.oai.openapi+json",
     };
-  if (path === "/robots.txt")
+  if (path === "/.well-known/mcp/server-card.json")
     return {
-      body: `User-agent: *\nAllow: /\nContent-Signal: search=yes, ai-input=yes, ai-train=no\nSitemap: ${HOME}/sitemap.xml\n`,
-      type: "text/plain",
-    };
-  if (path === "/sitemap.xml")
-    return {
-      body: `<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${HOME}/</loc></url><url><loc>${HOME}/crp/</loc></url><url><loc>${HOME}/warrants/</loc></url><url><loc>${HOME}/warrants/experience/</loc></url><url><loc>${HOME}/warrants/methode/</loc></url><url><loc>${HOME}/method.md</loc></url></urlset>`,
-      type: "application/xml",
+      body: {
+        serverInfo: { name: "fin-warrants", version: "2.0.0" },
+        url: "https://fin.keff.uk/mcp",
+        transport: "streamable-http",
+        authentication: { required: false },
+        tools: TOOLS,
+      },
     };
   return null;
 }

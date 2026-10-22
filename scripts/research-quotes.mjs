@@ -11,6 +11,10 @@ import {
 const args = process.argv.slice(2);
 const option = (name, fallback) =>
   args.includes(name) ? args[args.indexOf(name) + 1] : fallback;
+let tracker={positions:[]};
+try {tracker=JSON.parse(await readFile('public/research/tracker.json','utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
+const open=new Set(tracker.positions.filter(p=>!p.exit).map(p=>p.product.isin));
+const selected=new Set(tracker.positions.map(p=>p.product.isin));
 const path = option("--input", "public/research/snapshot.json");
 const output = option("--output", path);
 const data = JSON.parse(await readFile(path, "utf8"));
@@ -37,7 +41,8 @@ async function source(url) {
 for (const [id, name] of Object.entries(UNIVERSE)) {
   try {
     const found = [];
-    for (let page = 1; page <= 2; page++) {
+    const firstPage=1+(Math.floor(Date.now()/86400000)%10)*4;
+    for (const page of [...new Set([1,2,firstPage,firstPage+1,firstPage+2,firstPage+3])]) {
       const url = new URL(SEARCH, BOURSO);
       url.search = new URLSearchParams({
         "warrant_filter[underlyingName][]": name,
@@ -52,7 +57,8 @@ for (const [id, name] of Object.entries(UNIVERSE)) {
         ...found
           .filter((p) => p.direction === direction)
           .sort((a, b) => (a.ask - a.bid) / a.ask - (b.ask - b.bid) / b.ask)
-          .slice(0, 3),
+          .filter(p=>!selected.has(p.isin))
+          .slice(0, 10),
       );
     console.log(`${id}: ${found.length} eligible rows observed`);
   } catch (e) {
@@ -61,12 +67,12 @@ for (const [id, name] of Object.entries(UNIVERSE)) {
 }
 const known = new Map(data.products.map((p) => [p.isin, p]));
 const work = new Map(
-  data.products
-    .filter((p) => Date.parse(p.expiry) > Date.now())
+  [...tracker.positions.filter(p=>!p.exit).map(p=>p.product),...data.products]
+    .filter((p) => Date.parse(p.expiry) > Date.now() && (!selected.has(p.isin)||open.has(p.isin)))
     .map((p) => [p.isin, p]),
 );
 for (const p of candidates)
-  if (!work.has(p.isin) && work.size < 100) work.set(p.isin, p);
+  if (!work.has(p.isin) && work.size < 220) work.set(p.isin, p);
 const products = [],
   refreshed = [],
   added = [];
@@ -92,11 +98,11 @@ data.products = products;
 data.quoteDate = at.slice(0, 10);
 data.quotesCollection = {
   at,
-  cadence: "Chaque jour ouvré à 22 h 30 UTC",
+  cadence: "Chaque jour ouvré à 21 h 30 UTC",
   source: "Pages publiques Boursorama",
   universe: Object.keys(UNIVERSE),
-  pagesPerAsset: 2,
-  maxContracts: 100,
+  pagesPerAsset: 6,
+  maxContracts: 220,
   observed: refreshed.length,
   added: added.length,
   addedIsins: added,

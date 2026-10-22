@@ -28,6 +28,8 @@ export type Product = {
   kidUrl?: string;
 };
 export type History = {
+  spot?: number;
+  spotAt?: string;
   name: string;
   symbol: string;
   dates: string[];

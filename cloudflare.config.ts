@@ -1,4 +1,4 @@
-import { bindings, defineConfig, triggers } from "cf/config";
+import { bindings, defineConfig } from "cf/config";
 export default defineConfig({
   accountId: "05838fc24a89cefaf6081066cca13544",
   worker: {
@@ -16,10 +16,9 @@ export default defineConfig({
         id: "b2ebf887-2ed3-45d7-9141-7080ca687bf1",
         name: "crp-db",
       }),
-      OPENAI_API_KEY: bindings.secret(),
     },
     domains: ["fin.keff.uk", "crp.keff.uk"],
-    triggers: [triggers.scheduled({ schedule: "*/15 * * * *" })],
+    triggers: [],
     workersDev: true,
     observability: {
       enabled: true,

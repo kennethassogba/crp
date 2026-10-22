@@ -1,263 +1,96 @@
 import { chromium } from "playwright";
-import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
-import { writeFile } from "node:fs/promises";
-import { compareCrp } from "../lib/crp-performance.mjs";
-const base = process.env.FIN_URL ?? "http://127.0.0.1:5185";
-const original = await (await fetch(base + "/api/state")).json();
-const actions = ["CASH", "BTC_2X", "ETH_1X"];
-const fixture = () => {
-  const state = structuredClone(original);
-  state.stale = false;
-  state.decisions = state.models.map((model, i) => ({
-    id: `fixture:${i}`,
-    model: model.id,
-    cohort: "live",
-    snapshot_at: state.asOf - 2 * 86400000,
-    published_at: state.asOf - 2 * 86400000 + 1000,
-    entry_after: state.asOf - 2 * 86400000 + 3600000,
-    status: "completed",
-    snapshot: state.snapshot,
-    decision: {
-      action: actions[i],
-      reason: "Raison enregistrée du modèle. ".repeat(20),
-    },
-    result: {
-      equity: [10000, 10625, 9700][i],
-      pnl: [0, 625, -300][i],
-      exitAt: state.asOf - 86400000,
-      action: actions[i],
-      fees: 1,
-      funding: 0.5,
-    },
-  }));
-  state.comparison = compareCrp(state.models, state.decisions, {
-    to: state.asOf,
-  });
-  return state;
-};
-const browser = await chromium.launch(),
-  checks = [];
-async function scan(p) {
-  const result = await new AxeBuilder({ page: p })
-    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-    .analyze();
-  assert.deepEqual(
-    result.violations
-      .filter((v) => ["critical", "serious"].includes(v.impact))
-      .map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) })),
-    [],
-  );
-  assert.ok(
-    await p.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth + 1,
-    ),
-  );
-}
+const base = process.env.FIN_URL ?? "http://127.0.0.1:5185",
+  browser = await chromium.launch();
 try {
-  for (const width of [1440, 390, 320]) {
-    const c = await browser.newContext({
-        viewport: { width, height: 1000 },
-        serviceWorkers: "block",
-        reducedMotion: "reduce",
-        hasTouch: width <= 390,
-      }),
-      p = await c.newPage();
-    let state = fixture();
-    await p.route("**/api/state", (r) => r.fulfill({ json: state }));
-    await p.goto(base + "/crp/");
-    await p
-      .getByRole("group", { name: "Comparer les modèles", exact: true })
-      .waitFor();
-    assert.equal(await p.locator(".comparison-row").count(), 3);
-    assert.match(
-      await p.locator(".comparison-row").nth(1).innerText(),
-      /1[ \u202f\u00a0]062,50/,
-    );
-    assert.match(
-      await p.locator(".comparison-row").nth(1).innerText(),
-      /62,50/,
-    );
-    assert.match(
-      await p.locator(".comparison-row").nth(2).innerText(),
-      /970,00/,
-    );
-    assert.equal(
-      await p.evaluate(
-        () => getComputedStyle(document.documentElement).colorScheme,
-      ),
-      "dark",
-    );
-    for (let i = 0; i < 3; i++) {
-      await p.locator(".comparison-row").nth(i).click();
-      assert.equal(
-        await p.locator(".comparison-row").nth(i).getAttribute("aria-pressed"),
-        "true",
-      );
-      await p
-        .getByRole("region", {
-          name: `Portefeuille ${state.models[i].name}`,
-          exact: true,
-        })
-        .getByRole("heading", { name: state.models[i].name, exact: true })
-        .waitFor();
-      await p.locator(".position-button").click();
-      const dialog = p.getByRole("dialog", { name: "Décision enregistrée" });
-      await dialog
-        .getByRole("heading", { name: state.models[i].name, exact: true })
-        .waitFor();
-      if (i === 1) {
-        await dialog
-          .getByText("Exposition sur la base de 1 000 €", { exact: true })
-          .waitFor();
-        assert.ok(!(await dialog.innerText()).includes("10 000"));
-        await dialog
-          .getByRole("button", { name: "Copier le plan", exact: true })
-          .click();
-      }
-      if (i === 0)
-        assert.equal(
-          await dialog
-            .getByRole("button", { name: "Copier le plan", exact: true })
-            .isDisabled(),
-          true,
-        );
-      await scan(p);
-      await p.keyboard.press("Escape");
-      await dialog.waitFor({ state: "hidden" });
-      assert.equal(
-        await p
-          .locator(".position-button")
-          .evaluate((el) => el === document.activeElement),
-        true,
-      );
-    }
-    await p
-      .getByRole("button", { name: "Comparer les 3", exact: true })
-      .click();
-    assert.equal(
-      await p
-        .getByRole("button", { name: "Comparer les 3", exact: true })
-        .getAttribute("aria-pressed"),
-      "true",
-    );
-    await p.getByRole("button", { name: "1 J", exact: true }).click();
-    assert.equal(
-      await p
-        .getByRole("button", { name: "1 J", exact: true })
-        .getAttribute("aria-pressed"),
-      "true",
-    );
-    await p.getByRole("button", { name: "Tout", exact: true }).click();
-    const graph = p.getByRole("group", { name: /Évolution du capital/ });
-    await graph.scrollIntoViewIfNeeded();
-    await graph.focus();
-    const before = await graph.locator("[role=status]").innerText();
-    await p.keyboard.press("Home");
-    assert.notEqual(await graph.locator("[role=status]").innerText(), before);
-    const box = await graph.locator("svg").boundingBox();
-    await p.mouse.move(box.x + box.width * 0.1, box.y + 80);
-    const hovered = await graph.locator("[role=status]").innerText();
-    await p.mouse.move(box.x + box.width * 0.9, box.y + 80);
-    assert.notEqual(await graph.locator("[role=status]").innerText(), hovered);
-    if (width <= 390) {
-      await p.touchscreen.tap(box.x + box.width * 0.1, box.y + 70);
-      const touched = await graph.locator("[role=status]").innerText();
-      await p.touchscreen.tap(box.x + box.width * 0.9, box.y + 70);
-      assert.notEqual(
-        await graph.locator("[role=status]").innerText(),
-        touched,
-      );
-    }
-    await scan(p);
-    await p.evaluate(() => {
-      document.activeElement?.blur();
-      window.scrollTo(0, 0);
-    });
-    await p.screenshot({
-      path: `output/playwright/crp-comparison-fixture-${width}.png`,
-      fullPage: true,
-    });
-    await p.evaluate(() => (document.documentElement.style.fontSize = "200%"));
-    await scan(p);
-    await p.evaluate(() => {
-      document.documentElement.style.fontSize = "";
-      document.documentElement.dir = "rtl";
-    });
-    await scan(p);
-    await p.evaluate(() => (document.documentElement.dir = "ltr"));
-    for (const failure of ["failed", "late"]) {
-      state = fixture();
-      Object.assign(state.decisions[1], {
-        status: failure,
-        result: null,
-        error:
-          failure === "failed" ? "Source de données indisponible." : undefined,
-      });
-      state.comparison = compareCrp(state.models, state.decisions, {
-        to: state.asOf,
-      });
-      await p.reload();
-      await p.locator(".comparison-row").nth(1).click();
-      await p.locator(".position-button").click();
-      const dialog = p.getByRole("dialog", { name: "Décision enregistrée" });
-      await dialog
-        .getByRole("heading", { name: "Pas de position", exact: true })
-        .waitFor();
-      assert.equal(
-        await dialog
-          .getByRole("button", { name: "Copier le plan", exact: true })
-          .isDisabled(),
-        true,
-      );
-      assert.equal(
-        await dialog.getByText("Entrée indicative", { exact: true }).count(),
-        0,
-      );
-      if (failure === "failed")
-        await dialog
-          .getByText("Source de données indisponible.", { exact: true })
-          .waitFor();
-      await scan(p);
-      await p.keyboard.press("Escape");
-    }
-    await p.getByText("Détails", {exact:true}).click();
-    await p
-      .getByRole("link", { name: "Historique", exact: true })
-      .last()
-      .click();
-    await p
-      .getByRole("heading", { name: "Test historique Binance", exact: true })
-      .waitFor();
-    await p
-      .getByRole("combobox", { name: "Stratégie", exact: true })
-      .selectOption(state.models[0].id);
-    await p
-      .getByRole("heading", { name: "Journal des décisions", exact: true })
-      .waitFor();
-    await scan(p);
-    checks.push({
-      width,
-      models: 3,
-      baseEUR: 1000,
-      decisionOutcomes: ["cash", "BTC_2X", "ETH_1X", "failed", "late"],
-      keyboard: "passed",
-      hover: "passed",
-      history: "passed",
-      theme: "dark",
-    });
-    await c.close();
-  }
-  await writeFile(
-    "output/playwright/crp-unified-verification.json",
-    JSON.stringify(
-      { checks, scope: "Browser fixtures, no provider invocation" },
-      null,
-      2,
-    ),
+  const context = await browser.newContext({
+      viewport: { width: 1440, height: 1000 },
+    }),
+    page = await context.newPage();
+  await page.goto(base);
+  await page.locator(".position-row").first().waitFor();
+  await page
+    .getByRole("button", { name: "Prévision initiale", exact: true })
+    .click();
+  await page.getByRole("heading", { name: "Gain net simulé" }).waitFor();
+  await page.getByRole("button", { name: "Suivi", exact: true }).click();
+  await page.locator(".chart-canvas canvas").first().waitFor();
+  const chart = page.locator(".chart-canvas"),
+    readout = page.locator(".market-readout");
+  await chart.focus();
+  await page.keyboard.press("Home");
+  const first = await readout.textContent();
+  await page.keyboard.press("End");
+  assert.notEqual(
+    await readout.textContent(),
+    first,
+    "Keyboard must change price/date",
   );
+  const box = await chart.boundingBox();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.4);
+  const hover = await readout.textContent();
+  assert.notEqual(hover, first, "Pointer readout");
+  const canvas = await page
+    .locator(".chart-canvas canvas")
+    .first()
+    .screenshot();
+  assert.ok(canvas.length > 500, "Chart drawn");
+  await page
+    .getByRole("button", { name: "Zoomer le graphique", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Dézoomer le graphique", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Afficher tout l’historique", exact: true })
+    .click();
+  await page.getByRole("button", { name: "1S", exact: true }).click();
+  await page.getByRole("button", { name: "3M", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Série affichée" })
+    .selectOption("warrant");
+  await page
+    .getByRole("combobox", { name: "Série affichée" })
+    .selectOption("capital");
+  await page
+    .getByRole("combobox", { name: "Série affichée" })
+    .selectOption("underlying");
+  await page.getByRole("button", { name: "Suivre la position" }).click();
+  await page.getByRole("heading", { level: 1, name: "Positions" }).waitFor();
+  await page.getByRole("button", { name: "Clôturées", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "Aucune clôture pour le moment" })
+    .waitFor();
+  await page.getByRole("button", { name: "Toutes", exact: true }).click();
+  await page.getByRole("searchbox").fill("unknown-isin");
+  await page.getByRole("heading", { name: "Aucun résultat" }).waitFor();
+  await page.getByRole("searchbox").fill("");
+  await page.getByRole("link", { name: "Résultats", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "Pas encore de résultat à comparer" })
+    .waitFor();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("link", { name: "Sélection", exact: true }).click();
+  await page.locator(".position-row").first().click();
+  await page.getByRole("button", { name: "Retour à la liste" }).waitFor();
+  await page.getByRole("button", { name: "Retour à la liste" }).click();
+  assert.ok(await page.locator(".position-row").first().isVisible());
+  await context.close();
+  // Network failure must be visible and recoverable, never a fabricated zero return.
+  const failure = await browser.newContext(),
+    fp = await failure.newPage();
+  await fp.route("**/api/warrants/tracker", (r) =>
+    r.fulfill({ status: 503, body: "{}" }),
+  );
+  await fp.goto(base);
+  await fp.getByText("Chargement impossible.", { exact: false }).waitFor();
+  assert.equal(await fp.locator(".position-row").count(), 0);
+  await fp.unroute("**/api/warrants/tracker");
+  await fp.getByRole("button", { name: "Actualiser", exact: true }).click();
+  await fp.locator(".position-row").first().waitFor();
+  await failure.close();
   console.log(
-    "CRP: Stocks-style selection, EUR-1000 values, periods, comparison, five outcomes and keyboard/touch passed at three widths.",
+    "Chart, keyboard, hover, zoom, periods, series, navigation, filters, mobile and recovery passed",
   );
 } finally {
   await browser.close();

@@ -96,17 +96,10 @@ test("CSV roundtrip accepts semicolons/decimals and rejects duplicates", () => {
   assert.throws(() => parseCSV(fields + "\n" + row + "\n" + row), /dupliqué/);
   assert.throws(() => parseCSV("isin,ask\nx,1"), /Colonnes/);
 });
-test("legacy hostname redirects to scoped CRP, keeping API and query paths", () => {
-  assert.equal(
-    legacyRedirect(new URL("https://crp.keff.uk/?view=1")),
-    "https://fin.keff.uk/crp/?view=1",
-  );
-  assert.equal(
-    legacyRedirect(new URL("https://crp.keff.uk/api/state?x=1")),
-    "https://fin.keff.uk/api/state?x=1",
-  );
-  assert.equal(legacyRedirect(new URL("https://fin.keff.uk/")), null);
-  assert.equal(htmlEntry("/crp/"), "/index.html");
-  assert.equal(htmlEntry("/warrants/methode/"), "/index.html");
-  assert.equal(htmlEntry("/not-a-page"), null);
+test("retired product cannot render; old warrant bookmarks redirect", () => {
+ assert.equal(legacyRedirect(new URL("https://crp.keff.uk/?view=1")),"https://fin.keff.uk/");
+ assert.equal(legacyRedirect(new URL("https://fin.keff.uk/warrants/experience/")),"https://fin.keff.uk/positions/");
+ assert.equal(htmlEntry("/crp/"),null);
+ assert.equal(htmlEntry("/positions/"),"/index.html");
+ assert.equal(htmlEntry("/not-a-page"),null);
 });

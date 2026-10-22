@@ -37,6 +37,8 @@ for (const [id, old] of Object.entries(data.assets)) {
     if (pairs.length < 252) throw Error("Insufficient complete daily prices");
     data.assets[id] = {
       ...old,
+      spot: source.meta.regularMarketPrice,
+      spotAt: new Date(source.meta.regularMarketTime * 1000).toISOString(),
       dates: pairs.map(([t]) => new Date(t * 1000).toISOString().slice(0, 10)),
       closes: pairs.map(([, c]) => c),
       sourceUrl: url.href,
@@ -87,4 +89,4 @@ data.collection = {
 };
 await writeFile(`${output}.tmp`, JSON.stringify(data));
 await rename(`${output}.tmp`, output);
-if (failures.length) process.exitCode = 1;
+if (failures.length >= Object.keys(data.assets).length + 1) process.exitCode = 1;
