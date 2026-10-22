@@ -1,18 +1,22 @@
+import { getLanguage, locale } from "./i18n";
 export const number = (n: number, d = 0) =>
   Number.isFinite(n)
-    ? new Intl.NumberFormat("fr-FR", {
+    ? new Intl.NumberFormat(locale(), {
         maximumFractionDigits: d,
         minimumFractionDigits: d,
       }).format(n)
     : "—";
-export const euro = (n: number, d = 0) => `${number(n, d)} €`;
+export const euro = (n: number, d = 0) =>
+  getLanguage() === "en"
+    ? `${n < 0 ? "-" : ""}€${number(Math.abs(n), d)}`
+    : `${number(n, d)} €`;
 export const signedEuro = (n: number, d = 0) => {
   const v = Math.abs(n) < 0.5 * 10 ** -d ? 0 : n;
   return `${v > 0 ? "+" : ""}${euro(v, d)}`;
 };
-export const percent = (n: number, d = 1) => `${number(n * 100, d)} %`;
+export const percent = (n: number, d = 1) => `${number(n * 100, d)}${getLanguage() === "fr" ? " " : ""}%`;
 export const date = (s: string, short = false) =>
-  new Intl.DateTimeFormat("fr-FR", {
+  new Intl.DateTimeFormat(locale(), {
     day: "numeric",
     month: short ? "short" : "long",
     year: "numeric",
@@ -34,7 +38,7 @@ export function download(
 }
 
 export const observedTime = (s: string) =>
-  new Intl.DateTimeFormat("fr-FR", {
+  new Intl.DateTimeFormat(locale(), {
     day: "numeric",
     month: "short",
     hour: "2-digit",

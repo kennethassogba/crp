@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { t } from "./i18n";
 export function Sheet({
   open,
   title,
@@ -38,7 +39,7 @@ export function Sheet({
         <h2>{title}</h2>
         <button
           className="icon-button"
-          aria-label={"Fermer " + title}
+          aria-label={t("Fermer") + " " + title}
           onClick={() => ref.current?.close()}
         >
           <X size={22} aria-hidden="true" />

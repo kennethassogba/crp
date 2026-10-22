@@ -1,3 +1,4 @@
+import { t } from "./fin/i18n";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpFromLine, Smartphone, X } from "lucide-react";
 
@@ -170,14 +171,14 @@ export function InstallPrompt() {
   return (
     <>
       {show ? (
-        <span className="install-offer" role="group" aria-label="Installer Fin">
+        <span className="install-offer" role="group" aria-label={t("Installer Fin")}>
           <button className="install-action" onClick={install} disabled={busy}>
             <Smartphone size={14} />
-            {busy ? "Ouverture…" : "Installer"}
+            {busy ? t("Ouverture…") : t("Installer")}
           </button>
           <button
             className="install-dismiss"
-            aria-label="Masquer la proposition d’installation"
+            aria-label={t("Masquer la proposition d’installation")}
             onClick={dismiss}
           >
             <X size={13} />
@@ -191,10 +192,10 @@ export function InstallPrompt() {
         onClose={dismiss}
       >
         <div className="dialog-heading">
-          <h2 id="install-title">Installer Fin</h2>
+          <h2 id="install-title">{t("Installer Fin")}</h2>
           <button
             className="icon-button"
-            aria-label="Fermer le guide d’installation"
+            aria-label={t("Fermer le guide d’installation")}
             onClick={() => help.current?.close()}
           >
             <X size={18} />
@@ -202,34 +203,29 @@ export function InstallPrompt() {
         </div>
         {instructions === "ios" ? (
           <>
-            <p>Ajouter Fin à l’écran d’accueil.</p>
+            <p>{t("Ajouter Fin à l’écran d’accueil.")}</p>
             <ol>
               <li>
-                Ouvrir le menu <strong>Partager</strong> du navigateur{" "}
+                {t("Ouvrir le menu ")}<strong>{t("Partager")}</strong>{t(" du navigateur")}{" "}
                 <ArrowUpFromLine size={15} aria-hidden="true" />.
               </li>
               <li>
-                Choisir <strong>Sur l’écran d’accueil</strong>.
+                {t("Choisir ")}<strong>{t("Sur l’écran d’accueil")}</strong>.
               </li>
               <li>
-                Activer <strong>Ouvrir comme app web</strong> si proposé, puis
-                choisir <strong>Ajouter</strong>.
+                {t("Activer ")}<strong>{t("Ouvrir comme app web")}</strong>{t(" si proposé, puis choisir ")}<strong>{t("Ajouter")}</strong>.
               </li>
             </ol>
             <p className="small-note">
-              Si le partage est absent, ouvrir cette page dans Safari.
-            </p>
+              {t("Si le partage est absent, ouvrir cette page dans Safari.")}</p>
           </>
         ) : (
           <p>
-            Ouvrir le menu du navigateur et choisir <strong>Installer</strong>.
-            Si l’installation est indisponible, recharger la page puis
-            réessayer.
+            {t("Ouvrir le menu du navigateur et choisir Installer. Si l’installation est indisponible, recharger la page puis réessayer.")}
           </p>
         )}
         <button className="secondary" onClick={() => help.current?.close()}>
-          Fermer
-        </button>
+          {t("Fermer")}</button>
       </dialog>
     </>
   );

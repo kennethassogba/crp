@@ -1,3 +1,4 @@
+import { t, useLanguage, setLanguage } from "./i18n";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -36,7 +37,7 @@ const routes = [
 ] as const;
 const gain = (n: number | null) =>
   n === null || n === 0 ? "" : n < 0 ? "negative" : "positive";
-const money = (n: number | null) => (n === null ? "Indisponible" : euro(n, 2));
+const money = (n: number | null) => (n === null ? t("Indisponible") : euro(n, 2));
 const probability = (n: number | null) => (n === null ? "—" : percent(n, 0));
 const reason = {
   target: "Objectif atteint",
@@ -45,12 +46,12 @@ const reason = {
 };
 const stateName = (p: Tracked) =>
   p.exit
-    ? "Clôturée"
+    ? t("Clôturée")
     : p.status === "unavailable"
-      ? "Prix indisponible"
+      ? t("Prix indisponible")
       : p.status === "overdue"
-        ? "Sortie en attente"
-        : "En cours";
+        ? t("Sortie en attente")
+        : t("En cours");
 function usePageSize(key: string, rowHeight = 88) {
   const [node, setNode] = useState<HTMLDivElement | null>(null),
     [size, setSize] = useState(3);
@@ -73,6 +74,7 @@ function usePageSize(key: string, rowHeight = 88) {
   return { ref: setNode, size };
 }
 function App() {
+  useLanguage();
   const { data, error } = useTracker();
   const [url, setUrl] = useState(() => location.pathname + location.search),
     [query, setQuery] = useState(""),
@@ -85,12 +87,12 @@ function App() {
     selectedId = new URLSearchParams(url.split("?")[1] ?? "").get("w");
   const title =
     path === "/positions/"
-      ? "Positions"
+      ? t("Positions")
       : path === "/resultats/"
-        ? "Résultats"
+        ? t("Résultats")
         : path === "/methode/"
-          ? "Méthode"
-          : "Sélection";
+          ? t("Méthode")
+          : t("Sélection");
   const main = useRef<HTMLElement>(null),
     { ref: listRef, size } = usePageSize(path);
   const go = (to: string) => {
@@ -113,8 +115,10 @@ function App() {
   }, []);
   useEffect(() => {
     document.title = title + " · Fin";
+  }, [title]);
+  useEffect(() => {
     main.current?.focus({ preventScroll: true });
-  }, [path, title]);
+  }, [path]);
   const all = data?.positions ?? [],
     batches = [...(data?.batches ?? [])].reverse(),
     activeDay = day || batches[0]?.day;
@@ -166,13 +170,12 @@ function App() {
   return (
     <div className="app">
       <a className="skip-link" href="#content">
-        Aller au contenu
-      </a>
+        {t("Aller au contenu")}</a>
       <aside className="sidebar">
         <a className="brand" href="/" onClick={(e) => link("/", e)}>
           Fin
         </a>
-        <nav aria-label="Navigation principale">
+        <nav aria-label={t("Navigation principale")}>
           {routes.map(([to, label, Icon]) => (
             <a
               key={to}
@@ -181,7 +184,7 @@ function App() {
               aria-current={path === to ? "page" : undefined}
             >
               <Icon size={22} aria-hidden="true" />
-              <span>{label}</span>
+              <span>{t(label)}</span>
             </a>
           ))}
         </nav>
@@ -192,8 +195,7 @@ function App() {
             aria-current={path === "/methode/" ? "page" : undefined}
           >
             <BookOpen size={20} aria-hidden="true" />
-            Méthode
-          </a>
+            {t("Méthode")}</a>
         </div>
       </aside>
       <main
@@ -208,7 +210,7 @@ function App() {
             <>
               {path === "/" ? (
                 <select
-                  aria-label="Jour de sélection"
+                  aria-label={t("Jour de sélection")}
                   value={activeDay ?? ""}
                   onChange={(e) => {
                     setDay(e.target.value);
@@ -223,12 +225,12 @@ function App() {
                       </option>
                     ))
                   ) : (
-                    <option value="">Sélection</option>
+                    <option value="">{t("Sélection")}</option>
                   )}
                 </select>
               ) : (
                 <select
-                  aria-label="État des positions"
+                  aria-label={t("État des positions")}
                   value={filter}
                   onChange={(e) => {
                     setFilter(e.target.value);
@@ -236,22 +238,23 @@ function App() {
                     go("/positions/");
                   }}
                 >
-                  <option value="open">En cours</option>
-                  <option value="closed">Clôturées</option>
-                  <option value="all">Toutes</option>
+                  <option value="open">{t("En cours")}</option>
+                  <option value="closed">{t("Clôturées")}</option>
+                  <option value="all">{t("Toutes")}</option>
                 </select>
               )}
               <div className="toolbar-actions">
+                <LanguageSwitch />
                 <button
                   className={`icon-button ${query ? "active" : ""}`}
-                  aria-label="Rechercher un warrant"
+                  aria-label={t("Rechercher un warrant")}
                   onClick={() => setSearch(true)}
                 >
                   <Search size={22} aria-hidden="true" />
                 </button>
                 <button
                   className="icon-button"
-                  aria-label="Menu de l’application"
+                  aria-label={t("Menu de l’application")}
                   onClick={() => setMenu(true)}
                 >
                   <MoreHorizontal size={24} aria-hidden="true" />
@@ -261,25 +264,28 @@ function App() {
           ) : (
             <>
               <span className="view-name">{title}</span>
+              <div className="toolbar-actions">
+              <LanguageSwitch />
               <button
                 className="icon-button"
-                aria-label="Menu de l’application"
+                aria-label={t("Menu de l’application")}
                 onClick={() => setMenu(true)}
               >
                 <MoreHorizontal size={24} aria-hidden="true" />
               </button>
+              </div>
             </>
           )}
         </header>
         <div className="network-status" role="status">
-          {error ||
+          {(error ? t(error) : "") ||
             (data?.health.stale
-              ? "Collecte en retard. Derniers relevés conservés."
+              ? t("Collecte en retard. Derniers relevés conservés.")
               : "")}
         </div>
         {!data ? (
           <div className="empty-state" role="status">
-            {error ? "Reconnexion en cours…" : "Chargement…"}
+            {error ? t("Reconnexion en cours…") : t("Chargement…")}
           </div>
         ) : (
           <>
@@ -290,7 +296,7 @@ function App() {
                 <section
                   className="selection-list"
                   aria-label={
-                    path === "/" ? "Sélections du jour" : "Positions simulées"
+                    path === "/" ? t("Sélections du jour") : t("Positions simulées")
                   }
                 >
                   <div ref={listRef} className="list-viewport">
@@ -336,18 +342,17 @@ function App() {
                       <div className="empty-state">
                         <h2>
                           {query
-                            ? "Aucun résultat"
+                            ? t("Aucun résultat")
                             : path === "/positions/" && filter === "closed"
-                              ? "Aucune clôture"
-                              : "Aucune sélection"}
+                              ? t("Aucune clôture")
+                              : t("Aucune sélection")}
                         </h2>
                         {query && (
                           <button
                             className="button"
                             onClick={() => setQuery("")}
                           >
-                            Effacer la recherche
-                          </button>
+                            {t("Effacer la recherche")}</button>
                         )}
                       </div>
                     )}
@@ -366,7 +371,7 @@ function App() {
                   <section
                     className="analysis"
                     tabIndex={-1}
-                    aria-label="Analyse du warrant"
+                    aria-label={t("Analyse du warrant")}
                   >
                     <Instrument
                       key={selected.id}
@@ -400,18 +405,16 @@ function App() {
             }}
           >
             <BookOpen size={22} aria-hidden="true" />
-            Méthode
-          </button>
+            {t("Méthode")}</button>
           <a href="/research/tracker.json" download>
             <Download size={22} aria-hidden="true" />
-            Exporter le journal
-          </a>
+            {t("Exporter le journal")}</a>
           <InstallPrompt />
         </div>
       </Sheet>
       <Sheet
         open={search}
-        title="Rechercher un warrant"
+        title={t("Rechercher un warrant")}
         onClose={() => setSearch(false)}
       >
         <form
@@ -422,7 +425,7 @@ function App() {
             setSearch(false);
           }}
         >
-          <label htmlFor="warrant-search">Code, ISIN ou sous-jacent</label>
+          <label htmlFor="warrant-search">{t("Code, ISIN ou sous-jacent")}</label>
           <input
             id="warrant-search"
             type="search"
@@ -431,11 +434,26 @@ function App() {
             onChange={(e) => setQuery(e.target.value)}
           />
           <button className="primary" type="submit">
-            Afficher
-          </button>
+            {t("Afficher")}</button>
         </form>
       </Sheet>
     </div>
+  );
+}
+function LanguageSwitch({ mobile = false }: { mobile?: boolean }) {
+  const language = useLanguage();
+  const target = language === "fr" ? "en" : "fr";
+  const label = target === "en" ? "Switch to English" : "Passer en français";
+  return (
+    <button
+      className={`icon-button language-switch ${mobile ? "mobile-language" : ""}`}
+      onClick={() => setLanguage(target)}
+      aria-label={label}
+      title={label}
+      lang={target}
+    >
+      {target.toUpperCase()}
+    </button>
   );
 }
 function Pager({
@@ -452,7 +470,7 @@ function Pager({
       <button
         className="icon-button"
         disabled={!page}
-        aria-label="Page précédente"
+        aria-label={t("Page précédente")}
         onClick={() => onPage(page - 1)}
       >
         <ChevronLeft size={22} aria-hidden="true" />
@@ -463,7 +481,7 @@ function Pager({
       <button
         className="icon-button"
         disabled={page >= pages - 1}
-        aria-label="Page suivante"
+        aria-label={t("Page suivante")}
         onClick={() => onPage(page + 1)}
       >
         <ChevronRight size={22} aria-hidden="true" />
@@ -526,42 +544,42 @@ function Instrument({
   const pred = p.prediction;
   const positionFacts: [string, React.ReactNode][][] = [
     [
-      ["Mise initiale", "1 000,00 €"],
-      ["Achat", `${p.quantity} × ${euro(p.product.ask, 3)}`],
-      ["Frais d’achat", money(p.entryFee)],
-      ["Espèces", money(p.cash)],
+      [t("Mise initiale"), money(1000)],
+      [t("Achat"), `${p.quantity} × ${euro(p.product.ask, 3)}`],
+      [t("Frais d’achat"), money(p.entryFee)],
+      [t("Espèces"), money(p.cash)],
     ],
     [
       ["ISIN", p.product.isin],
       ["Strike", `${number(p.product.strike, 2)} ${p.product.currency}`],
-      ["Échéance", date(p.product.expiry, true)],
-      ["Parité", `1 / ${number(1 / p.product.ratio, 0)}`],
+      [t("Échéance"), date(p.product.expiry, true)],
+      [t("Parité"), `1 / ${number(1 / p.product.ratio, 0)}`],
     ],
     [
-      ["Valeur nette", money(p.value)],
-      ["Perte maximale", money(p.cost)],
-      ["Sortie", p.exit ? date(p.exit.at, true) : date(p.dueDay, true)],
-      ["Règle", p.exit ? reason[p.exit.reason] : "+100 % ou −50 %"],
+      [t("Valeur nette"), money(p.value)],
+      [t("Perte maximale"), money(p.cost)],
+      [t("Sortie"), p.exit ? date(p.exit.at, true) : date(p.dueDay, true)],
+      [t("Règle"), p.exit ? t(reason[p.exit.reason]) : t("+100 % ou −50 %")],
     ],
   ];
   const forecastFacts: [string, React.ReactNode][][] = [
     [
-      ["Scénario bas · P10", signedEuro(pred.p10)],
-      ["Scénario médian", signedEuro(pred.median)],
-      ["Scénario haut · P90", signedEuro(pred.p90)],
-      ["Gain moyen", signedEuro(pred.expected)],
+      [t("Scénario bas · P10"), signedEuro(pred.p10)],
+      [t("Scénario médian"), signedEuro(pred.median)],
+      [t("Scénario haut · P90"), signedEuro(pred.p90)],
+      [t("Gain moyen"), signedEuro(pred.expected)],
     ],
     [
-      ["Probabilité de gain", probability(pred.profit)],
-      ["Atteindre +100 %", probability(pred.double)],
-      ["Volatilité −20 %", signedEuro(pred.stressExpected)],
-      ["Scénarios", number(pred.samples, 0)],
+      [t("Probabilité de gain"), probability(pred.profit)],
+      [t("Atteindre +100 %"), probability(pred.double)],
+      [t("Volatilité −20 %"), signedEuro(pred.stressExpected)],
+      [t("Scénarios"), number(pred.samples, 0)],
     ],
     [
-      ["Historique arrêté au", date(pred.historyThrough, true)],
-      ["Volatilité implicite", percent(pred.impliedVol, 1)],
+      [t("Historique arrêté au"), date(pred.historyThrough, true)],
+      [t("Volatilité implicite"), percent(pred.impliedVol, 1)],
       ["EUR/USD", number(pred.fx, 4)],
-      ["Prévision figée le", date(p.day, true)],
+      [t("Prévision figée le"), date(p.day, true)],
     ],
   ];
   return (
@@ -570,7 +588,7 @@ function Instrument({
         <button
           className="icon-button back-button"
           onClick={onBack}
-          aria-label="Retour à la liste"
+          aria-label={t("Retour à la liste")}
         >
           <ArrowLeft size={24} aria-hidden="true" />
         </button>
@@ -578,12 +596,13 @@ function Instrument({
           {p.product.underlying}{" "}
           <span>{p.product.direction === "call" ? "Call" : "Put"}</span>
         </h2>
+        <LanguageSwitch mobile />
         <a
           className="icon-button broker-link"
           href={p.product.brokerUrl ?? p.product.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          aria-label="Ouvrir ce warrant chez BoursoBank"
+          aria-label={t("Ouvrir ce warrant chez BoursoBank")}
         >
           <ArrowUpRight size={24} aria-hidden="true" />
         </a>
@@ -591,13 +610,13 @@ function Instrument({
       <div className="instrument-summary">
         <div>
           <div className="metric-label">
-            <span>{daily ? "Gain moyen prévu" : "Valeur de la position"}</span>
+            <span>{daily ? t("Gain moyen prévu") : t("Valeur de la position")}</span>
             <button
               className="icon-button"
               aria-label={
                 daily
-                  ? "Comprendre le gain moyen prévu"
-                  : "Comprendre la valorisation"
+                  ? t("Comprendre le gain moyen prévu")
+                  : t("Comprendre la valorisation")
               }
               onClick={() => setSheet("estimate")}
             >
@@ -609,7 +628,7 @@ function Instrument({
           </strong>
         </div>
         <div className="probability">
-          <span>{daily ? "Probabilité de gain" : stateName(p)}</span>
+          <span>{daily ? t("Probabilité de gain") : stateName(p)}</span>
           <strong className={daily ? "" : gain(p.pnl)}>
             {daily
               ? probability(pred.profit)
@@ -621,19 +640,19 @@ function Instrument({
       </div>
       <div className="chart-source">
         <select
-          aria-label="Série affichée"
+          aria-label={t("Série affichée")}
           value={kind}
           onChange={(e) => setKind(e.target.value)}
         >
           <option value="underlying">
-            {p.product.underlying} · Sous-jacent ($)
+            {p.product.underlying}{t(" · Sous-jacent ($)")}
           </option>
-          <option value="warrant">{p.product.id} · Warrant (€)</option>
-          <option value="capital">Capital simulé (€)</option>
+          <option value="warrant">{p.product.id}{t(" · Warrant (€)")}</option>
+          <option value="capital">{t("Capital simulé (€)")}</option>
         </select>
         <button
           className="icon-button"
-          aria-label="Source et date des cours"
+          aria-label={t("Source et date des cours")}
           onClick={() => setSheet("source")}
         >
           <Info size={20} aria-hidden="true" />
@@ -647,10 +666,10 @@ function Instrument({
             selectedDay={p.day}
             name={
               kind === "underlying"
-                ? p.product.underlying + " · sous-jacent"
+                ? p.product.underlying + t(" · sous-jacent")
                 : kind === "warrant"
-                  ? p.product.id + " · prix bid du warrant"
-                  : "Capital simulé"
+                  ? p.product.id + t(" · prix bid du warrant")
+                  : t("Capital simulé")
             }
             unit={kind === "underlying" ? "$" : "€"}
             initial={
@@ -666,7 +685,7 @@ function Instrument({
             <strong>
               {kind === "warrant" ? euro(p.latest.bid, 3) : money(p.value)}
             </strong>
-            <p>Un seul relevé disponible.</p>
+            <p>{t("Un seul relevé disponible.")}</p>
           </div>
         )}
       </div>
@@ -678,8 +697,7 @@ function Instrument({
             setSheet("position");
           }}
         >
-          Position
-        </button>
+          {t("Position")}</button>
         <button
           className="button"
           onClick={() => {
@@ -687,63 +705,56 @@ function Instrument({
             setSheet("forecast");
           }}
         >
-          Prévision
-        </button>
+          {t("Prévision")}</button>
       </footer>
       <Sheet
         open={sheet === "estimate"}
-        title={daily ? "Gain moyen prévu" : "Valorisation"}
+        title={daily ? t("Gain moyen prévu") : t("Valorisation")}
         onClose={() => setSheet("")}
       >
         <p>
           {daily
-            ? "Gain moyen simulé pour une mise de 1 000 €, après spread et courtage, avant impôts."
-            : "Valeur de revente simulée au dernier bid disponible, frais et espèces restantes inclus, avant impôts."}
+            ? t("Gain moyen simulé pour une mise de 1 000 €, après spread et courtage, avant impôts.")
+            : t("Valeur de revente simulée au dernier bid disponible, frais et espèces restantes inclus, avant impôts.")}
         </p>
         <p>
-          Sortie après 20 séances ou au premier relevé à +100 % / −50 %. Un gap
-          peut dépasser ces seuils.
-        </p>
-        <p>Modèle non validé. La perte peut atteindre le montant engagé.</p>
+          {t("Sortie après 20 séances ou au premier relevé à +100 % / −50 %. Un gap peut dépasser ces seuils.")}</p>
+        <p>{t("Modèle non validé. La perte peut atteindre le montant engagé.")}</p>
       </Sheet>
       <Sheet
         open={sheet === "source"}
-        title="Cours et sélection"
+        title={t("Cours et sélection")}
         onClose={() => setSheet("")}
       >
         <Facts
           rows={[
-            ["Warrant relevé le", observedTime(p.latest.at)],
-            ["Sélection", observedTime(p.selectedAt)],
-            ["Mise à jour", "Automatique · relevés quotidiens"],
+            [t("Warrant relevé le"), observedTime(p.latest.at)],
+            [t("Sélection"), observedTime(p.selectedAt)],
+            [t("Mise à jour"), t("Automatique · relevés quotidiens")],
           ]}
         />
         <p>
-          Gris : avant sélection. Bleu : depuis la sélection. Le sous-jacent, le
-          bid du warrant et le capital sont des séries distinctes.
-        </p>
+          {t("Gris : avant sélection. Bleu : depuis la sélection. Le sous-jacent, le bid du warrant et le capital sont des séries distinctes.")}</p>
         <p>
-          Les prix publics sont indicatifs ; l’heure de cotation émetteur est
-          inconnue.
-        </p>
+          {t("Les prix publics sont indicatifs ; l’heure de cotation émetteur est inconnue.")}</p>
       </Sheet>
       <Sheet
         open={sheet === "position"}
-        title="Position"
+        title={t("Position")}
         onClose={() => setSheet("")}
       >
         <div
           className="segments"
           role="group"
-          aria-label="Informations sur la position"
+          aria-label={t("Informations sur la position")}
         >
-          {["Entrée", "Contrat", "Sortie"].map((v, i) => (
+          {[t("Entrée"), t("Contrat"), t("Sortie")].map((v, i) => (
             <button
               key={v}
               aria-pressed={positionPage === i}
               onClick={() => setPositionPage(i)}
             >
-              {v}
+              {t(v)}
             </button>
           ))}
         </div>
@@ -755,23 +766,23 @@ function Instrument({
             target="_blank"
             rel="noreferrer"
           >
-            Document émetteur <ArrowUpRight size={20} aria-hidden="true" />
+            {t("Document émetteur")}<ArrowUpRight size={20} aria-hidden="true" />
           </a>
         )}
       </Sheet>
       <Sheet
         open={sheet === "forecast"}
-        title="Prévision initiale"
+        title={t("Prévision initiale")}
         onClose={() => setSheet("")}
       >
-        <div className="segments" role="group" aria-label="Prévision initiale">
-          {["Scénarios", "Chances", "Modèle"].map((v, i) => (
+        <div className="segments" role="group" aria-label={t("Prévision initiale")}>
+          {[t("Scénarios"), t("Chances"), t("Modèle")].map((v, i) => (
             <button
               key={v}
               aria-pressed={forecastPage === i}
               onClick={() => setForecastPage(i)}
             >
-              {v}
+              {t(v)}
             </button>
           ))}
         </div>
@@ -802,29 +813,27 @@ function Results({
       <div
         className="segments result-tabs"
         role="group"
-        aria-label="Résultats affichés"
+        aria-label={t("Résultats affichés")}
       >
         <button
           aria-pressed={tab === "summary"}
           onClick={() => setTab("summary")}
         >
-          Bilan
-        </button>
+          {t("Bilan")}</button>
         <button
           aria-pressed={tab === "closed"}
           onClick={() => setTab("closed")}
         >
-          Clôtures
-        </button>
+          {t("Clôtures")}</button>
       </div>
       {tab === "summary" ? (
         <div className="result-overview">
           <div className="result-metrics">
             {[
-              ["Gain réalisé", s.closed ? signedEuro(s.realizedPnl) : "—"],
-              ["Clôtures", String(s.closed)],
-              ["Gagnantes", probability(s.winRate)],
-              ["Gain moyen", s.closed ? signedEuro(s.meanPnl!) : "—"],
+              [t("Gain réalisé"), s.closed ? signedEuro(s.realizedPnl) : "—"],
+              [t("Clôtures"), String(s.closed)],
+              [t("Gagnantes"), probability(s.winRate)],
+              [t("Gain moyen"), s.closed ? signedEuro(s.meanPnl!) : "—"],
             ].map(([label, value]) => (
               <div key={label}>
                 <span>{label}</span>
@@ -836,7 +845,7 @@ function Results({
             className="button quality-action"
             onClick={() => setQuality(true)}
           >
-            Évaluer le modèle <ArrowUpRight size={20} aria-hidden="true" />
+            {t("Évaluer le modèle")}<ArrowUpRight size={20} aria-hidden="true" />
           </button>
         </div>
       ) : (
@@ -861,7 +870,7 @@ function Results({
               ))
             ) : (
               <div className="empty-state">
-                <h2>Aucune clôture</h2>
+                <h2>{t("Aucune clôture")}</h2>
               </div>
             )}
           </div>
@@ -870,33 +879,32 @@ function Results({
       )}
       <Sheet
         open={quality}
-        title="Qualité du modèle"
+        title={t("Qualité du modèle")}
         onClose={() => setQuality(false)}
       >
         {s.closed ? (
           <>
             <Facts
               rows={[
-                ["Probabilité moyenne prévue", probability(s.meanPredicted)],
-                ["Clôtures gagnantes", probability(s.winRate)],
-                ["Brier · plus bas = mieux", number(s.brier!, 3)],
-                ["Référence à 50 %", "0,250"],
+                [t("Probabilité moyenne prévue"), probability(s.meanPredicted)],
+                [t("Clôtures gagnantes"), probability(s.winRate)],
+                [t("Brier · plus bas = mieux"), number(s.brier!, 3)],
+                [t("Référence à 50 %"), number(0.25, 3)],
               ]}
             />
             <p>
               {s.closed < 30
-                ? `${s.closed} clôtures sur 30 minimum. Échantillon insuffisant.`
-                : "Échantillon exploratoire ; les positions peuvent être corrélées."}
+                ? t("{count} clôtures sur 30 minimum. Échantillon insuffisant.", { count: s.closed })
+                : t("Échantillon exploratoire ; les positions peuvent être corrélées.")}
             </p>
             {s.unavailable > 0 && (
               <p>
-                {s.unavailable} positions sans prix récent restent dans le
-                suivi.
+                {t("{count} positions sans prix récent restent dans le suivi.", { count: s.unavailable })}
               </p>
             )}
           </>
         ) : (
-          <p>Aucune clôture pour comparer les prévisions aux résultats.</p>
+          <p>{t("Aucune clôture pour comparer les prévisions aux résultats.")}</p>
         )}
       </Sheet>
     </section>
@@ -934,38 +942,37 @@ function Method({ data: d }: { data: Tracker }) {
   return (
     <article className="method">
       <div className="method-step">
-        <h2>{methodSteps[step].title}</h2>
-        <p>{methodSteps[step].text}</p>
+        <h2>{t(methodSteps[step].title)}</h2>
+        <p>{t(methodSteps[step].text)}</p>
       </div>
       <div className="method-actions">
         <button className="button" onClick={() => setSources(true)}>
-          Sources et données
-        </button>
+          {t("Sources et données")}</button>
         <a
           className="button"
           href="/research/protocole.md"
           target="_blank"
           rel="noreferrer"
         >
-          Protocole <ArrowUpRight size={20} aria-hidden="true" />
+          {t("Protocole")}<ArrowUpRight size={20} aria-hidden="true" />
         </a>
       </div>
       <Pager page={step} pages={methodSteps.length} onPage={setStep} />
       <Sheet
         open={sources}
-        title="Sources et données"
+        title={t("Sources et données")}
         onClose={() => setSources(false)}
       >
         <Facts
           rows={[
-            ["Dernier calcul", observedTime(d.updatedAt)],
-            ["Univers observé", `${d.scan?.universe ?? 0} warrants`],
-            ["Collecte", "Lun.–ven. · 21 h 30 UTC"],
+            [t("Dernier calcul"), observedTime(d.updatedAt)],
+            [t("Univers observé"), `${d.scan?.universe ?? 0} warrants`],
+            [t("Collecte"), t("Lun.–ven. · 21 h 30 UTC")],
             ["Version", d.rule.version],
           ]}
         />
         <a className="button" href="/research/recherche.zip" download>
-          Code et données <Download size={20} aria-hidden="true" />
+          {t("Code et données")}<Download size={20} aria-hidden="true" />
         </a>
         <p>
           TradingView Lightweight Charts™ · Copyright (с) 2025 TradingView, Inc.{" "}

@@ -32,6 +32,7 @@ jobs:
           curl --retry 30 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:5185/ > /dev/null
           npm run test:fin
           npm run test:ui
+          npm run test:i18n
           npm run test:theme
           npm run test:install
           npm run test:pwa

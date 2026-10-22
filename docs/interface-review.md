@@ -28,3 +28,9 @@ Captures : output/playwright/fullscreen-list-2407.png, fullscreen-chart-390.png 
 ## Limites
 
 Prix publics indicatifs, heure émetteur inconnue. DIC lié mais non validé juridiquement par le moteur. Les résultats prospectifs ne sont pas encore suffisants pour valider le classement. La synchronisation de l’interface ne change pas la fréquence quotidienne de collecte. Le nombre de nouvelles sélections dépend des données et de l’éligibilité.
+
+## Français / English
+
+Interrupteur visible sur chaque écran et dans la fiche mobile. Préférence mémorisée, sélection conservée, noms accessibles et langue du document synchronisés. Traduction des états, feuilles, étapes de méthode, aide d’installation, dates, montants et graphiques. Les horaires et données financières ne changent pas. README principal en anglais ; contenu français conservé dans README.fr.md avec liens réciproques.
+
+Contrôles dédiés : scripts/check-i18n.mjs (couverture des traductions, formats 1440 × 900, 390 × 844 et 320 × 568, clavier, persistance, aides et erreurs). Résultat : 25 états anglais et 24 états français validés, sans défilement du document ni violation axe détectée ; navigation, reconnexion et installation existantes passent aussi.

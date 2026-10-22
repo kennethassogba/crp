@@ -330,6 +330,12 @@ input {
 .back-button {
   display: none;
 }
+.mobile-language {
+  display: none;
+}
+.language-switch {
+  font-weight: 600;
+}
 .instrument-summary {
   display: grid;
   width: 100%;
@@ -815,6 +821,12 @@ input {
   }
 }
 @media (max-width: 840px) {
+  .view-toolbar {
+    gap: 8px;
+  }
+  .mobile-language {
+    display: inline-flex;
+  }
   .app {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;

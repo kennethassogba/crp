@@ -20,7 +20,8 @@
     "test:pwa": "node scripts/check-pwa.mjs",
     "research:quotes": "node scripts/research-quotes.mjs",
     "test:theme": "node scripts/check-theme.mjs",
-    "research:track": "node scripts/research-track.mjs"
+    "research:track": "node scripts/research-track.mjs",
+    "test:i18n": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "@fontsource-variable/public-sans": "^5.3.0",

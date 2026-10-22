@@ -1,3 +1,4 @@
+import { t, useLanguage, locale } from "./i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createChart,
@@ -26,6 +27,7 @@ export function MarketChart({
   unit?: string;
   initial?: number;
 }) {
+  const language = useLanguage();
   const host = useRef<HTMLDivElement>(null),
     api = useRef<IChartApi | null>(null),
     line = useRef<ISeriesApi<"Line"> | null>(null),
@@ -50,8 +52,10 @@ export function MarketChart({
     point = data[index];
   const reference = initial ?? data[0]?.value,
     delta = point ? point.value - reference : 0;
-  const fmt = (v: number) =>
-    `${number(v, unit === "€" && v < 10 ? 3 : 2)} ${unit}`;
+  const fmt = (v: number) => {
+    const value = number(v, unit === "€" && v < 10 ? 3 : 2);
+    return language === "en" ? `${unit}${value}` : `${value} ${unit}`;
+  };
   useEffect(() => {
     const el = host.current;
     if (!el || !data.length) return;
@@ -102,7 +106,7 @@ export function MarketChart({
         axisPressedMouseMove: true,
       },
       localization: {
-        locale: "fr-FR",
+        locale: locale(),
         priceFormatter: fmt,
         timeFormatter: (t: Time) =>
           typeof t === "number"
@@ -149,7 +153,7 @@ export function MarketChart({
         lineWidth: 1,
         lineStyle: 2,
         axisLabelVisible: false,
-        title: "Entrée",
+        title: t("Entrée"),
       });
     chart.subscribeCrosshairMove((p) => {
       if (typeof p.time !== "number") {
@@ -169,7 +173,7 @@ export function MarketChart({
       line.current = null;
       chart.remove();
     };
-  }, [data, selectedDay, unit, initial]);
+  }, [data, selectedDay, unit, initial, language]);
   useEffect(() => {
     const chart = api.current;
     if (!chart || !data.length) return;
@@ -183,7 +187,7 @@ export function MarketChart({
         to: Math.floor(last / 1000) as UTCTimestamp,
       });
     else chart.timeScale().fitContent();
-  }, [period, data]);
+  }, [period, data, language]);
   const zoom = (factor: number) => {
     const chart = api.current,
       r = chart?.timeScale().getVisibleLogicalRange();
@@ -245,7 +249,7 @@ export function MarketChart({
         <div
           className="chart-periods"
           role="group"
-          aria-label="Période du cours"
+          aria-label={t("Période du cours")}
         >
           {["1S", "1M", "3M", "1A"].map((p) => (
             <button
@@ -256,19 +260,19 @@ export function MarketChart({
                 setActive(null);
               }}
             >
-              {p}
+              {t(p)}
             </button>
           ))}
         </div>
         <div className="chart-zoom">
-          <button aria-label="Dézoomer le graphique" onClick={() => zoom(1.4)}>
+          <button aria-label={t("Dézoomer le graphique")} onClick={() => zoom(1.4)}>
             <Minus size={20} aria-hidden="true" />
           </button>
-          <button aria-label="Zoomer le graphique" onClick={() => zoom(0.7)}>
+          <button aria-label={t("Zoomer le graphique")} onClick={() => zoom(0.7)}>
             <Plus size={20} aria-hidden="true" />
           </button>
           <button
-            aria-label="Afficher tout l’historique"
+            aria-label={t("Afficher tout l’historique")}
             onClick={() => api.current?.timeScale().fitContent()}
           >
             <Maximize2 size={20} aria-hidden="true" />
@@ -280,11 +284,11 @@ export function MarketChart({
         ref={host}
         tabIndex={0}
         role="group"
-        aria-label={`${name}. Flèches pour lire les prix, début et fin pour les extrêmes.`}
+        aria-label={`${name}. ${t("Flèches pour lire les prix, début et fin pour les extrêmes.")}`}
         onKeyDown={key}
       />
       <span className="visually-hidden">
-        Courbe grise avant sélection, bleue à partir du{" "}
+        {t("Courbe grise avant sélection, bleue à partir du")}{" "}
         {date(selectedDay, true)}.
       </span>
     </div>
