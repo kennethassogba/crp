@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: crp-${{ github.ref }}
+  group: fin-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   verify:
@@ -26,7 +26,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Check desktop and mobile in Chromium
         run: |
-          npm run dev > /tmp/crp-dev.log 2>&1 &
+          npm run dev > /tmp/fin-dev.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
           curl --retry 30 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:5185/ > /dev/null
